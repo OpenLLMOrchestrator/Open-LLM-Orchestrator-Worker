@@ -2,8 +2,10 @@ package com.openllmorchestrator.worker.activity;
 
 import io.temporal.activity.ActivityInterface;
 
+import java.util.List;
+
 @ActivityInterface
 public interface RetrievalActivity {
 
-    String retrieve(String documentId, float[] vector);
+    List<String> retrieve(String documentId, List<Double> vector);
 }

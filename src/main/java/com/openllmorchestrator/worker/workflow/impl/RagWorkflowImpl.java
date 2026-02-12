@@ -3,6 +3,7 @@ package com.openllmorchestrator.worker.workflow.impl;
 import com.openllmorchestrator.worker.activity.EmbeddingActivity;
 import com.openllmorchestrator.worker.activity.ModelActivity;
 import com.openllmorchestrator.worker.activity.RetrievalActivity;
+import com.openllmorchestrator.worker.activity.model.ModelResult;
 import com.openllmorchestrator.worker.workflow.RagWorkflow;
 import com.openllmorchestrator.worker.workflow.contract.RagRequest;
 import com.openllmorchestrator.worker.workflow.contract.RagResponse;
@@ -33,29 +34,34 @@ public class RagWorkflowImpl implements RagWorkflow {
 
         long start = System.currentTimeMillis();
 
-        float[] vector = embeddingActivity.embed(request.getQuestion());
+        List<Double> vector = embeddingActivity.embed(request.getQuestion());
 
-        String context =
+        List<String> context =
                 retrievalActivity.retrieve(request.getDocumentId(), vector);
 
         String prompt = buildPrompt(context, request.getQuestion());
 
-        String answer = modelActivity.generate(prompt);
+        ModelResult result = modelActivity.generateAnswer(
+                request.getQuestion(),
+                context
+        );
+
 
         long latency = System.currentTimeMillis() - start;
 
         return RagResponse.builder()
-                .answer(answer)
-                .modelUsed("mock-model")
-                .sources(List.of("doc-" + request.getDocumentId()))
+                .answer(result.getAnswer())
+                .modelUsed(result.getModelName())
+                .sources(context)
                 .latencyMs(latency)
-                .promptTokens(0)
-                .completionTokens(0)
+                .promptTokens(result.getPromptTokens())
+                .completionTokens(result.getCompletionTokens())
                 .build();
+
     }
 
 
-    private String buildPrompt(String context, String question) {
+    private String buildPrompt(List<String> context, String question) {
         return """
                 Use the following context to answer the question.
 
