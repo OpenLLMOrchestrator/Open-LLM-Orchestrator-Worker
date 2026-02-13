@@ -1,18 +1,21 @@
 package com.openllmorchestrator.worker.engine.kernel;
 
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.contract.StageResult;
-import com.openllmorchestrator.worker.engine.stage.StageDefinition;
-import com.openllmorchestrator.worker.engine.stage.StageExecutionMode;
+import com.openllmorchestrator.worker.engine.kernel.execution.AsyncGroupExecutor;
+import com.openllmorchestrator.worker.engine.kernel.execution.GroupExecutor;
+import com.openllmorchestrator.worker.engine.kernel.execution.SyncGroupExecutor;
+import com.openllmorchestrator.worker.engine.stage.StageGroupSpec;
 import com.openllmorchestrator.worker.engine.stage.StagePlan;
-import io.temporal.workflow.Promise;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
 public class KernelOrchestrator {
+    private static final List<GroupExecutor> EXECUTORS = List.of(
+            new SyncGroupExecutor(),
+            new AsyncGroupExecutor()
+    );
 
     private final StageInvoker stageInvoker;
 
@@ -21,43 +24,19 @@ public class KernelOrchestrator {
     }
 
     public void execute(StagePlan plan, ExecutionContext context) {
-
-        for (List<StageDefinition> group : plan.getGroups()) {
-
+        for (StageGroupSpec spec : plan.getGroups()) {
             log.info("---- Executing Stage Group ----");
+            executeGroup(spec, context);
+        }
+    }
 
-            if (group.get(0).getExecutionMode()
-                    == StageExecutionMode.ASYNC) {
-
-                List<Promise<StageResult>> promises =
-                        new ArrayList<>();
-
-                for (StageDefinition def : group) {
-                    log.info("Scheduling ASYNC stage: {}",
-                            def.getName());
-                    promises.add(stageInvoker.invokeAsync(def));
-                }
-
-                Promise.allOf(promises).get();
-
-                for (Promise<StageResult> p : promises) {
-                    log.info("Completed ASYNC stage: {}",
-                            p.get().getStageName());
-                }
-
-            } else {
-
-                for (StageDefinition def : group) {
-                    log.info("Executing SYNC stage: {}",
-                            def.getName());
-
-                    StageResult result =
-                            stageInvoker.invokeSync(def);
-
-                    log.info("Completed SYNC stage: {}",
-                            result.getStageName());
-                }
+    private void executeGroup(StageGroupSpec spec, ExecutionContext context) {
+        for (GroupExecutor ex : EXECUTORS) {
+            if (ex.supports(spec)) {
+                ex.execute(spec, stageInvoker, context);
+                return;
             }
         }
+        throw new IllegalStateException("No executor for group");
     }
 }

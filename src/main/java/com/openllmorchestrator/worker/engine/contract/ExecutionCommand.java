@@ -14,4 +14,6 @@ public class ExecutionCommand {
     private String tenantId;
     private String userId;
     private Map<String, Object> metadata;
+    /** Initial input map for the pipeline; every plugin can read this (read-only). */
+    private Map<String, Object> input;
 }

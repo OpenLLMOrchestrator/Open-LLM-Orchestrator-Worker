@@ -37,11 +37,17 @@ public class WorkerApplication {
             System.out.println("Using Task Queue: " + taskQueue);
 
             // ----------------------------------------------------
-            // 2️⃣  Connect to Temporal
+            // 2️⃣  Connect to Temporal (from config; no hardcoded target)
             // ----------------------------------------------------
+            String temporalTarget = config.getTemporal() != null && config.getTemporal().getTarget() != null
+                    ? config.getTemporal().getTarget()
+                    : "localhost:7233";
+            String namespace = config.getTemporal() != null && config.getTemporal().getNamespace() != null
+                    ? config.getTemporal().getNamespace()
+                    : "default";
             WorkflowServiceStubsOptions serviceOptions =
                     WorkflowServiceStubsOptions.newBuilder()
-                            .setTarget("localhost:7233")
+                            .setTarget(temporalTarget)
                             .build();
 
             WorkflowServiceStubs service =

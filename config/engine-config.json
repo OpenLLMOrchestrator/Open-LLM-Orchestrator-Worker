@@ -4,6 +4,24 @@
     "queueName": "core-task-queue",
     "strictBoot": false
   },
+  "temporal": {
+    "target": "localhost:7233",
+    "namespace": "default"
+  },
+  "activity": {
+    "defaultTimeouts": {
+      "scheduleToStartSeconds": 60,
+      "startToCloseSeconds": 30,
+      "scheduleToCloseSeconds": 300
+    },
+    "retryPolicy": {
+      "maximumAttempts": 3,
+      "initialIntervalSeconds": 1,
+      "backoffCoefficient": 2.0,
+      "maximumIntervalSeconds": 60,
+      "nonRetryableErrors": []
+    }
+  },
   "redis": {
     "host": "localhost",
     "port": 6379,
@@ -16,6 +34,19 @@
   },
   "pipeline": {
     "defaultTimeoutSeconds": 30,
+    "defaultAsyncCompletionPolicy": "ALL",
+    "stagePlugins": {
+      "ACCESS": "default",
+      "MEMORY": "default",
+      "RETRIEVAL": "default",
+      "MODEL": "default",
+      "MCP": "default",
+      "TOOL": "default",
+      "FILTER": "default",
+      "POST_PROCESS": "default",
+      "OBSERVABILITY": "default",
+      "CUSTOM": "default"
+    },
     "root": {
       "type": "GROUP",
       "executionMode": "SYNC",
@@ -28,6 +59,7 @@
         {
           "type": "GROUP",
           "executionMode": "ASYNC",
+          "asyncCompletionPolicy": "ALL",
           "children": [
             { "type": "STAGE", "name": "MEMORY" },
             { "type": "STAGE", "name": "RETRIEVAL" }
