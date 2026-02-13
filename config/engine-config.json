@@ -1,0 +1,44 @@
+{
+  "configVersion": "1.0",
+  "worker": {
+    "queueName": "core-task-queue",
+    "strictBoot": false
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 6379,
+    "password": ""
+  },
+  "database": {
+    "url": "jdbc:postgresql://localhost:5432/olo_config",
+    "username": "postgres",
+    "password": "postgres"
+  },
+  "pipeline": {
+    "defaultTimeoutSeconds": 30,
+    "root": {
+      "type": "GROUP",
+      "executionMode": "SYNC",
+      "children": [
+        {
+          "type": "STAGE",
+          "name": "ACCESS",
+          "timeoutSeconds": 10
+        },
+        {
+          "type": "GROUP",
+          "executionMode": "ASYNC",
+          "children": [
+            { "type": "STAGE", "name": "MEMORY" },
+            { "type": "STAGE", "name": "RETRIEVAL" }
+          ]
+        },
+        {
+          "type": "STAGE",
+          "name": "MODEL",
+          "timeoutSeconds": 120
+        }
+      ]
+    }
+  }
+}
