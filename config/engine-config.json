@@ -1,14 +1,38 @@
 {
   "configVersion": "1.0",
-  "worker": { "queueName": "core-task-queue", "strictBoot": false },
-  "temporal": { "target": "localhost:7233", "namespace": "default" },
-  "activity": {
-    "defaultTimeouts": { "scheduleToStartSeconds": 60, "startToCloseSeconds": 30, "scheduleToCloseSeconds": 300 },
-    "retryPolicy": { "maximumAttempts": 3, "initialIntervalSeconds": 1, "backoffCoefficient": 2, "maximumIntervalSeconds": 60, "nonRetryableErrors": [] }
+  "worker": {
+    "queueName": "core-task-queue",
+    "strictBoot": false
   },
-  "redis": { "host": "localhost", "port": 6379, "password": "" },
-  "database": { "url": "jdbc:postgresql://localhost:5432/olo_config", "username": "postgres", "password": "postgres" },
-  "stageOrder": ["ACCESS", "MEMORY", "RETRIEVAL", "MODEL", "MCP", "TOOL", "FILTER", "POST_PROCESS", "OBSERVABILITY",   "CUSTOM"],
+  "temporal": {
+    "target": "localhost:7233",
+    "namespace": "default"
+  },
+  "activity": {
+    "defaultTimeouts": {
+      "scheduleToStartSeconds": 60,
+      "startToCloseSeconds": 30,
+      "scheduleToCloseSeconds": 300
+    },
+    "retryPolicy": {
+      "maximumAttempts": 3,
+      "initialIntervalSeconds": 1,
+      "backoffCoefficient": 2,
+      "maximumIntervalSeconds": 60,
+      "nonRetryableErrors": []
+    }
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 6379,
+    "password": ""
+  },
+  "database": {
+    "url": "jdbc:postgresql://localhost:5432/olo_config",
+    "username": "postgres",
+    "password": "postgres"
+  },
+  "stageOrder": ["ACCESS", "MEMORY", "RETRIEVAL", "MODEL", "MCP", "TOOL", "FILTER", "POST_PROCESS", "OBSERVABILITY", "CUSTOM"],
   "mergePolicies": {
     "DEFAULT_ASYNC": "LAST_WINS",
     "PREFIX_KEYS": "PREFIX_BY_ACTIVITY"
@@ -22,14 +46,22 @@
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "FilterPlugin", "name": "com.openllmorchestrator.worker.plugin.tokenizer.DocumentTokenizerPlugin" }
+            {
+              "type": "STAGE",
+              "pluginType": "FilterPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.tokenizer.DocumentTokenizerPlugin"
+            }
           ]
         },
         "RETRIEVAL": {
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "VectorStorePlugin", "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin" }
+            {
+              "type": "STAGE",
+              "pluginType": "VectorStorePlugin",
+              "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
+            }
           ]
         }
       }
@@ -42,14 +74,22 @@
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "FilterPlugin", "name": "com.openllmorchestrator.worker.plugin.folder.FolderIngestionPlugin" }
+            {
+              "type": "STAGE",
+              "pluginType": "FilterPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.folder.FolderIngestionPlugin"
+            }
           ]
         },
         "RETRIEVAL": {
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "VectorStorePlugin", "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin" }
+            {
+              "type": "STAGE",
+              "pluginType": "VectorStorePlugin",
+              "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
+            }
           ]
         }
       }
@@ -62,14 +102,631 @@
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "VectorStorePlugin", "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin" }
+            {
+              "type": "STAGE",
+              "pluginType": "VectorStorePlugin",
+              "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
+            }
           ]
         },
         "MODEL": {
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin", "timeoutSeconds": 120 }
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "llama-oss": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "openai-oss": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "both": {
+      "defaultTimeoutSeconds": 120,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "rag-llama-oss": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "RETRIEVAL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "VectorStorePlugin",
+              "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
+            }
+          ]
+        },
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "rag-openai-oss": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "RETRIEVAL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "VectorStorePlugin",
+              "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
+            }
+          ]
+        },
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "rag-both": {
+      "defaultTimeoutSeconds": 120,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "RETRIEVAL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "VectorStorePlugin",
+              "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
+            }
+          ]
+        },
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "rag-mistral": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "RETRIEVAL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "VectorStorePlugin",
+              "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
+            }
+          ]
+        },
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "rag-llama3.2": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "RETRIEVAL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "VectorStorePlugin",
+              "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
+            }
+          ]
+        },
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "rag-phi3": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "RETRIEVAL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "VectorStorePlugin",
+              "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
+            }
+          ]
+        },
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "rag-gemma2-2b": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "RETRIEVAL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "VectorStorePlugin",
+              "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
+            }
+          ]
+        },
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "rag-qwen2-1.5b": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "RETRIEVAL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "VectorStorePlugin",
+              "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
+            }
+          ]
+        },
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "chat-mistral": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "chat-llama3.2": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "chat-phi3": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "chat-gemma2-2b": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "chat-qwen2-1.5b": {
+      "defaultTimeoutSeconds": 90,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
+              "timeoutSeconds": 120
+            }
+          ]
+        },
+        "POST_PROCESS": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "RefinementPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
+            }
+          ]
+        }
+      }
+    },
+    "query-all-models": {
+      "defaultTimeoutSeconds": 180,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "ASYNC",
+          "asyncCompletionPolicy": "ALL",
+          "asyncOutputMergePolicy": "ALL_MODELS_RESPONSE_FORMAT",
+          "timeoutSeconds": 180,
+          "children": [
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.MistralChatPlugin",
+              "timeoutSeconds": 120
+            },
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Llama32FixedChatPlugin",
+              "timeoutSeconds": 120
+            },
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Phi3ChatPlugin",
+              "timeoutSeconds": 120
+            },
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Gemma2_2bChatPlugin",
+              "timeoutSeconds": 120
+            },
+            {
+              "type": "STAGE",
+              "pluginType": "ModelPlugin",
+              "name": "com.openllmorchestrator.worker.plugin.llm.Qwen2_1_5bChatPlugin",
+              "timeoutSeconds": 120
+            }
           ]
         }
       }

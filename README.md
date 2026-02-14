@@ -71,13 +71,18 @@ For local development, **Temporal** is required; **Ollama** is optional (the LLM
 
 ## Pipelines (default config)
 
-| Pipeline | Input | Description |
-|----------|--------|-------------|
-| **document-ingestion** | `{ "document": "<text>" }` | Tokenize document → store chunks in vector store. |
-| **document-ingestion-folder** | `{ "folderPath": "<path>", optional "fileExtensions", "recursive" }` | Read folder → tokenize → store chunks. |
-| **question-answer** | `{ "question": "<question>" }` | Retrieve chunks → LLM (Ollama) → response in `result` and `response`. |
+| Workflow | Pipeline ID | Input | Description |
+|----------|-------------|--------|-------------|
+| **CoreWorkflowImpl** | **document-ingestion** | `{ "document": "<text>" }` | Tokenize document → store chunks in vector store. |
+| **CoreWorkflowImpl** | **document-ingestion-folder** | `{ "folderPath": "<path>", optional "fileExtensions", "recursive" }` | Read folder → tokenize → store chunks. |
+| **CoreWorkflowImpl** | **question-answer** | `{ "question": "<question>" }` | Retrieve chunks → LLM (Ollama) → `result`, `response`, and formatted `output` (ANS: "..."). |
+| **CoreWorkflowImpl** | **rag-*** (e.g. rag-mistral, rag-llama3.2) | `{ "question": "..." }` | RAG: retrieve + one model (mistral, llama3.2, phi3, gemma2-2b, qwen2-1.5b). |
+| **CoreWorkflowImpl** | **chat-*** (e.g. chat-mistral, chat-llama3.2) | `{ "question": "..." }` or `{ "messages": [...] }` | Chat only (no RAG) with one model. |
+| **CoreWorkflowImpl** | **query-all-models** | `{ "question": "..." }` or `{ "messages": [...] }` | Query all five models in parallel; merged output: `response from X: "..."` per model. |
 
-Workflow **input** is always an **ExecutionCommand** with `pipelineName` and `input`; the workflow **return value** is a **Map&lt;String, Object&gt;** (accumulated output), including `result` from the LLM stage.
+**Full list** (workflow name, pipeline ID, payload, summary): see **[config/README.md](config/README.md)**.
+
+Workflow **input** is always an **ExecutionCommand**: `{ "pipelineName": "<id>", "input": { ... } }`. The workflow **return value** is a **Map&lt;String, Object&gt;** (accumulated output), including `result` and often `output` from the LLM/post-process stages.
 
 ---
 
