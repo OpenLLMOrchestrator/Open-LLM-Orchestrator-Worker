@@ -43,6 +43,11 @@ public class EngineFileConfig {
     private Map<String, String> mergePolicies;
     /** Named pipelines: user-defined name → pipeline config (e.g. "chat", "document-extraction", "default"). At least one required. */
     private Map<String, PipelineSection> pipelines;
+    /**
+     * Dynamic plugins: plugin name (activity id) → path to JAR file.
+     * At bootstrap the engine tries to load each JAR and register a StageHandler; if the file is missing or load fails, a no-op wrapper is registered and a log message is emitted. At runtime, if the plugin was not loaded, the wrapper logs and returns empty output.
+     */
+    private Map<String, String> dynamicPlugins;
 
     /** Merge: connection config (queue, redis, db) from env; server config from storage. */
     public static EngineFileConfig mergeFromEnv(EnvConfig env, EngineFileConfig fromStorage) {
@@ -57,6 +62,7 @@ public class EngineFileConfig {
         merged.stageOrder = fromStorage != null ? fromStorage.stageOrder : null;
         merged.stagePlugins = fromStorage != null ? fromStorage.stagePlugins : null;
         merged.mergePolicies = fromStorage != null ? fromStorage.mergePolicies : null;
+        merged.dynamicPlugins = fromStorage != null ? fromStorage.dynamicPlugins : null;
         return merged;
     }
 
@@ -81,5 +87,10 @@ public class EngineFileConfig {
     /** All pipeline names to use at runtime. Requires at least one pipeline in config. */
     public Map<String, PipelineSection> getPipelinesEffective() {
         return pipelines != null ? pipelines : Collections.emptyMap();
+    }
+
+    /** Effective dynamic plugin name → JAR path. */
+    public Map<String, String> getDynamicPluginsEffective() {
+        return dynamicPlugins != null ? dynamicPlugins : Collections.emptyMap();
     }
 }

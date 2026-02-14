@@ -1,6 +1,7 @@
 package com.openllmorchestrator.worker.engine.bootstrap;
 
 import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildActivityRegistryStep;
+import com.openllmorchestrator.worker.engine.bootstrap.steps.LoadDynamicPluginsStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildPlanStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildResolverStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.LoadConfigStep;
@@ -18,6 +19,7 @@ public final class WorkerBootstrap {
     private static final List<BootstrapStep> DEFAULT_STEPS = List.of(
             new LoadConfigStep(),
             new BuildActivityRegistryStep(),
+            new LoadDynamicPluginsStep(),
             new BuildResolverStep(),
             new ValidateConfigStep(),
             new BuildPlanStep(),

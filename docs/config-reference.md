@@ -75,6 +75,7 @@ The **execution hierarchy** (stage plan, resolver, and plugin/activity registrie
 | `database`  | DB connection (if used). |
 | `stageOrder` | Optional. Order of stages when root is a stages map; only stages present there are included. If omitted, predefined order in code is used. |
 | `mergePolicies` | Optional. Map of policy name → implementation. Value = built-in name (FIRST_WINS, LAST_WINS, PREFIX_BY_ACTIVITY) or fully qualified class name. Registered at bootstrap; reference by name in pipeline/group `asyncOutputMergePolicy`. |
+| `dynamicPlugins` | Optional. Map of **plugin name** (activity id) → **path to JAR file**. At bootstrap the engine tries to load each JAR and register a `StageHandler`; if the file is missing or load fails, a no-op wrapper is registered and a log message is emitted. At runtime, if the plugin was not loaded, the wrapper logs and returns empty output so the workflow continues. JAR must provide `META-INF/services/com.openllmorchestrator.worker.engine.stage.StageHandler`. |
 | `pipelines` | **Required.** Map of pipeline name → pipeline config (e.g. `default`, chat, document-extraction). At least one pipeline required. |
 
 ---
@@ -202,6 +203,26 @@ Example:
 ```
 
 Then set `asyncOutputMergePolicy` to `"DEFAULT_ASYNC"`, `"NO_OVERWRITE"`, or `"CUSTOM_MERGE"` in pipeline or group config.
+
+### Dynamic plugins (optional JAR loading)
+
+Use **`dynamicPlugins`** to load plugins from JAR files at bootstrap. Each key is the **plugin name** (activity id used in pipeline `name`); each value is the **path to the JAR** (absolute or relative to the process working directory).
+
+- **Load time:** The engine tries to load each JAR and register a `StageHandler`. If the file does not exist or loading fails (e.g. no SPI provider in the JAR), it **logs a message and continues** — it does not fail startup. A no-op wrapper is registered for that name.
+- **Runtime:** When a stage uses that plugin name, the wrapper runs: if the plugin was loaded, it delegates to it; if not, it **logs and returns empty output** so the workflow continues.
+
+The JAR must provide a service implementation via **`META-INF/services/com.openllmorchestrator.worker.engine.stage.StageHandler`** (one line: fully qualified class name of the implementation).
+
+Example:
+
+```json
+"dynamicPlugins": {
+  "MyOptionalPlugin": "/opt/plugins/my-plugin.jar",
+  "DynamicAddress": "plugins/another.jar"
+}
+```
+
+Reference the plugin in pipeline nodes by **`name`** (e.g. `"MyOptionalPlugin"`, `"DynamicAddress"`). If the JAR was missing at startup, that stage will no-op and log when executed.
 
 ### Pipeline mode: stages (top-level flow)
 

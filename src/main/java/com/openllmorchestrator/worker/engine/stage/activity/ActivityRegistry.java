@@ -37,6 +37,11 @@ public final class ActivityRegistry {
         return byName.get(activityName);
     }
 
+    /** All registered handlers (for merging with dynamic plugins). */
+    public Map<String, StageHandler> getHandlers() {
+        return Collections.unmodifiableMap(new HashMap<>(byName));
+    }
+
     public boolean has(String activityName) {
         return get(activityName) != null;
     }
@@ -64,6 +69,14 @@ public final class ActivityRegistry {
         public Builder register(String activityName, StageHandler handler) {
             if (activityName != null && !activityName.isBlank() && handler != null) {
                 byName.put(activityName, handler);
+            }
+            return this;
+        }
+
+        /** Add all handlers from an existing registry (e.g. before adding dynamic plugins). */
+        public Builder registerAll(Map<String, StageHandler> handlers) {
+            if (handlers != null) {
+                handlers.forEach(this::register);
             }
             return this;
         }
