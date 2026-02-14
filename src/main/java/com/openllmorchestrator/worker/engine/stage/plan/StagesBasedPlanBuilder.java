@@ -3,8 +3,9 @@ package com.openllmorchestrator.worker.engine.stage.plan;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.GroupConfig;
+import com.openllmorchestrator.worker.engine.config.pipeline.MergePolicyConfig;
+import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
 import com.openllmorchestrator.worker.engine.config.pipeline.StageBlockConfig;
-import com.openllmorchestrator.worker.engine.kernel.merge.AsyncOutputMergePolicy;
 import com.openllmorchestrator.worker.engine.stage.AsyncCompletionPolicy;
 import com.openllmorchestrator.worker.engine.stage.StageExecutionMode;
 import com.openllmorchestrator.worker.engine.stage.StagePlanBuilder;
@@ -25,31 +26,46 @@ public final class StagesBasedPlanBuilder {
     private StagesBasedPlanBuilder() {}
 
     public static void build(EngineFileConfig fileConfig, StagePlanBuilder builder) {
-        if (fileConfig == null || fileConfig.getPipeline() == null) {
+        Map<String, PipelineSection> pipelines = fileConfig != null ? fileConfig.getPipelinesEffective() : null;
+        if (pipelines != null && !pipelines.isEmpty()) {
+            PipelineSection section = pipelines.containsKey("default") ? pipelines.get("default") : pipelines.values().iterator().next();
+            build(fileConfig, section, builder);
+        }
+    }
+
+    /** Build from a specific pipeline section (for named pipelines). */
+    public static void build(EngineFileConfig fileConfig, PipelineSection section, StagePlanBuilder builder) {
+        if (fileConfig == null || section == null) {
             return;
         }
-        List<StageBlockConfig> stages = fileConfig.getPipeline().getStages();
+        List<StageBlockConfig> stages = section.getStages();
         if (stages == null || stages.isEmpty()) {
             return;
         }
+        int defaultMaxDepth = section.getDefaultMaxGroupDepth() > 0 ? section.getDefaultMaxGroupDepth() : 5;
         PlanBuildContext ctx = new PlanBuildContext(
-                fileConfig.getPipeline().getDefaultTimeoutSeconds(),
+                section.getDefaultTimeoutSeconds(),
                 fileConfig.getWorker().getQueueName(),
                 fileConfig.getActivity(),
-                fileConfig.getPipeline().getDefaultAsyncCompletionPolicy()
+                section.getDefaultAsyncCompletionPolicy(),
+                defaultMaxDepth
         );
         for (StageBlockConfig stageBlock : stages) {
             if (stageBlock == null || stageBlock.getGroupsSafe().isEmpty()) {
                 continue;
             }
             for (GroupConfig group : stageBlock.getGroupsSafe()) {
-                processGroup(group, ctx, builder);
+                processGroup(group, section, ctx, builder, 0);
             }
         }
     }
 
-    private static void processGroup(GroupConfig group, PlanBuildContext ctx, StagePlanBuilder builder) {
+    private static void processGroup(GroupConfig group, PipelineSection section, PlanBuildContext ctx, StagePlanBuilder builder, int depth) {
         if (group == null) return;
+        int effectiveMax = group.getMaxDepth() != null ? group.getMaxDepth() : ctx.getDefaultMaxGroupDepth();
+        if (depth >= effectiveMax) {
+            throw new IllegalStateException("Group recursion depth " + depth + " exceeds max " + effectiveMax);
+        }
         int timeoutSeconds = group.getTimeoutSeconds() != null && group.getTimeoutSeconds() > 0
                 ? group.getTimeoutSeconds()
                 : ctx.getDefaultTimeoutSeconds();
@@ -63,9 +79,9 @@ public final class StagesBasedPlanBuilder {
             AsyncCompletionPolicy policy = group.getAsyncCompletionPolicy() != null && !group.getAsyncCompletionPolicy().isBlank()
                     ? AsyncCompletionPolicy.fromConfig(group.getAsyncCompletionPolicy())
                     : ctx.getDefaultAsyncPolicy();
-            AsyncOutputMergePolicy outputMerge = group.getAsyncOutputMergePolicy() != null && !group.getAsyncOutputMergePolicy().isBlank()
-                    ? AsyncOutputMergePolicy.fromConfig(group.getAsyncOutputMergePolicy())
-                    : null;
+            String mergePolicyName = resolveMergePolicyName(
+                    group.getMergePolicy(), group.getAsyncOutputMergePolicy(),
+                    section != null ? section.getMergePolicy() : null);
             builder.addAsyncGroup(
                     activityNames,
                     timeout,
@@ -74,7 +90,7 @@ public final class StagesBasedPlanBuilder {
                     scheduleToClose,
                     retryOptions,
                     policy,
-                    outputMerge
+                    mergePolicyName
             );
         } else {
             for (Object child : group.getChildrenAsList()) {
@@ -93,10 +109,24 @@ public final class StagesBasedPlanBuilder {
                     }
                 } else if (child instanceof Map) {
                     GroupConfig nested = MAPPER.convertValue(child, GroupConfig.class);
-                    processGroup(nested, ctx, builder);
+                    processGroup(nested, section, ctx, builder, depth + 1);
                 }
             }
         }
+    }
+
+    private static String resolveMergePolicyName(MergePolicyConfig groupMergePolicy, String groupLegacy,
+                                                  MergePolicyConfig sectionMergePolicy) {
+        if (groupMergePolicy != null && groupMergePolicy.getName() != null && !groupMergePolicy.getName().isBlank()) {
+            return groupMergePolicy.getName();
+        }
+        if (groupLegacy != null && !groupLegacy.isBlank()) {
+            return groupLegacy;
+        }
+        if (sectionMergePolicy != null && sectionMergePolicy.getName() != null && !sectionMergePolicy.getName().isBlank()) {
+            return sectionMergePolicy.getName();
+        }
+        return "LAST_WINS";
     }
 
     private static List<String> flattenActivityNames(GroupConfig group) {

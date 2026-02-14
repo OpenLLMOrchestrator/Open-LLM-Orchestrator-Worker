@@ -4,6 +4,9 @@ import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.stage.StagePlan;
 import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
  * One-time bootstrap state: config, execution hierarchy (plan + resolver), and resolver.
  * Built once at startup and reused for the entire container lifecycle.
@@ -16,7 +19,7 @@ import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
 public final class EngineRuntime {
 
     private static volatile EngineFileConfig config;
-    private static volatile StagePlan stagePlan;
+    private static volatile Map<String, StagePlan> stagePlansByName;
     private static volatile StageResolver stageResolver;
 
     /** Set during bootstrap; never null after successful init. */
@@ -32,17 +35,27 @@ public final class EngineRuntime {
         EngineRuntime.config = config;
     }
 
-    /** Execution hierarchy (plan) built once at bootstrap; reused for container lifecycle. */
+    /** Execution hierarchy (plan) for default pipeline; same as getStagePlan("default"). */
     public static StagePlan getStagePlan() {
-        StagePlan p = stagePlan;
+        return getStagePlan("default");
+    }
+
+    /** Execution hierarchy (plan) for the given pipeline name. Workflow payload should pass this name. */
+    public static StagePlan getStagePlan(String pipelineName) {
+        Map<String, StagePlan> map = stagePlansByName;
+        if (map == null || map.isEmpty()) {
+            throw new IllegalStateException("Engine not bootstrapped. Stage plans not set.");
+        }
+        String name = pipelineName != null && !pipelineName.isBlank() ? pipelineName : "default";
+        StagePlan p = map.get(name);
         if (p == null) {
-            throw new IllegalStateException("Engine not bootstrapped. Stage plan not set.");
+            throw new IllegalStateException("Unknown pipeline name: '" + name + "'. Available: " + map.keySet());
         }
         return p;
     }
 
-    public static void setStagePlan(StagePlan stagePlan) {
-        EngineRuntime.stagePlan = stagePlan;
+    public static void setStagePlans(Map<String, StagePlan> plans) {
+        EngineRuntime.stagePlansByName = plans != null ? Collections.unmodifiableMap(plans) : null;
     }
 
     /** Resolves predefined stages via config + plugin bucket, custom stages via custom bucket. */

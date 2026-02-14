@@ -1,6 +1,8 @@
 package com.openllmorchestrator.worker.engine.kernel;
 
 import com.openllmorchestrator.worker.engine.activity.KernelStageActivity;
+import com.openllmorchestrator.worker.engine.activity.MergePolicyActivity;
+import com.openllmorchestrator.worker.engine.contract.AsyncGroupResultEntry;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.engine.contract.StageResult;
 import com.openllmorchestrator.worker.engine.stage.StageDefinition;
@@ -12,6 +14,7 @@ import io.temporal.workflow.Promise;
 import io.temporal.workflow.Workflow;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +33,27 @@ public class StageInvoker {
         Map<String, Object> orig = context != null ? context.getOriginalInput() : Map.of();
         Map<String, Object> acc = context != null ? context.getAccumulatedOutput() : Map.of();
         return activity.execute(definition.getName(), orig, acc);
+    }
+
+    /**
+     * Invoke the merge policy activity (plugin) before exiting an ASYNC group. Returns the merged map.
+     */
+    public Map<String, Object> invokeMerge(String mergePolicyName, String taskQueue, Duration timeout,
+                                           ExecutionContext context, List<String> names, List<StageResult> results) {
+        MergePolicyActivity activity = Workflow.newActivityStub(MergePolicyActivity.class,
+                ActivityOptions.newBuilder()
+                        .setTaskQueue(taskQueue != null ? taskQueue : "default")
+                        .setStartToCloseTimeout(timeout != null && !timeout.isNegative() ? timeout : Duration.ofSeconds(30))
+                        .build());
+        List<AsyncGroupResultEntry> entries = new ArrayList<>();
+        if (names != null && results != null && names.size() == results.size()) {
+            for (int i = 0; i < names.size(); i++) {
+                entries.add(new AsyncGroupResultEntry(names.get(i), results.get(i)));
+            }
+        }
+        Map<String, Object> orig = context != null ? context.getOriginalInput() : Map.of();
+        Map<String, Object> acc = context != null ? context.getAccumulatedOutput() : Map.of();
+        return activity.merge(mergePolicyName, orig, acc, entries);
     }
 
     private static ActivityOptions toActivityOptions(StageDefinition d) {

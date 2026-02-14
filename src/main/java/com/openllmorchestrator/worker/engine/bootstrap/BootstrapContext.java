@@ -4,6 +4,8 @@ import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.config.env.EnvConfig;
 import com.openllmorchestrator.worker.engine.stage.StagePlan;
 import com.openllmorchestrator.worker.engine.stage.activity.ActivityRegistry;
+
+import java.util.Map;
 import com.openllmorchestrator.worker.engine.stage.custom.CustomStageBucket;
 import com.openllmorchestrator.worker.engine.stage.predefined.PredefinedPluginBucket;
 import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
@@ -21,5 +23,8 @@ public class BootstrapContext {
     private CustomStageBucket customBucket;
     private ActivityRegistry activityRegistry;
     private StageResolver resolver;
+    /** Single plan (legacy); used when plans map is not set. */
     private StagePlan plan;
+    /** Named pipeline plans: pipeline name → StagePlan. When set, use getStagePlan(name) at runtime. */
+    private Map<String, StagePlan> plans;
 }

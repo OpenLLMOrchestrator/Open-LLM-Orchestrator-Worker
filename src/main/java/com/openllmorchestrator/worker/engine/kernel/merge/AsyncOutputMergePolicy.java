@@ -9,11 +9,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Policy for merging multiple ASYNC plugin outputs into the accumulated map.
- * Order of results may be completion order (first finished first, or last).
- * Extensible: register custom strategies by name.
+ * Built-in policies for merging multiple ASYNC plugin outputs into the accumulated map.
+ * Register in {@link MergePolicyRegistry} and reference by name in config (asyncOutputMergePolicy).
  */
-public enum AsyncOutputMergePolicy {
+public enum AsyncOutputMergePolicy implements AsyncMergePolicy {
     /** First finished job's output written first; later outputs do not overwrite keys (putIfAbsent). */
     FIRST_WINS(FirstWriterWinsMergePolicy.INSTANCE),
     /** Last finished overwrites; merge in completion order (putAll each). */
@@ -33,6 +32,7 @@ public enum AsyncOutputMergePolicy {
      * For LAST_WINS: merge in list order (last overwrites).
      * For PREFIX_BY_ACTIVITY: each result's keys are prefixed by activity name.
      */
+    @Override
     public void mergeAll(Map<String, Object> accumulated, List<NamedStageResult> results) {
         if (results == null || results.isEmpty()) return;
         for (NamedStageResult r : results) {
@@ -43,22 +43,9 @@ public enum AsyncOutputMergePolicy {
         }
     }
 
-    public static AsyncOutputMergePolicy fromConfig(String value) {
-        if (value == null || value.isBlank()) return LAST_WINS;
-        switch (value.toUpperCase()) {
-            case "FIRST_WINS":
-            case "FIRST_FINISHED_FIRST":
-                return FIRST_WINS;
-            case "LAST_WINS":
-            case "LAST_FINISHED_WINS":
-            case "FIRST_FINISHED_LAST":
-                return LAST_WINS;
-            case "PREFIX_BY_ACTIVITY":
-            case "PREFIX":
-                return PREFIX_BY_ACTIVITY;
-            default:
-                return LAST_WINS;
-        }
+    /** Resolve policy by name from registry (use for config). */
+    public static AsyncMergePolicy fromConfig(String value) {
+        return MergePolicyRegistry.getDefault().get(value);
     }
 
     /** Pair of activity name and its stage result (for ordered merge). */

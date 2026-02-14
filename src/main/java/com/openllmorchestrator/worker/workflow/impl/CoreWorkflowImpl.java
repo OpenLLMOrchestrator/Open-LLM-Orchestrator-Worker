@@ -10,19 +10,28 @@ import com.openllmorchestrator.worker.workflow.CoreWorkflow;
 import io.temporal.workflow.Workflow;
 import org.slf4j.Logger;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Uses one-time bootstrapped plan and invoker; no config read per execution.
+ * Returns the accumulated output (including "result" from the LLM plugin) as the response.
  */
 public class CoreWorkflowImpl implements CoreWorkflow {
 
     private static final Logger log = Workflow.getLogger(CoreWorkflowImpl.class);
 
     @Override
-    public void execute(ExecutionCommand command) {
+    public Map<String, Object> execute(ExecutionCommand command) {
         ExecutionContext context = ExecutionContext.from(command);
-        StagePlan plan = EngineRuntime.getStagePlan();
+        String pipelineName = command.getPipelineName() != null && !command.getPipelineName().isBlank()
+                ? command.getPipelineName()
+                : "default";
+        StagePlan plan = EngineRuntime.getStagePlan(pipelineName);
+        log.info("Executing pipeline: {}", pipelineName);
         StageInvoker invoker = new StageInvoker();
         KernelOrchestrator kernel = new KernelOrchestrator(invoker);
         kernel.execute(plan, context);
+        return new HashMap<>(context.getAccumulatedOutput());
     }
 }

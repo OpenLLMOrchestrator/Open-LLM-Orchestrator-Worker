@@ -58,11 +58,11 @@ public final class StageResolver {
     }
 
     private String getPluginIdForPredefined(String stageName) {
-        if (config == null || config.getPipeline() == null) {
+        if (config == null) {
             return DEFAULT_PLUGIN_ID;
         }
-        Map<String, String> stagePlugins = config.getPipeline().getStagePlugins();
-        if (stagePlugins == null) {
+        Map<String, String> stagePlugins = config.getStagePluginsEffective();
+        if (stagePlugins == null || stagePlugins.isEmpty()) {
             return DEFAULT_PLUGIN_ID;
         }
         String pluginId = stagePlugins.get(stageName);

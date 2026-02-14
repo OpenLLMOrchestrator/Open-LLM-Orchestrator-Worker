@@ -12,13 +12,20 @@ import java.util.List;
 @Setter
 public class NodeConfig {
     private String type;
+    /** For STAGE: class name to call (fully qualified class name, e.g. com.example.plugin.AccessControlPluginImpl). Required. */
     private String name;
+    /** For STAGE: one of the allowed plugin types (e.g. AccessControlPlugin, MemoryPlugin). Required. */
+    private String pluginType;
     private String executionMode;
     private Integer timeoutSeconds;
     /** For GROUP ASYNC: override default policy (ALL | FIRST_SUCCESS | FIRST_FAILURE | ALL_SETTLED). */
     private String asyncCompletionPolicy;
-    /** For GROUP ASYNC: output key overwrite policy (FIRST_WINS | LAST_WINS | PREFIX_BY_ACTIVITY). */
+    /** For GROUP ASYNC: output key overwrite policy (name from merge policy registry). Legacy; prefer mergePolicy hook. */
     private String asyncOutputMergePolicy;
+    /** For GROUP ASYNC: merge policy hook { "type": "MERGE_POLICY", "pluginType": "MergePolicy", "name": "..." }. */
+    private MergePolicyConfig mergePolicy;
+    /** For GROUP: max recursion depth for nested groups (overrides pipeline defaultMaxGroupDepth). */
+    private Integer maxDepth;
     /** For STAGE: optional activity timeout overrides (seconds). */
     private Integer scheduleToStartSeconds;
     private Integer scheduleToCloseSeconds;

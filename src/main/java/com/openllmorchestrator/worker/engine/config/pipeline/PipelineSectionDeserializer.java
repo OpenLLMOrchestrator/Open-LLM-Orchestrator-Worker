@@ -1,0 +1,56 @@
+package com.openllmorchestrator.worker.engine.config.pipeline;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Deserializes pipeline section. The "root" key is polymorphic:
+ * - If root is an object with "type" (e.g. GROUP), it is a single root tree (legacy) → set root.
+ * - Otherwise root is an object with stage names as keys and GROUP configs as values → set rootByStage.
+ */
+public final class PipelineSectionDeserializer extends JsonDeserializer<PipelineSection> {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    @Override
+    public PipelineSection deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+        JsonNode node = p.getCodec().readTree(p);
+        PipelineSection section = new PipelineSection();
+
+        if (node.has("defaultTimeoutSeconds")) {
+            section.setDefaultTimeoutSeconds(node.get("defaultTimeoutSeconds").asInt());
+        }
+        if (node.has("defaultAsyncCompletionPolicy")) {
+            section.setDefaultAsyncCompletionPolicy(node.get("defaultAsyncCompletionPolicy").asText());
+        }
+        if (node.has("defaultMaxGroupDepth")) {
+            section.setDefaultMaxGroupDepth(node.get("defaultMaxGroupDepth").asInt());
+        }
+        if (node.has("mergePolicy")) {
+            section.setMergePolicy(MAPPER.treeToValue(node.get("mergePolicy"), MergePolicyConfig.class));
+        }
+        if (node.has("stagePlugins")) {
+            section.setStagePlugins(MAPPER.convertValue(node.get("stagePlugins"), new TypeReference<Map<String, String>>() {}));
+        }
+        if (node.has("stages")) {
+            section.setStages(MAPPER.convertValue(node.get("stages"), new TypeReference<List<StageBlockConfig>>() {}));
+        }
+        if (node.has("root")) {
+            JsonNode rootNode = node.get("root");
+            if (rootNode.isObject() && rootNode.has("type")) {
+                section.setRoot(MAPPER.treeToValue(rootNode, NodeConfig.class));
+            } else if (rootNode.isObject()) {
+                section.setRootByStage(MAPPER.convertValue(rootNode, new TypeReference<Map<String, NodeConfig>>() {}));
+            }
+        }
+
+        return section;
+    }
+}

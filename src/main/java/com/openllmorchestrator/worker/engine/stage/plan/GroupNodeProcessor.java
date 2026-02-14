@@ -1,7 +1,7 @@
 package com.openllmorchestrator.worker.engine.stage.plan;
 
+import com.openllmorchestrator.worker.engine.config.pipeline.MergePolicyConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.NodeConfig;
-import com.openllmorchestrator.worker.engine.kernel.merge.AsyncOutputMergePolicy;
 import com.openllmorchestrator.worker.engine.stage.AsyncCompletionPolicy;
 import com.openllmorchestrator.worker.engine.stage.StagePlanBuilder;
 
@@ -17,16 +17,18 @@ public final class GroupNodeProcessor implements NodeProcessor {
     }
 
     @Override
-    public void process(NodeConfig node, PlanBuildContext ctx, StagePlanBuilder builder, PipelineWalker walker) {
+    public void process(NodeConfig node, PlanBuildContext ctx, StagePlanBuilder builder, PipelineWalker walker, int depth) {
+        int effectiveMax = node.getMaxDepth() != null ? node.getMaxDepth() : ctx.getDefaultMaxGroupDepth();
+        if (depth >= effectiveMax) {
+            throw new IllegalStateException("Group recursion depth " + depth + " exceeds max " + effectiveMax);
+        }
         if ("ASYNC".equalsIgnoreCase(node.getExecutionMode())) {
             List<String> names = collectStageNames(node);
             int timeout = node.getTimeoutSeconds() != null ? node.getTimeoutSeconds() : ctx.getDefaultTimeoutSeconds();
             AsyncCompletionPolicy policy = node.getAsyncCompletionPolicy() != null && !node.getAsyncCompletionPolicy().isBlank()
                     ? AsyncCompletionPolicy.fromConfig(node.getAsyncCompletionPolicy())
                     : ctx.getDefaultAsyncPolicy();
-            AsyncOutputMergePolicy outputMerge = node.getAsyncOutputMergePolicy() != null && !node.getAsyncOutputMergePolicy().isBlank()
-                    ? AsyncOutputMergePolicy.fromConfig(node.getAsyncOutputMergePolicy())
-                    : null;
+            String mergePolicyName = resolveMergePolicyName(node.getMergePolicy(), node.getAsyncOutputMergePolicy());
             builder.addAsyncGroup(
                     names,
                     Duration.ofSeconds(timeout),
@@ -35,13 +37,20 @@ public final class GroupNodeProcessor implements NodeProcessor {
                     ActivityOptionsFromConfig.scheduleToClose(node, ctx),
                     ActivityOptionsFromConfig.retryOptions(node, ctx),
                     policy,
-                    outputMerge
+                    mergePolicyName
             );
         } else {
             for (NodeConfig child : node.getChildren()) {
-                walker.processNode(child, ctx, builder);
+                walker.processNode(child, ctx, builder, depth + 1);
             }
         }
+    }
+
+    private static String resolveMergePolicyName(MergePolicyConfig mergePolicy, String legacyAsyncOutputMergePolicy) {
+        if (mergePolicy != null && mergePolicy.getName() != null && !mergePolicy.getName().isBlank()) {
+            return mergePolicy.getName();
+        }
+        return legacyAsyncOutputMergePolicy != null && !legacyAsyncOutputMergePolicy.isBlank() ? legacyAsyncOutputMergePolicy : "LAST_WINS";
     }
 
     private static List<String> collectStageNames(NodeConfig node) {

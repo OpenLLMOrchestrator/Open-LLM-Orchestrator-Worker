@@ -1,25 +1,36 @@
 package com.openllmorchestrator.worker.engine.config.pipeline;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
 import java.util.Map;
 
-/** Pipeline section of engine config. */
+/** Pipeline section of engine config. Each pipeline has one root (one or more stages; each stage has one group). */
 @Getter
 @Setter
+@JsonDeserialize(using = PipelineSectionDeserializer.class)
 public class PipelineSection {
     private int defaultTimeoutSeconds;
     /** Default for ASYNC groups: ALL | FIRST_SUCCESS | FIRST_FAILURE | ALL_SETTLED */
     private String defaultAsyncCompletionPolicy = "ALL";
-    /** Legacy: single root GROUP/STAGE tree. Used when stages is null or empty. */
+    /** Max depth for nested GROUP recursion (default 5). Exceeding throws at plan build. */
+    private int defaultMaxGroupDepth = 5;
+    /** Default merge policy hook for ASYNC groups: type MERGE_POLICY, pluginType MergePolicy, name = activity/FQCN. */
+    private MergePolicyConfig mergePolicy;
+    /** Legacy: single root GROUP/STAGE tree. Used when stages and rootByStage are null/empty. */
     private NodeConfig root;
-    /** Stage name → plugin id for predefined stages (when using root tree). */
+    /** Optional: stage name → plugin id. When absent, engine-level stagePlugins are used. */
     private Map<String, String> stagePlugins;
     /**
      * Top-level flow: ordered list of stages. Each stage has groups; group children are activity names.
-     * When non-null and non-empty, plan is built from this instead of root.
+     * When non-null and non-empty, plan is built from this instead of root/rootByStage.
      */
     private List<StageBlockConfig> stages;
+    /**
+     * Stage name → GROUP config. Execution order follows engine stageOrder; only stages present here are included.
+     * When non-null and non-empty, plan is built from this (stagePlugins section not needed).
+     */
+    private Map<String, NodeConfig> rootByStage;
 }

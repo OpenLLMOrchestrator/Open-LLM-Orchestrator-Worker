@@ -1,5 +1,6 @@
 package com.openllmorchestrator.worker.engine.stage.predefined;
 
+import java.util.List;
 import java.util.Set;
 
 /** Predefined pipeline stage names. Others are custom and use custom bucket. */
@@ -18,6 +19,10 @@ public final class PredefinedStages {
     private static final Set<String> NAMES = Set.of(
             ACCESS, MEMORY, RETRIEVAL, MODEL, MCP, TOOL, FILTER, POST_PROCESS, OBSERVABILITY, CUSTOM);
 
+    /** Canonical order for execution when config does not set stageOrder. */
+    private static final List<String> ORDERED_NAMES = List.of(
+            ACCESS, MEMORY, RETRIEVAL, MODEL, MCP, TOOL, FILTER, POST_PROCESS, OBSERVABILITY, CUSTOM);
+
     private PredefinedStages() {}
 
     public static boolean isPredefined(String stageName) {
@@ -26,5 +31,10 @@ public final class PredefinedStages {
 
     public static Set<String> all() {
         return NAMES;
+    }
+
+    /** Ordered list of predefined stage names for plan building when stageOrder is not in config. */
+    public static List<String> orderedNames() {
+        return ORDERED_NAMES;
     }
 }

@@ -7,5 +7,5 @@ import com.openllmorchestrator.worker.engine.stage.StagePlanBuilder;
 public interface NodeProcessor {
     boolean supports(NodeConfig node);
 
-    void process(NodeConfig node, PlanBuildContext ctx, StagePlanBuilder builder, PipelineWalker walker);
+    void process(NodeConfig node, PlanBuildContext ctx, StagePlanBuilder builder, PipelineWalker walker, int depth);
 }

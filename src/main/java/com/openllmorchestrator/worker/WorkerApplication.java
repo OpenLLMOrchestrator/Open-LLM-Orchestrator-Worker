@@ -1,8 +1,10 @@
 package com.openllmorchestrator.worker;
 
 import com.openllmorchestrator.worker.engine.activity.impl.KernelStageActivityImpl;
+import com.openllmorchestrator.worker.engine.activity.impl.MergePolicyActivityImpl;
 import com.openllmorchestrator.worker.engine.bootstrap.WorkerBootstrap;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
+import com.openllmorchestrator.worker.engine.config.env.EnvConfig;
 import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
 import com.openllmorchestrator.worker.workflow.impl.CoreWorkflowImpl;
 import io.temporal.client.WorkflowClient;
@@ -10,6 +12,7 @@ import io.temporal.serviceclient.WorkflowServiceStubs;
 import io.temporal.serviceclient.WorkflowServiceStubsOptions;
 import io.temporal.worker.Worker;
 import io.temporal.worker.WorkerFactory;
+import io.temporal.worker.WorkerOptions;
 
 public class WorkerApplication {
 
@@ -37,14 +40,19 @@ public class WorkerApplication {
             System.out.println("Using Task Queue: " + taskQueue);
 
             // ----------------------------------------------------
-            // 2️⃣  Connect to Temporal (from config; no hardcoded target)
+            // 2️⃣  Connect to Temporal (env overrides config)
             // ----------------------------------------------------
-            String temporalTarget = config.getTemporal() != null && config.getTemporal().getTarget() != null
-                    ? config.getTemporal().getTarget()
-                    : "localhost:7233";
-            String namespace = config.getTemporal() != null && config.getTemporal().getNamespace() != null
-                    ? config.getTemporal().getNamespace()
-                    : "default";
+            EnvConfig env = EnvConfig.fromEnvironment();
+            String temporalTarget = env.getTemporalTarget() != null && !env.getTemporalTarget().isBlank()
+                    ? env.getTemporalTarget()
+                    : (config.getTemporal() != null && config.getTemporal().getTarget() != null
+                            ? config.getTemporal().getTarget()
+                            : "localhost:7233");
+            String namespace = env.getTemporalNamespace() != null && !env.getTemporalNamespace().isBlank()
+                    ? env.getTemporalNamespace()
+                    : (config.getTemporal() != null && config.getTemporal().getNamespace() != null
+                            ? config.getTemporal().getNamespace()
+                            : "default");
             WorkflowServiceStubsOptions serviceOptions =
                     WorkflowServiceStubsOptions.newBuilder()
                             .setTarget(temporalTarget)
@@ -60,17 +68,22 @@ public class WorkerApplication {
                     WorkerFactory.newInstance(client);
 
             // ----------------------------------------------------
-            // 3️⃣  Create Worker for Queue
+            // 3️⃣  Create Worker for Queue (pollers from env)
             // ----------------------------------------------------
+            WorkerOptions workerOptions = WorkerOptions.newBuilder()
+                    .setMaxConcurrentWorkflowTaskPollers(env.getMaxConcurrentWorkflowTaskPollers())
+                    .setMaxConcurrentActivityTaskPollers(env.getMaxConcurrentActivityTaskPollers())
+                    .build();
             Worker worker =
-                    factory.newWorker(taskQueue);
+                    factory.newWorker(taskQueue, workerOptions);
 
             // Register Workflow
             worker.registerWorkflowImplementationTypes(CoreWorkflowImpl.class);
 
-            // Register Kernel Stage Activity
+            // Register activities
             worker.registerActivitiesImplementations(
-                    new KernelStageActivityImpl()
+                    new KernelStageActivityImpl(),
+                    new MergePolicyActivityImpl()
             );
 
             // ----------------------------------------------------

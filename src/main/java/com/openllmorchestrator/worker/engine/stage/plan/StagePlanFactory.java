@@ -2,14 +2,51 @@ package com.openllmorchestrator.worker.engine.stage.plan;
 
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.NodeConfig;
+import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
 import com.openllmorchestrator.worker.engine.config.pipeline.StageBlockConfig;
 import com.openllmorchestrator.worker.engine.stage.StagePlan;
 import com.openllmorchestrator.worker.engine.stage.StagePlanBuilder;
 
 import java.util.List;
+import java.util.Map;
 
 /** Builds StagePlan from config. Single responsibility: plan construction. */
-public final class StagePlanFactory {
+public final class
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+StagePlanFactory {
     private static final List<NodeProcessor> PROCESSORS = List.of(
             new StageNodeProcessor(),
             new GroupNodeProcessor()
@@ -17,34 +54,83 @@ public final class StagePlanFactory {
 
     private StagePlanFactory() {}
 
+    /** Build a single plan from the first pipeline in config (e.g. for tests). Prefer "default" if present. */
     public static StagePlan fromFileConfig(EngineFileConfig fileConfig) {
+        Map<String, PipelineSection> pipelines = fileConfig.getPipelinesEffective();
+        if (pipelines == null || pipelines.isEmpty()) {
+            throw new IllegalStateException("No pipeline config. Set pipelines in config (at least one required).");
+        }
+        PipelineSection section = pipelines.containsKey("default") ? pipelines.get("default") : pipelines.values().iterator().next();
+        return fromPipelineSection(fileConfig, section);
+    }
+
+    /** Build a single plan from a given pipeline section (for named pipelines). */
+    public static StagePlan fromPipelineSection(EngineFileConfig fileConfig, PipelineSection section) {
+        if (fileConfig == null || section == null) {
+            throw new IllegalArgumentException("fileConfig and section must be non-null");
+        }
         StagePlanBuilder builder = StagePlan.builder();
-        List<StageBlockConfig> stages = fileConfig.getPipeline() != null ? fileConfig.getPipeline().getStages() : null;
+        List<StageBlockConfig> stages = section.getStages();
         if (stages != null && !stages.isEmpty()) {
-            StagesBasedPlanBuilder.build(fileConfig, builder);
+            StagesBasedPlanBuilder.build(fileConfig, section, builder);
             return builder.build();
         }
-        NodeConfig root = fileConfig.getPipeline().getRoot();
-        if (root == null) {
-            throw new IllegalStateException("Pipeline root is missing in config. Set pipeline.root or pipeline.stages.");
+        Map<String, NodeConfig> rootByStage = section.getRootByStage();
+        if (rootByStage != null && !rootByStage.isEmpty()) {
+            buildFromRootByStage(fileConfig, section, rootByStage, builder);
+            return builder.build();
         }
+        NodeConfig root = section.getRoot();
+        if (root == null) {
+            throw new IllegalStateException("Pipeline root is missing. Set root (stages map or single GROUP tree) or stages for this pipeline.");
+        }
+        int defaultMaxDepth = section.getDefaultMaxGroupDepth() > 0 ? section.getDefaultMaxGroupDepth() : 5;
         PlanBuildContext ctx = new PlanBuildContext(
-                fileConfig.getPipeline().getDefaultTimeoutSeconds(),
+                section.getDefaultTimeoutSeconds(),
                 fileConfig.getWorker().getQueueName(),
                 fileConfig.getActivity(),
-                fileConfig.getPipeline().getDefaultAsyncCompletionPolicy()
+                section.getDefaultAsyncCompletionPolicy(),
+                defaultMaxDepth
         );
         DefaultPipelineWalker walker = new DefaultPipelineWalker();
-        walker.processNode(root, ctx, builder);
+        walker.processNode(root, ctx, builder, 0);
         return builder.build();
+    }
+
+    /**
+     * Build plan from rootByStage: only stages present in the map are included,
+     * in the order defined by config stageOrder (or predefined order in code).
+     */
+    private static void buildFromRootByStage(EngineFileConfig fileConfig, PipelineSection section,
+                                             Map<String, NodeConfig> rootByStage, StagePlanBuilder builder) {
+        List<String> stageOrder = fileConfig.getStageOrderEffective();
+        int defaultMaxDepth = section.getDefaultMaxGroupDepth() > 0 ? section.getDefaultMaxGroupDepth() : 5;
+        PlanBuildContext ctx = new PlanBuildContext(
+                section.getDefaultTimeoutSeconds(),
+                fileConfig.getWorker().getQueueName(),
+                fileConfig.getActivity(),
+                section.getDefaultAsyncCompletionPolicy(),
+                defaultMaxDepth
+        );
+        DefaultPipelineWalker walker = new DefaultPipelineWalker();
+        for (String stageName : stageOrder) {
+            NodeConfig groupNode = rootByStage.get(stageName);
+            if (groupNode == null) {
+                continue; // not defined → skip
+            }
+            if (!groupNode.isGroup()) {
+                throw new IllegalStateException("Pipeline rootByStage['" + stageName + "'] must be a GROUP, got: " + groupNode.getType());
+            }
+            walker.processNode(groupNode, ctx, builder, 0);
+        }
     }
 
     private static class DefaultPipelineWalker implements PipelineWalker {
         @Override
-        public void processNode(NodeConfig node, PlanBuildContext ctx, StagePlanBuilder builder) {
+        public void processNode(NodeConfig node, PlanBuildContext ctx, StagePlanBuilder builder, int depth) {
             for (NodeProcessor p : PROCESSORS) {
                 if (p.supports(node)) {
-                    p.process(node, ctx, builder, this);
+                    p.process(node, ctx, builder, this, depth);
                     return;
                 }
             }

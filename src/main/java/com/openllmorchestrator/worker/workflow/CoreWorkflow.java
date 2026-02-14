@@ -4,9 +4,12 @@ import com.openllmorchestrator.worker.engine.contract.ExecutionCommand;
 import io.temporal.workflow.WorkflowInterface;
 import io.temporal.workflow.WorkflowMethod;
 
+import java.util.Map;
+
 @WorkflowInterface
 public interface CoreWorkflow {
 
+    /** Execute the pipeline and return the accumulated output (includes "result" from LLM) as the response. */
     @WorkflowMethod
-    void execute(ExecutionCommand command);
+    Map<String, Object> execute(ExecutionCommand command);
 }

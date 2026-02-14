@@ -1,0 +1,89 @@
+# Open LLM Orchestrator Worker – Docker Compose
+# Use with: cp .env.example .env && docker compose up -d
+# Worker connects to Temporal, optional Redis/DB for config; Ollama for LLM pipeline.
+
+services:
+  worker:
+    build: .
+    image: open-llm-orchestrator-worker:latest
+    env_file: .env
+    environment:
+      TEMPORAL_TARGET: ${TEMPORAL_TARGET:-temporal:7233}
+      TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
+      QUEUE_NAME: ${QUEUE_NAME:-core-task-queue}
+      CONFIG_FILE_PATH: ${CONFIG_FILE_PATH:-/app/config/engine-config.json}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      DB_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/olo_config}
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:latest}
+    volumes:
+      - ./config:/app/config:ro
+    depends_on:
+      temporal:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Optional: Temporal server for local dev (use external Temporal in production)
+  temporal:
+    image: temporalio/auto-setup:1.24.2
+    ports:
+      - "7233:7233"
+    environment:
+      DB: postgresql
+      DB_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PWD: postgres
+      POSTGRES_SEEDS: postgres
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "tctl", "--address", "temporal:7233", "workflow", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: Redis for config storage (worker falls back to file if Redis/DB unavailable)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  # Optional: PostgreSQL for config storage and Temporal
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: olo_config
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Optional: Ollama for question-answer pipeline (LLM). Start with: docker compose up -d ollama && docker exec -it <ollama_container> ollama run llama3.2:latest
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  redis_data:
+  postgres_data:
+  ollama_data:

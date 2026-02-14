@@ -28,7 +28,7 @@ public class KernelStageActivityImpl implements KernelStageActivity {
         if (handler == null) {
             if (PredefinedStages.isPredefined(stageName)) {
                 throw new IllegalStateException("Predefined stage '" + stageName
-                        + "' has no plugin registered for the plugin id in pipeline.stagePlugins.");
+                        + "' has no plugin registered. Register a handler for this stage.");
             }
             throw new IllegalStateException("Stage or activity '" + stageName
                     + "' could not be resolved. Register it in the activity registry (plugin name) or custom bucket.");

@@ -216,7 +216,7 @@ sequenceDiagram
     Note over Valid: NotNull, Worker, PipelineRoot, PipelineNode
 
     WB->>BuildP: run(ctx)
-    BuildP->>Runtime: ctx.setPlan(StagePlanFactory.fromFileConfig())
+    BuildP->>Runtime: ctx.setPlans(plans from pipelines), ctx.setPlan if "default"
 
     WB->>SetR: run(ctx)
     SetR->>Runtime: setStageResolver, setConfig, setStagePlan
@@ -283,7 +283,7 @@ flowchart LR
     end
 
     subgraph PredefinedPath["Predefined path"]
-        Config["config.pipeline.stagePlugins"]
+        Config["config (optional stagePlugins)"]
         PredefBucket[PredefinedPluginBucket]
         Plugin["plugin id → handler"]
     end
@@ -303,7 +303,7 @@ flowchart LR
     CustomLookup --> Handler
 ```
 
-- **Predefined stages** (ACCESS, MEMORY, RETRIEVAL, MODEL): plugin id comes from `pipeline.stagePlugins` in config, then lookup in `PredefinedPluginBucket`.
+- **Predefined stages** (ACCESS, MEMORY, RETRIEVAL, MODEL): plugin id from config (optional `stagePlugins`) or default, then lookup in `PredefinedPluginBucket`.
 - **Custom stages**: any other name is resolved only from `CustomStageBucket`. If missing, the stage fails with a clear error.
 
 ---

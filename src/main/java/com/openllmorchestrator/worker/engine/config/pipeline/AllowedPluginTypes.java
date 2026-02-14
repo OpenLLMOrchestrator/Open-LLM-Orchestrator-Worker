@@ -1,0 +1,71 @@
+package com.openllmorchestrator.worker.engine.config.pipeline;
+
+import java.util.Set;
+
+/**
+ * Allowed values for STAGE node {@code pluginType}. Every STAGE must have one of these;
+ * {@code name} is the class name to invoke (fully qualified class name).
+ */
+public final class AllowedPluginTypes {
+    public static final String ACCESS_CONTROL = "AccessControlPlugin";
+    public static final String TENANT_POLICY = "TenantPolicyPlugin";
+    public static final String RATE_LIMIT = "RateLimitPlugin";
+    public static final String MEMORY = "MemoryPlugin";
+    public static final String VECTOR_STORE = "VectorStorePlugin";
+    public static final String MODEL = "ModelPlugin";
+    public static final String MCP = "MCPPlugin";
+    public static final String TOOL = "ToolPlugin";
+    public static final String FILTER = "FilterPlugin";
+    public static final String GUARDRAIL = "GuardrailPlugin";
+    public static final String REFINEMENT = "RefinementPlugin";
+    public static final String PROMPT_BUILDER = "PromptBuilderPlugin";
+    public static final String OBSERVABILITY = "ObservabilityPlugin";
+    public static final String TRACING = "TracingPlugin";
+    public static final String BILLING = "BillingPlugin";
+    public static final String FEATURE_FLAG = "FeatureFlagPlugin";
+    public static final String AUDIT = "AuditPlugin";
+    public static final String SECURITY_SCANNER = "SecurityScannerPlugin";
+    public static final String CACHING = "CachingPlugin";
+    public static final String SEARCH = "SearchPlugin";
+    public static final String LANG_CHAIN_ADAPTER = "LangChainAdapterPlugin";
+    public static final String AGENT_ORCHESTRATOR = "AgentOrchestratorPlugin";
+    public static final String WORKFLOW_EXTENSION = "WorkflowExtensionPlugin";
+    public static final String CUSTOM_STAGE = "CustomStagePlugin";
+
+    private static final Set<String> ALLOWED = Set.of(
+            ACCESS_CONTROL,
+            TENANT_POLICY,
+            RATE_LIMIT,
+            MEMORY,
+            VECTOR_STORE,
+            MODEL,
+            MCP,
+            TOOL,
+            FILTER,
+            GUARDRAIL,
+            REFINEMENT,
+            PROMPT_BUILDER,
+            OBSERVABILITY,
+            TRACING,
+            BILLING,
+            FEATURE_FLAG,
+            AUDIT,
+            SECURITY_SCANNER,
+            CACHING,
+            SEARCH,
+            LANG_CHAIN_ADAPTER,
+            AGENT_ORCHESTRATOR,
+            WORKFLOW_EXTENSION,
+            CUSTOM_STAGE
+    );
+
+    private AllowedPluginTypes() {}
+
+    public static boolean isAllowed(String pluginType) {
+        return pluginType != null && ALLOWED.contains(pluginType);
+    }
+
+    public static Set<String> all() {
+        return ALLOWED;
+    }
+}

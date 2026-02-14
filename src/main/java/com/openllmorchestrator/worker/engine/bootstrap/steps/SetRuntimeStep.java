@@ -10,7 +10,7 @@ public final class SetRuntimeStep implements BootstrapStep {
     public void run(BootstrapContext ctx) {
         EngineRuntime.setStageResolver(ctx.getResolver());
         EngineRuntime.setConfig(ctx.getConfig());
-        EngineRuntime.setStagePlan(ctx.getPlan());
+        EngineRuntime.setStagePlans(ctx.getPlans());
         EngineRuntime.CONFIG = ctx.getConfig();
     }
 }

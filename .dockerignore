@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+**/node_modules
+build
+.gradle
+**/*.md
+!README.md
+docs
+samples
+**/*.iml
+.idea
+.cursor
+**/terminals

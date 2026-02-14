@@ -15,7 +15,7 @@ public final class StageNodeProcessor implements NodeProcessor {
     }
 
     @Override
-    public void process(NodeConfig node, PlanBuildContext ctx, StagePlanBuilder builder, PipelineWalker walker) {
+    public void process(NodeConfig node, PlanBuildContext ctx, StagePlanBuilder builder, PipelineWalker walker, int depth) {
         int timeout = node.getTimeoutSeconds() != null ? node.getTimeoutSeconds() : ctx.getDefaultTimeoutSeconds();
         builder.addSyncWithCustomConfig(
                 node.getName(),

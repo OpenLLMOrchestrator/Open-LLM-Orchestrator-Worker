@@ -3,7 +3,6 @@ package com.openllmorchestrator.worker.engine.kernel.execution;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.engine.contract.StageResult;
 import com.openllmorchestrator.worker.engine.kernel.StageInvoker;
-import com.openllmorchestrator.worker.engine.kernel.merge.AsyncOutputMergePolicy;
 import com.openllmorchestrator.worker.engine.stage.AsyncCompletionPolicy;
 import com.openllmorchestrator.worker.engine.stage.StageDefinition;
 import com.openllmorchestrator.worker.engine.stage.StageExecutionMode;
@@ -13,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public final class AsyncGroupExecutor implements GroupExecutor {
@@ -43,8 +43,12 @@ public final class AsyncGroupExecutor implements GroupExecutor {
                 results.add(StageResult.builder().stageName(def.getName()).build());
             }
         }
-        spec.getAsyncOutputMergePolicy().mergeAll(context.getAccumulatedOutput(),
-                AsyncOutputMergePolicy.NamedStageResult.from(names, results));
+        String taskQueue = group.isEmpty() ? null : group.get(0).getTaskQueue();
+        java.time.Duration timeout = group.isEmpty() ? java.time.Duration.ofSeconds(30) : group.get(0).getTimeout();
+        Map<String, Object> merged = invoker.invokeMerge(
+                spec.getAsyncOutputMergePolicyName(), taskQueue, timeout, context, names, results);
+        context.getAccumulatedOutput().clear();
+        context.getAccumulatedOutput().putAll(merged != null ? merged : Map.of());
         for (StageResult r : results) {
             log.info("Completed ASYNC stage: {}", r.getStageName());
         }

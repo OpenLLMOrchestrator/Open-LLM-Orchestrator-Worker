@@ -1,7 +1,5 @@
 package com.openllmorchestrator.worker.engine.stage;
 
-import com.openllmorchestrator.worker.engine.kernel.merge.AsyncOutputMergePolicy;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,14 +35,14 @@ public final class StagePlanBuilder {
                                           StageRetryOptions retryOptions,
                                           AsyncCompletionPolicy asyncPolicy) {
         return addAsyncGroup(stageNames, timeout, taskQueue, scheduleToStart, scheduleToClose, retryOptions,
-                asyncPolicy, null);
+                asyncPolicy, "LAST_WINS");
     }
 
     public StagePlanBuilder addAsyncGroup(List<String> stageNames, Duration timeout, String taskQueue,
                                           Duration scheduleToStart, Duration scheduleToClose,
                                           StageRetryOptions retryOptions,
                                           AsyncCompletionPolicy asyncPolicy,
-                                          AsyncOutputMergePolicy asyncOutputMergePolicy) {
+                                          String asyncOutputMergePolicyName) {
         List<StageDefinition> definitions = new ArrayList<>();
         for (String stageName : stageNames) {
             definitions.add(StageDefinition.builder()
@@ -60,7 +58,7 @@ public final class StagePlanBuilder {
         }
         groupCounter++;
         groups.add(new StageGroupSpec(definitions, asyncPolicy != null ? asyncPolicy : AsyncCompletionPolicy.ALL,
-                asyncOutputMergePolicy));
+                asyncOutputMergePolicyName));
         return this;
     }
 

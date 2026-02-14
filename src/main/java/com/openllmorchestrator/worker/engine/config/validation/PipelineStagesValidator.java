@@ -3,6 +3,7 @@ package com.openllmorchestrator.worker.engine.config.validation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.GroupConfig;
+import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
 import com.openllmorchestrator.worker.engine.config.pipeline.StageBlockConfig;
 import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
 
@@ -15,22 +16,24 @@ public final class PipelineStagesValidator implements ConfigValidator {
 
     @Override
     public void validate(EngineFileConfig config, StageResolver resolver) {
-        if (config.getPipeline() == null) {
-            return;
-        }
-        List<StageBlockConfig> stages = config.getPipeline().getStages();
-        if (stages == null || stages.isEmpty()) {
-            return;
-        }
-        for (StageBlockConfig block : stages) {
-            if (block == null) {
-                throw new IllegalStateException("pipeline.stages contains a null stage block");
+        Map<String, PipelineSection> effective = config.getPipelinesEffective();
+        for (Map.Entry<String, PipelineSection> e : effective.entrySet()) {
+            PipelineSection section = e.getValue();
+            if (section == null) continue;
+            List<StageBlockConfig> stages = section.getStages();
+            if (stages == null || stages.isEmpty()) {
+                continue;
             }
-            if (block.getStage() == null || block.getStage().isBlank()) {
-                throw new IllegalStateException("pipeline.stages: each stage block must have a non-blank 'stage' name");
-            }
-            for (GroupConfig group : block.getGroupsSafe()) {
-                validateGroup(group, resolver);
+            for (StageBlockConfig block : stages) {
+                if (block == null) {
+                    throw new IllegalStateException("pipeline.stages contains a null stage block");
+                }
+                if (block.getStage() == null || block.getStage().isBlank()) {
+                    throw new IllegalStateException("pipeline.stages: each stage block must have a non-blank 'stage' name");
+                }
+                for (GroupConfig group : block.getGroupsSafe()) {
+                    validateGroup(group, resolver);
+                }
             }
         }
     }

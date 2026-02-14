@@ -1,0 +1,16 @@
+Company Policy – AI and Data Usage
+
+Scope
+This policy applies to all use of the Open LLM Orchestrator and related pipelines (document ingestion, RAG, model calls). Data passed in workflow input (documents, questions) is processed according to pipeline configuration.
+
+Document ingestion
+Documents submitted to the document-ingestion pipeline are tokenized and stored for retrieval. Retain only what is needed for RAG; configure retention and indexing in your vector store and tokenizer plugins.
+
+Question-answer and LLM calls
+The question-answer pipeline retrieves stored content and sends it with the user question to the configured LLM (e.g. Llama 3.2). Do not send sensitive credentials or PII in workflow input; use secure configuration and secrets management for API keys and model endpoints.
+
+Operational requirements
+Workers must use the configured task queue and namespace. Pipeline names (e.g. document-ingestion, question-answer) must match the names defined in engine-config.json. For multiple environments, use separate namespaces or task queues and corresponding config.
+
+Review
+This policy is reviewed quarterly. Updates to pipeline behavior or data handling require a config change and worker restart.

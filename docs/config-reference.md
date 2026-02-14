@@ -10,9 +10,10 @@ Three example configuration files are provided for different use cases. Copy and
 
 | File | Use case |
 |------|----------|
-| [`docs/config-examples/engine-config-minimal.json`](config-examples/engine-config-minimal.json) | **Minimal** — Bare minimum: worker queue + pipeline with `root` (GROUP/STAGE tree). No temporal, redis, database, or activity overrides. Good for local quick start. |
+| [`docs/config-examples/engine-config-minimal.json`](config-examples/engine-config-minimal.json) | **Minimal** — Bare minimum: worker queue + `pipelines` with one pipeline (`default`) and root as stages map. No temporal, redis, database, or activity overrides. Good for local quick start. |
 | [`docs/config-examples/engine-config-stages.json`](config-examples/engine-config-stages.json) | **Stages-based** — Top-level flow using `pipeline.stages`. Each stage has groups (SYNC/ASYNC); group children are **activity names** (plugin ids). Shows ACCESS → MEMORY → RETRIEVAL → MODEL → OBSERVABILITY with real plugin names. |
-| [`docs/config-examples/engine-config-full.json`](config-examples/engine-config-full.json) | **Full** — All sections populated: worker, temporal, activity (timeouts + retry), redis, database, pipeline with `root` and full `stagePlugins`. Use as a production-style reference; in production, queue/Redis/DB are overridden from environment. |
+| [`docs/config-examples/engine-config-full.json`](config-examples/engine-config-full.json) | **Full** — All sections populated: worker, temporal, activity (timeouts + retry), redis, database, `pipelines` with `root` (stages map). Use as a production-style reference; in production, queue/Redis/DB are overridden from environment. |
+| [`docs/config-examples/engine-config-multi-pipeline.json`](config-examples/engine-config-multi-pipeline.json) | **Multiple flows** — `pipelines` map with user-defined names (`chat`, `document-extraction`). Workflow payload must set `pipelineName` to one of these names to pick the pipeline. |
 
 ---
 
@@ -22,6 +23,8 @@ In production, **queue name, Redis, and DB connection** come **only from environ
 
 | Env var | Default | Description |
 |---------|---------|-------------|
+| `TEMPORAL_TARGET` | `localhost:7233` | Temporal server address. Overrides config when set. |
+| `TEMPORAL_NAMESPACE` | `default` | Temporal namespace. Overrides config when set. |
 | `QUEUE_NAME` | `core-task-queue` | Temporal task queue name. |
 | `REDIS_HOST` | `localhost` | Redis host for config storage and cache. |
 | `REDIS_PORT` | `6379` | Redis port. |
@@ -31,8 +34,12 @@ In production, **queue name, Redis, and DB connection** come **only from environ
 | `DB_PASSWORD` | `postgres` | DB password. |
 | `CONFIG_RETRY_SLEEP_SECONDS` | `30` | Seconds to sleep before retrying when config is not found anywhere. |
 | `CONFIG_FILE_PATH` | `config/engine-config.json` | Mounted config file path (fallback when Redis and DB have no config). |
+| `MAX_CONCURRENT_WORKFLOW_TASK_POLLERS` | `5` | Max concurrent workflow task pollers (worker tuning). |
+| `MAX_CONCURRENT_ACTIVITY_TASK_POLLERS` | `10` | Max concurrent activity task pollers (worker tuning). |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API base URL (used by Llama32ModelPlugin). |
+| `OLLAMA_MODEL` | `llama3.2:latest` | Ollama model name for generate API. |
 
-**Server configuration** (temporal target, activity timeouts/retry, pipeline) is **not** from env; it is loaded from the hierarchy below.
+**Server configuration** (activity timeouts/retry, pipeline) is loaded from config; Temporal target/namespace and queue/Redis/DB are overridden from env when set.
 
 ---
 
@@ -66,7 +73,9 @@ The **execution hierarchy** (stage plan, resolver, and plugin/activity registrie
 | `activity`  | Default activity timeouts and retry policy. |
 | `redis`     | Redis connection (if used). |
 | `database`  | DB connection (if used). |
-| `pipeline`  | Pipeline definition and stage plugins. |
+| `stageOrder` | Optional. Order of stages when root is a stages map; only stages present there are included. If omitted, predefined order in code is used. |
+| `mergePolicies` | Optional. Map of policy name → implementation. Value = built-in name (FIRST_WINS, LAST_WINS, PREFIX_BY_ACTIVITY) or fully qualified class name. Registered at bootstrap; reference by name in pipeline/group `asyncOutputMergePolicy`. |
+| `pipelines` | **Required.** Map of pipeline name → pipeline config (e.g. `default`, chat, document-extraction). At least one pipeline required. |
 
 ---
 
@@ -112,15 +121,26 @@ Default timeouts and retry policy for all activities (overridable per stage in p
 
 ---
 
-## `pipeline`
+## `pipelines` (multiple flows only)
+
+Config must have **`pipelines`**: a map of **pipeline name** → pipeline config (e.g. `"default"`, `"chat"`, `"document-extraction"`). At least one pipeline is required. Workflow payload must set **`pipelineName`** to one of these names (use `"default"` for a single flow).
+
+Each pipeline has **one root**. Root is **one or more stages**; each stage has **one group**; each group has **one or more** groups and/or stages (see *Pipeline nodes* below).
+
+**Root** is polymorphic (same key `root` in JSON):
+
+- **Stages map** — Object whose keys are stage names (e.g. `ACCESS`, `RETRIEVAL`) and values are **one GROUP** each. Execution order follows `stageOrder` (or predefined order). This is the recommended shape.
+- **Legacy single tree** — Single GROUP node with `type`, `executionMode`, `children` (nested GROUP/STAGE nodes). Supported for backward compatibility.
 
 | Key                         | Type   | Description |
 |-----------------------------|--------|-------------|
 | `defaultTimeoutSeconds`     | int    | Default start-to-close for stages. **Required.** |
 | `defaultAsyncCompletionPolicy` | string | Default for ASYNC groups: see below. |
-| `stagePlugins`              | object | Predefined stage name → plugin id (used when `root` is used). See *Predefined stages and plugins* below. |
-| `root`                      | object | **Legacy.** Root pipeline node (GROUP or STAGE tree). Required if `stages` is not set. |
-| `stages`                    | array  | **Top-level flow.** Ordered list of stage blocks; each stage has groups whose children are activity (plugin) names. Required if `root` is not set. |
+| `defaultMaxGroupDepth`     | int    | Max depth for nested GROUP recursion (default **5**). Exceeding throws at plan build. |
+| `root`                      | object | **Required.** Either (1) stages map: stage name → GROUP config (one group per stage), or (2) legacy: single GROUP tree. |
+| `stages`                    | array  | Alternative top-level flow (ordered stage blocks with activity names). Use when not using `root`. |
+
+**Workflow payload:** `ExecutionCommand` (or workflow input) must include **`pipelineName`** set to one of the keys in `pipelines` (e.g. `"default"`, `"chat"`, `"document-extraction"`). If omitted or blank, `"default"` is used.
 
 ### Async completion policy
 
@@ -143,11 +163,16 @@ On every workflow execution each plugin receives:
 - **Accumulated output** — map of output from all **previous** stages (read-only in the activity).
 - **Current plugin output** — map the plugin writes into via `context.putOutput(key, value)`; after the stage this is merged into accumulated output for the next stage.
 
-After every **SYNC** plugin execution, its output map is merged into the accumulated output (putAll). For **ASYNC** groups, the merge is controlled by `asyncOutputMergePolicy` (see below).
+After every **SYNC** plugin execution, its output map is merged into the accumulated output (putAll). For **ASYNC** groups, before exiting the group the engine **invokes a merge policy activity** (same pattern as other plugins). The merge policy is configured per group via `asyncOutputMergePolicy`.
 
-### ASYNC output key overwrite policy
+### ASYNC merge policy (invoked as activity)
 
-For ASYNC groups, set `asyncOutputMergePolicy` (or `asyncOutputMergePolicy` in group config) to control how multiple plugin outputs are merged and avoid data loss:
+For ASYNC groups, configure the merge policy in one of two ways:
+
+- **Hook (recommended):** Set `mergePolicy` to an object: `{ "type": "MERGE_POLICY", "pluginType": "MergePolicy", "name": "com.example.plugin.RankedMerge" }`. The `name` is the activity/plugin name or FQCN (e.g. `LAST_WINS`, or a custom class). Can be set at **pipeline** level (default for all ASYNC groups) or on each **GROUP** (override).
+- **Legacy:** Set `asyncOutputMergePolicy` to a string (activity name). If `mergePolicy` is also set, the hook’s `name` takes precedence.
+
+Before the group completes, this plugin is invoked as a Temporal activity with accumulated output and the list of async results; it returns the merged map. Built-in plugin names (registered in the activity registry):
 
 | Value | Behaviour |
 |-------|-----------|
@@ -155,7 +180,28 @@ For ASYNC groups, set `asyncOutputMergePolicy` (or `asyncOutputMergePolicy` in g
 | `FIRST_WINS` | First finished job's output written first; later outputs do not overwrite keys (putIfAbsent). |
 | `PREFIX_BY_ACTIVITY` | Each plugin's keys are prefixed by activity name (e.g. `MemoryPlugin.result`) so no overwrite. |
 
-**Merge policy classes** (extensible): `OutputMergePolicy` (interface), `PutAllMergePolicy` (SYNC default), `FirstWriterWinsMergePolicy`, `LastWriterWinsMergePolicy`, `PrefixByActivityMergePolicy`, and `AsyncOutputMergePolicy` (enum: FIRST_WINS, LAST_WINS, PREFIX_BY_ACTIVITY). Add custom implementations for new merge strategies.
+Custom merge strategies: implement a `StageHandler` that reads `context.getAccumulatedOutput()` and `context.get("asyncStageResults")`, merges them, and writes the merged map via `context.putOutput(key, value)`. Register it in the activity registry under a name (e.g. at bootstrap) and set `asyncOutputMergePolicy` to that name in the group config.
+
+#### mergePolicies (engine-level)
+
+Optional top-level key. Map of **policy name** (used in `asyncOutputMergePolicy`) → **implementation**. Value is either a **built-in name** (alias) or a **fully qualified class name** implementing `AsyncMergePolicy`. Applied at bootstrap before plans are built.
+
+| Key (policy name) | Value | Meaning |
+|------------------|-------|---------|
+| any string        | `FIRST_WINS`, `LAST_WINS`, `PREFIX_BY_ACTIVITY` | Alias to built-in policy. |
+| any string        | `com.example.MyMergePolicy` (contains dot)      | Instantiate this class and register. |
+
+Example:
+
+```json
+"mergePolicies": {
+  "DEFAULT_ASYNC": "LAST_WINS",
+  "NO_OVERWRITE": "PREFIX_BY_ACTIVITY",
+  "CUSTOM_MERGE": "com.mycompany.merge.CustomAsyncMergePolicy"
+}
+```
+
+Then set `asyncOutputMergePolicy` to `"DEFAULT_ASYNC"`, `"NO_OVERWRITE"`, or `"CUSTOM_MERGE"` in pipeline or group config.
 
 ### Pipeline mode: stages (top-level flow)
 
@@ -182,11 +228,11 @@ Example shape:
 ]
 ```
 
-Group `children` entries can be **strings** (activity name) or **nested group objects** (same shape: `executionMode`, `children`, etc.). Every string must be a registered plugin/activity name (see *Predefined stages and plugins* and activity registry).
+Group `children` entries can be **strings** (activity name) or **nested group objects** (same shape: `executionMode`, `children`, `maxDepth`, etc.). Every string must be a registered plugin/activity name (see *Predefined stages and plugins* and activity registry). Nested group depth is limited by pipeline **`defaultMaxGroupDepth`** (default 5) or per-group **`maxDepth`**; exceeding throws at plan build.
 
 ### Predefined stages and plugins
 
-**Predefined stages** (must have an entry in `stagePlugins` when used in the pipeline):
+**Predefined stages** (when used in the pipeline, a handler must be registered):
 
 | Stage           | Typical plugin(s) |
 |-----------------|-------------------|
@@ -205,20 +251,25 @@ Group `children` entries can be **strings** (activity name) or **nested group ob
 
 ---
 
-## Pipeline nodes (when using `root`)
+## Pipeline nodes (when using `root` or `rootByStage`)
 
-When using `pipeline.root`, the tree is made of GROUP and STAGE nodes:
+When using `pipeline.root` or `pipeline.rootByStage`, the tree is made of GROUP and STAGE nodes:
 
 ### STAGE node
+
+Every STAGE must have **`pluginType`** (one of the allowed plugin types below) and **`name`** (the **class name to call** — fully qualified class name of the implementation).
 
 | Key                     | Type    | Description |
 |-------------------------|---------|-------------|
 | `type`                  | string  | `"STAGE"`. **Required.** |
-| `name`                  | string  | Stage name (predefined or custom). **Required.** |
+| `pluginType`            | string  | **Required.** One of the allowed plugin types (see list below). |
+| `name`                  | string  | **Required.** Class name to call (fully qualified class name, e.g. `com.example.plugin.AccessControlPluginImpl`). |
 | `timeoutSeconds`        | int?    | Override start-to-close for this stage. |
 | `scheduleToStartSeconds`| int?    | Override schedule-to-start. |
 | `scheduleToCloseSeconds`| int?    | Override schedule-to-close. |
 | `retryPolicy`           | object? | Override retry policy (same shape as `activity.retryPolicy`). |
+
+**Allowed `pluginType` values:** AccessControlPlugin, TenantPolicyPlugin, RateLimitPlugin, MemoryPlugin, VectorStorePlugin, ModelPlugin, MCPPlugin, ToolPlugin, FilterPlugin, GuardrailPlugin, RefinementPlugin, PromptBuilderPlugin, ObservabilityPlugin, TracingPlugin, BillingPlugin, FeatureFlagPlugin, AuditPlugin, SecurityScannerPlugin, CachingPlugin, SearchPlugin, LangChainAdapterPlugin, AgentOrchestratorPlugin, WorkflowExtensionPlugin, CustomStagePlugin.
 
 ### GROUP node
 
@@ -227,7 +278,9 @@ When using `pipeline.root`, the tree is made of GROUP and STAGE nodes:
 | `type`                 | string | `"GROUP"`. **Required.** |
 | `executionMode`        | string | `"SYNC"` or `"ASYNC"`. **Required.** |
 | `asyncCompletionPolicy`| string?| For ASYNC: `ALL`, `FIRST_SUCCESS`, `FIRST_FAILURE`, `ALL_SETTLED`. |
-| `asyncOutputMergePolicy` | string?| For ASYNC: `FIRST_WINS`, `LAST_WINS`, `PREFIX_BY_ACTIVITY` (output key overwrite). |
+| `asyncOutputMergePolicy` | string?| For ASYNC: merge policy activity name (legacy). Prefer `mergePolicy` hook. |
+| `mergePolicy`           | object?| For ASYNC: merge policy hook. `{ "type": "MERGE_POLICY", "pluginType": "MergePolicy", "name": "<activity or FQCN>" }`. |
+| `maxDepth`             | int?   | Max recursion depth for nested groups at this node (overrides pipeline `defaultMaxGroupDepth`). |
 | `timeoutSeconds`       | int?   | Default timeout for children (ASYNC group). |
 | `children`             | array  | Child nodes. **Required.** |
 
@@ -239,13 +292,15 @@ When using `pipeline.root`, the tree is made of GROUP and STAGE nodes:
 {
   "configVersion": "1.0",
   "worker": { "queueName": "core-task-queue" },
-  "pipeline": {
-    "defaultTimeoutSeconds": 30,
-    "stagePlugins": { "ACCESS": "default", "MEMORY": "default", "RETRIEVAL": "default", "MODEL": "default", "MCP": "default", "TOOL": "default", "FILTER": "default", "POST_PROCESS": "default", "OBSERVABILITY": "default", "CUSTOM": "default" },
-    "root": { "type": "GROUP", "executionMode": "SYNC", "children": [
-      { "type": "STAGE", "name": "ACCESS", "timeoutSeconds": 10 },
-      { "type": "STAGE", "name": "MODEL", "timeoutSeconds": 120 }
-    ]}
+  "pipelines": {
+    "default": {
+      "defaultTimeoutSeconds": 30,
+      "defaultAsyncCompletionPolicy": "ALL",
+      "root": {
+        "ACCESS": { "type": "GROUP", "executionMode": "SYNC", "children": [{ "type": "STAGE", "pluginType": "AccessControlPlugin", "name": "com.example.plugin.AccessControlPluginImpl", "timeoutSeconds": 10 }] },
+        "MODEL": { "type": "GROUP", "executionMode": "SYNC", "children": [{ "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl", "timeoutSeconds": 120 }] }
+      }
+    }
   }
 }
 ```

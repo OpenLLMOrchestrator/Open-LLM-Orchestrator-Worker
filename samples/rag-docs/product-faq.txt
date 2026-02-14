@@ -1,0 +1,16 @@
+Open LLM Orchestrator Worker – Product FAQ
+
+What is the Open LLM Orchestrator Worker?
+The worker runs config-driven pipelines (e.g. document ingestion, question-answering) using Temporal. You define pipelines in engine-config.json and trigger them by workflow with a pipeline name and input.
+
+How do I ingest documents for RAG?
+Use the document-ingestion pipeline. Send a workflow with pipelineName "document-ingestion" and input containing a "document" field with the text. The pipeline tokenizes the document and stores chunks in the vector store (when implemented).
+
+How do I ask questions over ingested content?
+Use the question-answer pipeline. Send a workflow with pipelineName "question-answer" and input containing a "question" field. The pipeline retrieves relevant chunks from the vector store and sends them with the question to the LLM (e.g. Llama 3.2) to produce an answer.
+
+What task queue does the worker use?
+By default the worker uses the task queue name from config (e.g. "core-task-queue"). Set QUEUE_NAME in the environment to override in production.
+
+Where is the config loaded from?
+Config is loaded in order: Redis, then database, then file (e.g. config/engine-config.json). Connection details (queue, Redis, DB) come from environment variables.
