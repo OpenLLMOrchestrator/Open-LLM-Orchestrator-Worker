@@ -121,6 +121,19 @@ Detailed steps and sample payloads: [Temporal UI: RAG flows](docs/temporal-ui-ra
 - **Run with Compose:** `docker compose up -d` builds the worker image and starts the worker, Temporal, Redis, Postgres, and Ollama. The worker uses `TEMPORAL_TARGET=temporal:7233`, `OLLAMA_BASE_URL=http://ollama:11434`, and mounts `./config` for engine config. Override any variable in `.env`.
 - **Standalone image:** `docker build -t open-llm-orchestrator-worker .` then run with env vars or `--env-file .env` and a volume for `config/`.
 
+### CI/CD — Push to Docker Hub on master
+
+A GitHub Actions workflow (`.github/workflows/docker-publish.yml`) builds and pushes the Docker image to Docker Hub on every push to the **master** branch.
+
+**Setup:** In your GitHub repo go to **Settings → Secrets and variables → Actions** and add:
+
+| Secret | Description |
+|--------|-------------|
+| `DOCKERHUB_USERNAME` | Your Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token ([Create one](https://hub.docker.com/settings/security) under Account Settings → Security) |
+
+The image will be published as `DOCKERHUB_USERNAME/open-llm-orchestrator-worker:latest` and also tagged with the short Git SHA (e.g. `...worker:abc1234`).
+
 ---
 
 ## License and contributing
