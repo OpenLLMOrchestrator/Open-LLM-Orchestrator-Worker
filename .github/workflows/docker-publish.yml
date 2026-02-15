@@ -1,10 +1,11 @@
 # Copyright 2026 Open LLM Orchestrator contributors. Licensed under the Apache License, Version 2.0; see LICENSE file.
-# Build and push Docker image to Docker Hub on every push to master
+# Build and push Docker image to Docker Hub on every push to main (or master)
 name: Docker Build and Push
 
 on:
   push:
     branches:
+      - main
       - master
 
 env:
@@ -37,7 +38,7 @@ jobs:
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
             type=sha,prefix=,format=short
 
       - name: Build and push Docker image
