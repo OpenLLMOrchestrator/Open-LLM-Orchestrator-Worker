@@ -1,3 +1,5 @@
+<!-- Copyright 2026 Open LLM Orchestrator contributors. Licensed under the Apache License, Version 2.0; see LICENSE file. -->
+
 # Sample RAG documents
 
 Use these as **document** input for the **document-ingestion** (train) pipeline.

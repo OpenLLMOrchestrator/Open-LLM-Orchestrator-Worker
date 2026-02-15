@@ -1,3 +1,5 @@
+<!-- Copyright 2026 Open LLM Orchestrator contributors. Licensed under the Apache License, Version 2.0; see LICENSE file. -->
+
 # Engine configuration reference
 
 All engine behaviour is driven by configuration. **Nothing is hardcoded in the engine.**

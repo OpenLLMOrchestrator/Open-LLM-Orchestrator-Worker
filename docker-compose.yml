@@ -1,3 +1,4 @@
+# Copyright 2026 Open LLM Orchestrator contributors. Licensed under the Apache License, Version 2.0; see LICENSE file.
 # Open LLM Orchestrator Worker – Docker Compose
 # Use with: cp .env.example .env && docker compose up -d
 # Worker connects to Temporal, optional Redis/DB for config; Ollama for LLM pipeline.

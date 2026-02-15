@@ -1,3 +1,5 @@
+<!-- Copyright 2026 Open LLM Orchestrator contributors. Licensed under the Apache License, Version 2.0; see LICENSE file. -->
+
 # Open LLM Orchestrator Worker
 
 A **Temporal-native worker** that runs **config-driven pipelines** for document ingestion, retrieval, and LLM-based question answering (RAG). All behavior is defined in configuration—pipelines, stages, plugins, timeouts, and merge policies—with no hardcoded flows in the engine.

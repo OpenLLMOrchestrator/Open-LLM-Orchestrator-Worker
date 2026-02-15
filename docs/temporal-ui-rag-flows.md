@@ -1,3 +1,5 @@
+<!-- Copyright 2026 Open LLM Orchestrator contributors. Licensed under the Apache License, Version 2.0; see LICENSE file. -->
+
 # Temporal UI: RAG flows (train + question/answer)
 
 Use these steps in **Temporal Web UI** (Temporal UI) to run the **document-ingestion** (train) and **question-answer** flows.

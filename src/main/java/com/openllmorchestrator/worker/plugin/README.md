@@ -1,3 +1,5 @@
+<!-- Copyright 2026 Open LLM Orchestrator contributors. Licensed under the Apache License, Version 2.0; see LICENSE file. -->
+
 # Plugins (move to separate repos later)
 
 Four plugin packages, each in its own folder for easy extraction:
