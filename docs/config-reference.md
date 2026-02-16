@@ -46,6 +46,7 @@ In production, **queue name, Redis, and DB connection** come **only from environ
 | `MAX_CONCURRENT_ACTIVITY_TASK_POLLERS` | `10` | Max concurrent activity task pollers (worker tuning). |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API base URL (used by Llama32ModelPlugin). |
 | `OLLAMA_MODEL` | `llama3.2:latest` | Ollama model name for generate API. |
+| `OLLAMA_TIMEOUT_SECONDS` | `300` | Request timeout (seconds) per Ollama `/api/generate` call. Increase for slow models or **query-all-models** (6 models in parallel). |
 
 **Server configuration** (activity timeouts/retry, pipeline) is loaded from config; Temporal target/namespace and queue/Redis/DB are overridden from env when set.
 

@@ -26,6 +26,8 @@ import java.util.Map;
 public final class OllamaModelResolver {
 
     private static final String DEFAULT_MODEL = getEnv("OLLAMA_MODEL", "llama3.2:latest");
+    /** Request timeout for Ollama /api/generate (seconds). Use OLLAMA_TIMEOUT_SECONDS env for parallel/multi-model (e.g. query-all-models). */
+    private static final int DEFAULT_OLLAMA_TIMEOUT_SECONDS = 300;
 
     private static String getEnv(String key, String defaultValue) {
         String v = System.getenv(key);
@@ -49,6 +51,17 @@ public final class OllamaModelResolver {
             if (fromPipeline != null) return fromPipeline;
         }
         return DEFAULT_MODEL;
+    }
+
+    /** Timeout in seconds for each Ollama HTTP request (env OLLAMA_TIMEOUT_SECONDS). Default 300 for parallel/multi-model. */
+    public static int getOllamaTimeoutSeconds() {
+        String v = getEnv("OLLAMA_TIMEOUT_SECONDS", String.valueOf(DEFAULT_OLLAMA_TIMEOUT_SECONDS));
+        try {
+            int s = Integer.parseInt(v);
+            return s > 0 ? s : DEFAULT_OLLAMA_TIMEOUT_SECONDS;
+        } catch (NumberFormatException e) {
+            return DEFAULT_OLLAMA_TIMEOUT_SECONDS;
+        }
     }
 
     /**

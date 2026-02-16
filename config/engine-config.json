@@ -742,7 +742,7 @@
             }
         },
         "query-all-models": {
-            "defaultTimeoutSeconds": 180,
+            "defaultTimeoutSeconds": 360,
             "defaultAsyncCompletionPolicy": "ALL",
             "root": {
                 "MODEL": {
@@ -750,43 +750,43 @@
                     "executionMode": "ASYNC",
                     "asyncCompletionPolicy": "ALL",
                     "asyncOutputMergePolicy": "ALL_MODELS_RESPONSE_FORMAT",
-                    "timeoutSeconds": 180,
+                    "timeoutSeconds": 360,
                     "children": [
                         {
                             "type": "STAGE",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
-                            "timeoutSeconds": 120
+                            "timeoutSeconds": 360
                         },
                         {
                             "type": "STAGE",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.MistralChatPlugin",
-                            "timeoutSeconds": 120
+                            "timeoutSeconds": 360
                         },
                         {
                             "type": "STAGE",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32FixedChatPlugin",
-                            "timeoutSeconds": 120
+                            "timeoutSeconds": 360
                         },
                         {
                             "type": "STAGE",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Phi3ChatPlugin",
-                            "timeoutSeconds": 120
+                            "timeoutSeconds": 360
                         },
                         {
                             "type": "STAGE",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Gemma2_2bChatPlugin",
-                            "timeoutSeconds": 120
+                            "timeoutSeconds": 360
                         },
                         {
                             "type": "STAGE",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Qwen2_1_5bChatPlugin",
-                            "timeoutSeconds": 120
+                            "timeoutSeconds": 360
                         }
                     ]
                 }

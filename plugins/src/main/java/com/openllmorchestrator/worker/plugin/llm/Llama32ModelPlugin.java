@@ -133,9 +133,10 @@ public final class Llama32ModelPlugin implements StageHandler, ContractCompatibi
                     "stream", false
             );
             byte[] json = MAPPER.writeValueAsBytes(body);
+            int timeoutSec = OllamaModelResolver.getOllamaTimeoutSeconds();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(OLLAMA_BASE + "/api/generate"))
-                    .timeout(Duration.ofSeconds(120))
+                    .timeout(Duration.ofSeconds(timeoutSec))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofByteArray(json))
                     .build();
