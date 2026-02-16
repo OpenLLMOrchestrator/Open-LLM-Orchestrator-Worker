@@ -47,6 +47,18 @@ public final class PluginTypes {
     public static final String AGENT_ORCHESTRATOR = "AgentOrchestratorPlugin";
     public static final String WORKFLOW_EXTENSION = "WorkflowExtensionPlugin";
     public static final String CUSTOM_STAGE = "CustomStagePlugin";
+    /** Evaluate model output (scores, metrics). Future-ready for quality gates and learning triggers. */
+    public static final String EVALUATION = "EvaluationPlugin";
+    /** Collect user feedback (ratings, corrections) for learning. Future-ready for incremental learning. */
+    public static final String FEEDBACK = "FeedbackPlugin";
+    /** Incremental learning: fine-tune, update embeddings, train on new data. Future-ready for model learning. */
+    public static final String LEARNING = "LearningPlugin";
+    /** Build/curate dataset from feedback and evaluations for training. */
+    public static final String DATASET_BUILD = "DatasetBuildPlugin";
+    /** Trigger training job when conditions are met (e.g. fine-tune, LoRA). */
+    public static final String TRAIN_TRIGGER = "TrainTriggerPlugin";
+    /** Register or promote a trained model for serving. */
+    public static final String MODEL_REGISTRY = "ModelRegistryPlugin";
 
     private PluginTypes() {}
 }

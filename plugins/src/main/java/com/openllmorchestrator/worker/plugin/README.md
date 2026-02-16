@@ -22,6 +22,8 @@ Built-in plugin packages:
 | `plugin.caching` | `InMemoryCachingPlugin` | In-memory get/set by cacheKey. |
 | `plugin.observability` | `PassThroughObservabilityPlugin` | Pass-through with observed flag. |
 
+**Learning and training stages (future-ready):** Stub plugins for EVALUATION/EVALUATE, FEEDBACK/FEEDBACK_CAPTURE, LEARNING, DATASET_BUILD, TRAIN_TRIGGER, and MODEL_REGISTRY (`StubEvaluationPlugin`, `StubFeedbackPlugin`, `StubLearningPlugin`, `StubDatasetBuildPlugin`, `StubTrainTriggerPlugin`, `StubModelRegistryPlugin` in `sample`). A minimal flow is: ACCESS → MEMORY → RETRIEVE → MODEL → EVALUATE → FEEDBACK_CAPTURE → DATASET_BUILD → TRAIN_TRIGGER → MODEL_REGISTRY. Replace stubs with real implementations for incremental learning and model lifecycle pipelines.
+
 ## RAG plugins
 
 RAG is implemented by **two plugins** used together in a pipeline:

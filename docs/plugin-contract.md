@@ -222,6 +222,12 @@ The config field `pluginType` must be one of the following (semantic only; resol
 | FilterPlugin | Filtering/ingestion |
 | GuardrailPlugin | Guardrails |
 | RefinementPlugin | Output refinement |
+| EvaluationPlugin | Score/measure model output (quality gates) |
+| FeedbackPlugin | Collect user feedback (training signal) |
+| LearningPlugin | Incremental learning / model update |
+| DatasetBuildPlugin | Build/curate dataset from feedback and evaluations |
+| TrainTriggerPlugin | Trigger training job when conditions are met |
+| ModelRegistryPlugin | Register or promote trained model for serving |
 | PromptBuilderPlugin | Prompt building |
 | ObservabilityPlugin | Observability |
 | TracingPlugin | Tracing |

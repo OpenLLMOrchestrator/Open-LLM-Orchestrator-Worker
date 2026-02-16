@@ -52,6 +52,7 @@ public final class StageBucketFactory {
                 .register(PredefinedStages.ITERATIVE_BLOCK, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.ITERATIVE_BLOCK))
                 .register(PredefinedStages.MODEL, DEFAULT_PLUGIN_ID, new ModelStageHandler())
                 .register(PredefinedStages.RETRIEVAL, DEFAULT_PLUGIN_ID, new RetrievalStageHandler())
+                .register(PredefinedStages.RETRIEVE, DEFAULT_PLUGIN_ID, new RetrievalStageHandler())
                 .register(PredefinedStages.TOOL, DEFAULT_PLUGIN_ID, new ToolStageHandler())
                 .register(PredefinedStages.MCP, DEFAULT_PLUGIN_ID, new McpStageHandler())
                 .register(PredefinedStages.MEMORY, DEFAULT_PLUGIN_ID, new MemoryStageHandler())
@@ -61,6 +62,14 @@ public final class StageBucketFactory {
                 .register(PredefinedStages.ITERATIVE_BLOCK_END, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.ITERATIVE_BLOCK_END))
                 .register(PredefinedStages.FILTER, DEFAULT_PLUGIN_ID, new FilterStageHandler())
                 .register(PredefinedStages.POST_PROCESS, DEFAULT_PLUGIN_ID, new PostProcessStageHandler())
+                .register(PredefinedStages.EVALUATION, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.EVALUATION))
+                .register(PredefinedStages.EVALUATE, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.EVALUATE))
+                .register(PredefinedStages.FEEDBACK, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.FEEDBACK))
+                .register(PredefinedStages.FEEDBACK_CAPTURE, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.FEEDBACK_CAPTURE))
+                .register(PredefinedStages.LEARNING, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.LEARNING))
+                .register(PredefinedStages.DATASET_BUILD, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.DATASET_BUILD))
+                .register(PredefinedStages.TRAIN_TRIGGER, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.TRAIN_TRIGGER))
+                .register(PredefinedStages.MODEL_REGISTRY, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.MODEL_REGISTRY))
                 .register(PredefinedStages.OBSERVABILITY, DEFAULT_PLUGIN_ID, new ObservabilityStageHandler())
                 .register(PredefinedStages.CUSTOM, DEFAULT_PLUGIN_ID, new CustomStageHandler());
     }

@@ -44,6 +44,7 @@
         "ITERATIVE_BLOCK",
         "MODEL",
         "RETRIEVAL",
+        "RETRIEVE",
         "TOOL",
         "MCP",
         "MEMORY",
@@ -53,6 +54,14 @@
         "ITERATIVE_BLOCK_END",
         "FILTER",
         "POST_PROCESS",
+        "EVALUATION",
+        "EVALUATE",
+        "FEEDBACK",
+        "FEEDBACK_CAPTURE",
+        "LEARNING",
+        "DATASET_BUILD",
+        "TRAIN_TRIGGER",
+        "MODEL_REGISTRY",
         "OBSERVABILITY",
         "CUSTOM"
     ],
@@ -87,7 +96,13 @@
         "com.openllmorchestrator.worker.sample.StubFilterPlugin",
         "com.openllmorchestrator.worker.sample.StubRetrievalPlugin",
         "com.openllmorchestrator.worker.sample.StubModelPlugin",
-        "com.openllmorchestrator.worker.sample.StubRefinementPlugin"
+        "com.openllmorchestrator.worker.sample.StubRefinementPlugin",
+        "com.openllmorchestrator.worker.sample.StubEvaluationPlugin",
+        "com.openllmorchestrator.worker.sample.StubFeedbackPlugin",
+        "com.openllmorchestrator.worker.sample.StubLearningPlugin",
+        "com.openllmorchestrator.worker.sample.StubDatasetBuildPlugin",
+        "com.openllmorchestrator.worker.sample.StubTrainTriggerPlugin",
+        "com.openllmorchestrator.worker.sample.StubModelRegistryPlugin"
     ],
     "pipelines": {
         "document-ingestion": {

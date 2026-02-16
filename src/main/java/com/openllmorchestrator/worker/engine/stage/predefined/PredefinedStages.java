@@ -29,6 +29,8 @@ public final class PredefinedStages {
     public static final String ITERATIVE_BLOCK = "ITERATIVE_BLOCK";
     public static final String MODEL = "MODEL";
     public static final String RETRIEVAL = "RETRIEVAL";
+    /** Alias for RETRIEVAL; same semantics (retrieve from vector store / search). */
+    public static final String RETRIEVE = "RETRIEVE";
     public static final String TOOL = "TOOL";
     public static final String MCP = "MCP";
     public static final String MEMORY = "MEMORY";
@@ -39,18 +41,38 @@ public final class PredefinedStages {
     public static final String FILTER = "FILTER";
     public static final String CUSTOM = "CUSTOM";
     public static final String POST_PROCESS = "POST_PROCESS";
+    /** Score/measure model output (quality, relevance); feeds into learning. Future-ready for evaluation pipelines. */
+    public static final String EVALUATION = "EVALUATION";
+    /** Alias for evaluation stage (score/measure model output). */
+    public static final String EVALUATE = "EVALUATE";
+    /** Collect user feedback (ratings, corrections) as training signal. Future-ready for incremental learning. */
+    public static final String FEEDBACK = "FEEDBACK";
+    /** Alias for feedback capture (user ratings, corrections). */
+    public static final String FEEDBACK_CAPTURE = "FEEDBACK_CAPTURE";
+    /** Incremental learning: fine-tune, update embeddings, or train on new data. Future-ready for model learning. */
+    public static final String LEARNING = "LEARNING";
+    /** Build or curate dataset from feedback/evaluations for training. Future-ready for incremental learning. */
+    public static final String DATASET_BUILD = "DATASET_BUILD";
+    /** Trigger training job (e.g. fine-tune, LoRA) when conditions are met. Future-ready for model learning. */
+    public static final String TRAIN_TRIGGER = "TRAIN_TRIGGER";
+    /** Register or promote a trained model for serving. Future-ready for model lifecycle. */
+    public static final String MODEL_REGISTRY = "MODEL_REGISTRY";
     public static final String OBSERVABILITY = "OBSERVABILITY";
 
     private static final Set<String> NAMES = Set.of(
             ACCESS, PRE_CONTEXT_SETUP, PLANNER, PLAN_EXECUTOR, EXECUTION_CONTROLLER, ITERATIVE_BLOCK,
-            MODEL, RETRIEVAL, TOOL, MCP, MEMORY, REFLECTION, SUB_OBSERVABILITY,
-            SUB_CUSTOM, ITERATIVE_BLOCK_END, FILTER, POST_PROCESS, OBSERVABILITY, CUSTOM);
+            MODEL, RETRIEVAL, RETRIEVE, TOOL, MCP, MEMORY, REFLECTION, SUB_OBSERVABILITY,
+            SUB_CUSTOM, ITERATIVE_BLOCK_END, FILTER, POST_PROCESS,
+            EVALUATION, EVALUATE, FEEDBACK, FEEDBACK_CAPTURE, LEARNING, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY,
+            OBSERVABILITY, CUSTOM);
 
-    /** Canonical order for execution when config does not set stageOrder. */
+    /** Canonical order for execution when config does not set stageOrder. Learning/training stages (EVALUATE, FEEDBACK_CAPTURE, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY) are before OBSERVABILITY. */
     private static final List<String> ORDERED_NAMES = List.of(
             ACCESS, PRE_CONTEXT_SETUP, PLANNER, PLAN_EXECUTOR, EXECUTION_CONTROLLER, ITERATIVE_BLOCK,
-            MODEL, RETRIEVAL, TOOL, MCP, MEMORY, REFLECTION, SUB_OBSERVABILITY,
-            SUB_CUSTOM, ITERATIVE_BLOCK_END, FILTER, POST_PROCESS, OBSERVABILITY, CUSTOM);
+            MODEL, RETRIEVAL, RETRIEVE, TOOL, MCP, MEMORY, REFLECTION, SUB_OBSERVABILITY,
+            SUB_CUSTOM, ITERATIVE_BLOCK_END, FILTER, POST_PROCESS,
+            EVALUATION, EVALUATE, FEEDBACK, FEEDBACK_CAPTURE, LEARNING, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY,
+            OBSERVABILITY, CUSTOM);
 
     private PredefinedStages() {}
 

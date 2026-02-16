@@ -401,6 +401,12 @@ Beyond the plugin types already in config, the following **possible plugins** ma
 | FilterPlugin              | Chunking, tokenization, input filtering   |
 | GuardrailPlugin           | Safety, PII, policy checks                 |
 | RefinementPlugin          | Output formatting, normalization         |
+| EvaluationPlugin          | Score/measure model output (quality gates) |
+| FeedbackPlugin            | Collect user feedback (training signal)   |
+| LearningPlugin            | Incremental learning / model update       |
+| DatasetBuildPlugin        | Build/curate dataset from feedback        |
+| TrainTriggerPlugin        | Trigger training job (fine-tune, LoRA)   |
+| ModelRegistryPlugin       | Register/promote trained model for serving |
 | PromptBuilderPlugin       | Dynamic prompt assembly                   |
 | ObservabilityPlugin       | Metrics, monitoring                        |
 | TracingPlugin             | Distributed tracing                       |
@@ -522,9 +528,24 @@ Stages can optionally implement **StreamingStageHandler** (extends `StageHandler
 
 Execution order of predefined stages (see also §7.2 Execution Graph):
 
-`ACCESS` → `PRE_CONTEXT_SETUP` → `PLANNER` → `PLAN_EXECUTOR` → `EXECUTION_CONTROLLER` → `ITERATIVE_BLOCK` → `MODEL` → `RETRIEVAL` → `TOOL` → `MCP` → `MEMORY` → `REFLECTION` → `SUB_OBSERVABILITY` → `SUB_CUSTOM` → `ITERATIVE_BLOCK_END` → `FILTER` → `POST_PROCESS` → `OBSERVABILITY` → `CUSTOM`
+`ACCESS` → … → `MODEL` → `RETRIEVAL` / **`RETRIEVE`** → … → `POST_PROCESS` → **`EVALUATION`** / **`EVALUATE`** → **`FEEDBACK`** / **`FEEDBACK_CAPTURE`** → **`LEARNING`** → **`DATASET_BUILD`** → **`TRAIN_TRIGGER`** → **`MODEL_REGISTRY`** → `OBSERVABILITY` → `CUSTOM`
 
-Pipelines include only the stages they need; order is defined by `stageOrder` in config.
+Pipelines include only the stages they need; order is defined by `stageOrder` in config. A minimal learning-ready flow can use: **ACCESS** → **MEMORY** → **RETRIEVE** → **MODEL** → **EVALUATE** → **FEEDBACK_CAPTURE** → **DATASET_BUILD** → **TRAIN_TRIGGER** → **MODEL_REGISTRY**.
+
+### 12.1 Learning and training stages (future-ready)
+
+Stages reserved for **incremental learning** and **model learning**:
+
+| Stage | Purpose | Future use |
+|-------|---------|------------|
+| **EVALUATION** / **EVALUATE** | Score or measure model output (quality, relevance). | Quality gates; trigger learning when score is below threshold. |
+| **FEEDBACK** / **FEEDBACK_CAPTURE** | Collect user feedback (ratings, corrections). | Training signal for incremental learning. |
+| **LEARNING** | Run incremental learning step. | Fine-tune, update embeddings, or train on new data. |
+| **DATASET_BUILD** | Build or curate dataset from feedback/evaluations. | Training dataset preparation. |
+| **TRAIN_TRIGGER** | Trigger training job when conditions are met. | Fine-tune, LoRA, or full training runs. |
+| **MODEL_REGISTRY** | Register or promote a trained model for serving. | Model lifecycle, A/B, rollback. |
+
+**RETRIEVE** is an alias for **RETRIEVAL** (same semantics). Plugins: implement the corresponding plugin types in `PluginTypes` (e.g. `EvaluationPlugin`, `FeedbackPlugin`, `LearningPlugin`, `DatasetBuildPlugin`, `TrainTriggerPlugin`, `ModelRegistryPlugin`). Stub implementations are provided so pipelines can include these stages today; replace with real implementations for evaluation loops and model learning.
 
 ---
 
