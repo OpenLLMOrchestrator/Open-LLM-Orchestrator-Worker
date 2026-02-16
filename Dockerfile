@@ -23,7 +23,6 @@ COPY config config/
 USER appuser
 
 ENV PATH="/app/install/bin:${PATH}"
-# Default config path inside container (override with CONFIG_FILE_PATH)
-ENV CONFIG_FILE_PATH=/app/config/engine-config.json
+# Config file: when CONFIG_FILE_PATH is unset, path is config/<CONFIG_KEY>.json (e.g. /app/config/default.json)
 
 ENTRYPOINT ["worker"]

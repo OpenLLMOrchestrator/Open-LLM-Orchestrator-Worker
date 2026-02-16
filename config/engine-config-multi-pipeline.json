@@ -1,7 +1,13 @@
 {
   "configVersion": "1.0",
-  "worker": { "queueName": "core-task-queue", "strictBoot": false },
+  "worker": {
+    "queueName": "core-task-queue",
+    "strictBoot": false
+  },
   "stageOrder": ["ACCESS", "MEMORY", "RETRIEVAL", "MODEL", "MCP", "TOOL", "FILTER", "POST_PROCESS", "OBSERVABILITY", "CUSTOM"],
+  "mergePolicies": {
+    "PREFIX_KEYS": "PREFIX_BY_ACTIVITY"
+  },
   "pipelines": {
     "chat": {
       "defaultTimeoutSeconds": 30,
@@ -44,17 +50,15 @@
           "children": [
             { "type": "STAGE", "pluginType": "AccessControlPlugin", "name": "com.example.plugin.AccessControlPluginImpl" },
             { "type": "STAGE", "pluginType": "TenantPolicyPlugin", "name": "com.example.plugin.TenantPolicyPluginImpl", "timeoutSeconds": 45 },
-            { "type": "STAGE", "pluginType": "RateLimitPlugin", "name": "com.example.plugin.RateLimitPluginImpl" },
-            {
-              "type": "GROUP",
-              "executionMode": "SYNC",
-              "children": [
-                { "type": "STAGE", "pluginType": "MemoryPlugin", "name": "com.example.plugin.MemoryPluginImpl" },
-                { "type": "STAGE", "pluginType": "VectorStorePlugin", "name": "com.example.plugin.VectorStorePluginImpl", "timeoutSeconds": 45 },
-                { "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl" },
-                { "type": "STAGE", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl", "timeoutSeconds": 90 }
-              ]
-            }
+            { "type": "STAGE", "pluginType": "RateLimitPlugin", "name": "com.example.plugin.RateLimitPluginImpl" }
+          ]
+        },
+        "MEMORY": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            { "type": "STAGE", "pluginType": "MemoryPlugin", "name": "com.example.plugin.MemoryPluginImpl" },
+            { "type": "STAGE", "pluginType": "VectorStorePlugin", "name": "com.example.plugin.VectorStorePluginImpl", "timeoutSeconds": 45 }
           ]
         },
         "RETRIEVAL": {
@@ -67,6 +71,14 @@
             { "type": "STAGE", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl2", "timeoutSeconds": 45 },
             { "type": "STAGE", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl3" },
             { "type": "STAGE", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl4", "timeoutSeconds": 90 }
+          ]
+        },
+        "MODEL": {
+          "type": "GROUP",
+          "executionMode": "SYNC",
+          "children": [
+            { "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl" },
+            { "type": "STAGE", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl", "timeoutSeconds": 90 }
           ]
         }
       }

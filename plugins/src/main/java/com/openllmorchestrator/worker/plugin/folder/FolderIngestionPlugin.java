@@ -15,7 +15,11 @@
  */
 package com.openllmorchestrator.worker.plugin.folder;
 
+import com.openllmorchestrator.worker.contract.ContractCompatibility;
 import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
+import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
+import com.openllmorchestrator.worker.contract.PluginTypes;
 import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.contract.StageResult;
 
@@ -39,9 +43,10 @@ import java.util.stream.Stream;
  * Input: "folderPath" (required), optional "fileExtensions" (e.g. ".txt,.md"),
  * optional "recursive" (boolean, default false).
  */
-public final class FolderIngestionPlugin implements StageHandler {
+public final class FolderIngestionPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
-    public static final String NAME = "FolderIngestionPlugin";
+    private static final String CONTRACT_VERSION = "0.0.1";
+    public static final String NAME = "com.openllmorchestrator.worker.plugin.folder.FolderIngestionPlugin";
     private static final String DEFAULT_EXTENSIONS = ".txt,.md";
     private static final Set<String> DEFAULT_EXTENSION_SET = Set.of(".txt", ".md");
 
@@ -89,6 +94,26 @@ public final class FolderIngestionPlugin implements StageHandler {
         context.putOutput("fileCount", chunks.size());
 
         return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+    }
+
+    @Override
+    public String getRequiredContractVersion() {
+        return CONTRACT_VERSION;
+    }
+
+    @Override
+    public java.util.Set<String> getRequiredInputFieldsForPlanner() {
+        return Set.of("folderPath", "fileExtensions", "recursive");
+    }
+
+    @Override
+    public String getPlannerDescription() {
+        return "Filter: ingest folder files into tokenizedChunks for vector store.";
+    }
+
+    @Override
+    public String getPluginType() {
+        return PluginTypes.FILTER;
     }
 
     private static Set<String> parseExtensions(String fileExtensions) {

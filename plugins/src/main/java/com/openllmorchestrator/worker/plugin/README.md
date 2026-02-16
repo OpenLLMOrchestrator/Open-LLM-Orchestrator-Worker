@@ -1,8 +1,10 @@
 <!-- Copyright 2026 Open LLM Orchestrator contributors. Licensed under the Apache License, Version 2.0; see LICENSE file. -->
 
-# Plugins (move to separate repos later)
+# Plugins
 
-Four plugin packages, each in its own folder for easy extraction:
+All plugins live in the **plugins** Gradle module. The worker depends on `project(':plugins')`. This package contains built-in plugins (`plugin.*`); sample/stub plugins are in `com.openllmorchestrator.worker.sample`.
+
+Built-in plugin packages:
 
 | Package | Plugin | Role |
 |--------|--------|------|
@@ -11,6 +13,14 @@ Four plugin packages, each in its own folder for easy extraction:
 | `plugin.llm` | `Llama32ChatPlugin` | **Chat model plugin:** call Ollama with question/messages only (no retrieval). Supports all models via pipeline name or `input.modelId`. |
 | `plugin.tokenizer` | `DocumentTokenizerPlugin` | Split document content into chunks for embedding/storage. |
 | `plugin.folder` | `FolderIngestionPlugin` | Read all files from a folder and output as chunks for the vector store. |
+| `plugin.output` | `AnswerFormatPlugin` | Post-process: format model output as ANS: "...". |
+| `plugin.access` | `AllowAllAccessControlPlugin` | Allow-all access; optional allowKey check. |
+| `plugin.tool` | `EchoToolPlugin` | Echo tool input as result (testing/template). |
+| `plugin.memory` | `ContextMemoryPlugin` | Read/write key-value via context state (request-scoped). |
+| `plugin.guardrail` | `SimpleGuardrailPlugin` | Max length and optional blocklist. |
+| `plugin.prompt` | `SimplePromptBuilderPlugin` | Template with {question}, {context}, {result}. |
+| `plugin.caching` | `InMemoryCachingPlugin` | In-memory get/set by cacheKey. |
+| `plugin.observability` | `PassThroughObservabilityPlugin` | Pass-through with observed flag. |
 
 ## RAG plugins
 

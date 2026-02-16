@@ -15,20 +15,25 @@
  */
 package com.openllmorchestrator.worker.plugin.tokenizer;
 
+import com.openllmorchestrator.worker.contract.ContractCompatibility;
 import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
+import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
+import com.openllmorchestrator.worker.contract.PluginTypes;
 import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.contract.StageResult;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Document tokenizer plugin. Splits document content into chunks (e.g. for embedding and storage).
- * Intended to be moved to a separate repo later.
  */
-public final class DocumentTokenizerPlugin implements StageHandler {
+public final class DocumentTokenizerPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
-    public static final String NAME = "DocumentTokenizerPlugin";
+    private static final String CONTRACT_VERSION = "0.0.1";
+    public static final String NAME = "com.openllmorchestrator.worker.plugin.tokenizer.DocumentTokenizerPlugin";
 
     @Override
     public String name() {
@@ -46,6 +51,26 @@ public final class DocumentTokenizerPlugin implements StageHandler {
         context.putOutput("tokenizedChunks", chunks);
 
         return StageResult.builder().stageName(NAME).data(context.getCurrentPluginOutput()).build();
+    }
+
+    @Override
+    public String getRequiredContractVersion() {
+        return CONTRACT_VERSION;
+    }
+
+    @Override
+    public Set<String> getRequiredInputFieldsForPlanner() {
+        return Set.of("document");
+    }
+
+    @Override
+    public String getPlannerDescription() {
+        return "Filter: tokenize document into chunks for storage.";
+    }
+
+    @Override
+    public String getPluginType() {
+        return PluginTypes.FILTER;
     }
 
     private List<Map<String, Object>> tokenize(String content) {

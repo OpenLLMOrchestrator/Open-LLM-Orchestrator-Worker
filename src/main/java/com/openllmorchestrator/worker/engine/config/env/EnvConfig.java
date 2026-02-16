@@ -53,7 +53,10 @@ public class EnvConfig {
         String dbUser = getEnv("DB_USERNAME", "postgres");
         String dbPassword = getEnv("DB_PASSWORD", "postgres");
         int retrySleep = parseInt(getEnv("CONFIG_RETRY_SLEEP_SECONDS", "30"), 30);
-        String configPath = getEnv("CONFIG_FILE_PATH", getEnv("engine.config.path", "config/engine-config.json"));
+        String configPath = getEnv("CONFIG_FILE_PATH", getEnv("engine.config.path", null));
+        if (configPath == null || configPath.isBlank()) {
+            configPath = "config/" + getConfigKey() + ".json";
+        }
         int workflowPollers = parseInt(getEnv("MAX_CONCURRENT_WORKFLOW_TASK_POLLERS", "5"), 5);
         int activityPollers = parseInt(getEnv("MAX_CONCURRENT_ACTIVITY_TASK_POLLERS", "10"), 10);
         String temporalTarget = getEnv("TEMPORAL_TARGET", "localhost:7233");
@@ -70,6 +73,10 @@ public class EnvConfig {
                 .temporalTarget(temporalTarget)
                 .temporalNamespace(temporalNamespace)
                 .build();
+    }
+
+    private static String getConfigKey() {
+        return getEnv("CONFIG_KEY", "default");
     }
 
     private static String getEnv(String key, String defaultValue) {

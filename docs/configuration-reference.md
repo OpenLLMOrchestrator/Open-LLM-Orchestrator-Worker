@@ -1,6 +1,6 @@
 # Engine Configuration Reference
 
-This document describes **every field** in the engine configuration file (`engine-config.json`) so that:
+This document describes **every field** in the engine configuration file. The config file is chosen by **`CONFIG_KEY`**: when `CONFIG_FILE_PATH` is unset, the path is **`config/<CONFIG_KEY>.json`** (e.g. `config/default.json`). Config is loaded in order Redis → DB → file. So that:
 
 - Config files can be written or generated correctly.
 - A **drag-and-drop UI** can create pipelines and enable feature flags without guessing.
@@ -24,12 +24,13 @@ The config is **JSON**. All keys are case-sensitive. Unknown keys are ignored (`
 | `mergePolicies` | object | No | Merge policy name → implementation. See §8. |
 | `pipelines` | object | **Yes** | Named pipelines. At least one required. See §9. |
 | `plugins` | array of string | No | Allowed plugin names for static pipelines and dynamic use (PLANNER, PLAN_EXECUTOR). See §10. |
-| `dynamicPlugins` | object | No | Plugin name → JAR path. See §11. |
+| `dynamicPlugins` | object | No | Plugin name → JAR path (one handler per JAR). See §11. |
+| `dynamicPluginJars` | array of string | No | JAR paths; each JAR is loaded for **all** StageHandler implementations and each is registered by its `name()`. See §11. |
 | `queueTopology` | object | No | Queue topology for concurrency isolation. See §12. |
-| `redis` | object | No | Redis connection (from env merge). |
-| `database` | object | No | Database connection (from env merge). |
 
 \* Worker may be merged from environment at runtime.
+
+**Redis and database** are not in the config file. They are taken from **environment variables** (Docker/production) with **development defaults** when unset: `REDIS_HOST` (default `localhost`), `REDIS_PORT` (`6379`), `REDIS_PASSWORD` (empty), `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`. Config **file path** is **`config/<CONFIG_KEY>.json`** when `CONFIG_FILE_PATH` is unset; **`CONFIG_KEY`** (default `default`) also selects the Redis key `olo:engine:config:<CONFIG_KEY>:<version>`. See [config-reference.md](config-reference.md) for the full env table.
 
 ---
 
@@ -347,11 +348,11 @@ Static pipelines are built **after** this check: only stages whose plugin name i
 
 ---
 
-## 11. Dynamic plugins (`dynamicPlugins`)
+## 11. Dynamic plugins (`dynamicPlugins`, `dynamicPluginJars`)
 
-**Type:** Object. Keys = plugin name (activity id), value = path to JAR (string).
+**`dynamicPlugins`** — Object. Keys = plugin name (activity id), value = path to JAR (string). At bootstrap, each JAR is loaded and the **first** StageHandler is registered under that key. If the file is missing or load fails, a no-op wrapper is registered and a log is emitted.
 
-At bootstrap, each JAR is loaded and a StageHandler is registered. If the file is missing or load fails, a no-op wrapper is registered and a log is emitted. Plugins listed here should also be listed in `plugins` if you use an allow-list.
+**`dynamicPluginJars`** — Array of JAR paths. At bootstrap, each JAR is loaded and **all** StageHandler implementations (via ServiceLoader) are registered, each under its own `name()`. Use when one JAR provides multiple plugins (e.g. sample-plugins.jar). Plugins from these JARs should be listed in `plugins` if you use an allow-list.
 
 ---
 
@@ -443,4 +444,4 @@ Used when feature flag `CONCURRENCY_ISOLATION` is enabled.
 | **Payload limits** | `activity.payload` | Optional; two numbers (0 = no limit). |
 | **Queue topology** | `queueTopology` | Optional; strategy + two maps. |
 
-This reference plus the validation rules above are enough to drive a drag-and-drop pipeline and feature-flag UI that produces valid `engine-config.json`.
+This reference plus the validation rules above are enough to drive a drag-and-drop pipeline and feature-flag UI that produces valid engine config JSON (e.g. for `config/<CONFIG_KEY>.json`).

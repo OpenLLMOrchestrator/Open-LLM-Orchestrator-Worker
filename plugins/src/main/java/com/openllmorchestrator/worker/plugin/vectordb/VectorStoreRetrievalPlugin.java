@@ -15,7 +15,11 @@
  */
 package com.openllmorchestrator.worker.plugin.vectordb;
 
+import com.openllmorchestrator.worker.contract.ContractCompatibility;
 import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
+import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
+import com.openllmorchestrator.worker.contract.PluginTypes;
 import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.contract.StageResult;
 
@@ -23,11 +27,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Vector DB plugin: store chunks (doc pipeline) or retrieve (question pipeline). */
-public final class VectorStoreRetrievalPlugin implements StageHandler {
+public final class VectorStoreRetrievalPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
-    public static final String NAME = "VectorStoreRetrievalPlugin";
+    private static final String CONTRACT_VERSION = "0.0.1";
+    public static final String NAME = "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin";
 
     @Override
     public String name() {
@@ -52,6 +58,26 @@ public final class VectorStoreRetrievalPlugin implements StageHandler {
         }
 
         return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+    }
+
+    @Override
+    public String getRequiredContractVersion() {
+        return CONTRACT_VERSION;
+    }
+
+    @Override
+    public Set<String> getRequiredInputFieldsForPlanner() {
+        return Set.of("question", "tokenizedChunks");
+    }
+
+    @Override
+    public String getPlannerDescription() {
+        return "Vector store: store tokenizedChunks or retrieve chunks by question.";
+    }
+
+    @Override
+    public String getPluginType() {
+        return PluginTypes.VECTOR_STORE;
     }
 
     private List<Map<String, Object>> retrieveFromVectorDb(String question) {

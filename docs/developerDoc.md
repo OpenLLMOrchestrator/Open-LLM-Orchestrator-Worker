@@ -14,6 +14,10 @@ Infrastructure dependencies
 
 Expected behavior
 
+**Config loading:** The worker loads config at bootstrap in order **Redis → DB → file**. The file path is **`config/<CONFIG_KEY>.json`** when `CONFIG_FILE_PATH` is unset (e.g. `config/default.json`). Set **`CONFIG_KEY`** in the environment to select which config to load. The default task queue is **`core-task-queue`** (overridable via `QUEUE_NAME`). See [Config reference](config-reference.md).
+
+---
+
 🏗 Architecture Overview
 
 The Worker is responsible for:
@@ -22,7 +26,7 @@ Document ingestion
 
 Vector embedding
 
-Qdrant storage
+Qdrant storage (or configured vector store)
 
 Retrieval
 
@@ -30,9 +34,7 @@ LLM generation
 
 Chat memory persistence
 
-It runs as a Temporal Worker and polls:
-
-rag-task-queue
+It runs as a Temporal Worker and polls the task queue from config (default **core-task-queue**).
 
 ⚙️ Required Infrastructure
 

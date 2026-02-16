@@ -15,15 +15,22 @@
  */
 package com.openllmorchestrator.worker.engine.config.source;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openllmorchestrator.worker.engine.config.redis.RedisConfig;
 import redis.clients.jedis.Jedis;
 
 /**
  * Reads/writes engine config JSON from Redis.
- * Connection from env (RedisConfig) only.
+ * Key format: olo:engine:config:&lt;config_key&gt;:&lt;version&gt; (e.g. olo:engine:config:default:1.0).
+ * config_key from env CONFIG_KEY (default "default"). Version from env CONFIG_VERSION (default "1.0") on read;
+ * on write, version from config JSON configVersion field (default "1.0").
  */
 public final class RedisConfigRepository implements ConfigRepository {
-    private static final String CONFIG_KEY = "olo:engine:config";
+    private static final String KEY_PREFIX = "olo:engine:config:";
+    private static final String DEFAULT_CONFIG_KEY = "default";
+    private static final String DEFAULT_VERSION = "1.0";
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final Jedis jedis;
 
@@ -34,10 +41,25 @@ public final class RedisConfigRepository implements ConfigRepository {
         }
     }
 
+    private static String getConfigKey() {
+        String k = System.getenv("CONFIG_KEY");
+        return (k != null && !k.isBlank()) ? k.trim() : DEFAULT_CONFIG_KEY;
+    }
+
+    private static String getConfigVersionForRead() {
+        String v = System.getenv("CONFIG_VERSION");
+        return (v != null && !v.isBlank()) ? v.trim() : DEFAULT_VERSION;
+    }
+
+    private static String buildKey(String configKey, String version) {
+        return KEY_PREFIX + configKey + ":" + version;
+    }
+
     @Override
     public String get() {
         try {
-            return jedis.get(CONFIG_KEY);
+            String key = buildKey(getConfigKey(), getConfigVersionForRead());
+            return jedis.get(key);
         } catch (Exception e) {
             return null;
         }
@@ -47,7 +69,14 @@ public final class RedisConfigRepository implements ConfigRepository {
     public void set(String configJson) {
         if (configJson == null) return;
         try {
-            jedis.set(CONFIG_KEY, configJson);
+            String version = DEFAULT_VERSION;
+            JsonNode root = MAPPER.readTree(configJson);
+            if (root != null && root.has("configVersion") && root.get("configVersion").isTextual()) {
+                String v = root.get("configVersion").asText();
+                if (v != null && !v.isBlank()) version = v;
+            }
+            String key = buildKey(getConfigKey(), version);
+            jedis.set(key, configJson);
         } catch (Exception ignored) {
             // log and continue
         }

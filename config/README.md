@@ -2,7 +2,9 @@
 
 # Engine config
 
-For **full schema, every field, allowed values, and UI/drag-and-drop guidance**, see **[Configuration Reference](../docs/configuration-reference.md)**. It covers `engine-config.json` top-to-bottom (feature flags, pipelines, activity, queue topology, validation) so you can build config editors or pipeline builders from it.
+Config is loaded at startup in order **Redis → DB → file**. The file path is **`config/<CONFIG_KEY>.json`** when `CONFIG_FILE_PATH` is unset (e.g. `config/default.json` for `CONFIG_KEY=default`). Multiple files can exist (e.g. `config/default.json`, `config/production.json`); set **`CONFIG_KEY`** to select which one to load.
+
+For **full schema, every field, allowed values, and UI/drag-and-drop guidance**, see **[Configuration Reference](../docs/configuration-reference.md)**. It covers the engine config JSON top-to-bottom (feature flags, pipelines, activity, queue topology, validation) so you can build config editors or pipeline builders from it.
 
 ## Workflow
 
@@ -14,7 +16,7 @@ For **full schema, every field, allowed values, and UI/drag-and-drop guidance**,
 
 ## Pipelines reference
 
-All pipelines are defined in `engine-config.json`. Use `pipelineName` in the ExecutionCommand to select one.
+All pipelines are defined in the active config file (e.g. `config/default.json` or whatever `config/<CONFIG_KEY>.json` is loaded). Use `pipelineName` in the ExecutionCommand to select one.
 
 | Pipeline ID | Input payload | Summary |
 |-------------|----------------|---------|

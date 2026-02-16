@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.openllmorchestrator.worker.sample;
+package com.openllmorchestrator.worker.plugin.memory;
 
 import com.openllmorchestrator.worker.contract.ContractCompatibility;
-import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
 import com.openllmorchestrator.worker.contract.StageHandler;
@@ -28,17 +28,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Sample plugin that depends only on plugin-contract.
- * Echoes original input into output. Implements {@link ContractCompatibility},
- * {@link PlannerInputDescriptor} and {@link PluginTypeDescriptor} so it can be
- * sent as an "available tool" when the planner filters by type.
+ * MEMORY stage plugin: reads/writes key-value via context state (put/get). Request-scoped.
  */
-public final class SampleEchoPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+public final class ContextMemoryPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
-    /** Contract version this plugin was built against (match plugin-contract dependency version). */
     private static final String CONTRACT_VERSION = "0.0.1";
-
-    public static final String NAME = "com.openllmorchestrator.worker.sample.SampleEchoPlugin";
+    public static final String NAME = "com.openllmorchestrator.worker.plugin.memory.ContextMemoryPlugin";
+    private static final String STATE_PREFIX = "memory:";
 
     @Override
     public String name() {
@@ -47,15 +43,21 @@ public final class SampleEchoPlugin implements StageHandler, ContractCompatibili
 
     @Override
     public StageResult execute(PluginContext context) {
-        Map<String, Object> out = new HashMap<>(context.getOriginalInput());
-        out.put("_echo", true);
-        for (Map.Entry<String, Object> e : out.entrySet()) {
-            context.putOutput(e.getKey(), e.getValue());
+        Map<String, Object> input = context.getOriginalInput();
+        String key = input != null ? (String) input.get("memoryKey") : null;
+        Object valueToWrite = input != null ? input.get("memoryValue") : null;
+        if (key != null && !key.isBlank()) {
+            String stateKey = STATE_PREFIX + key;
+            if (valueToWrite != null) {
+                context.put(stateKey, valueToWrite);
+                context.putOutput("memoryValue", valueToWrite);
+                context.putOutput("written", true);
+            } else {
+                Object read = context.get(stateKey);
+                context.putOutput("memoryValue", read);
+            }
         }
-        return StageResult.builder()
-                .stageName(NAME)
-                .output(new HashMap<>(context.getCurrentPluginOutput()))
-                .build();
+        return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
     }
 
     @Override
@@ -65,16 +67,16 @@ public final class SampleEchoPlugin implements StageHandler, ContractCompatibili
 
     @Override
     public Set<String> getRequiredInputFieldsForPlanner() {
-        return Set.of("question", "document", "messages");
+        return Set.of("memoryKey", "memoryValue");
     }
 
     @Override
     public String getPlannerDescription() {
-        return "Echo plugin: forwards original input to output.";
+        return "Memory: read/write key-value via context state (request-scoped).";
     }
 
     @Override
     public String getPluginType() {
-        return PluginTypes.TOOL;
+        return PluginTypes.MEMORY;
     }
 }

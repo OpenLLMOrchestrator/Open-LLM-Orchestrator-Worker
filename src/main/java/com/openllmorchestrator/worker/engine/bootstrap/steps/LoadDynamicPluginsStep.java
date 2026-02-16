@@ -15,11 +15,11 @@
  */
 package com.openllmorchestrator.worker.engine.bootstrap.steps;
 
+import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapContext;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapStep;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.plugin.DynamicPluginLoader;
-import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.engine.stage.activity.ActivityRegistry;
 import com.openllmorchestrator.worker.engine.stage.handler.DynamicPluginWrapper;
 
@@ -47,6 +47,13 @@ public final class LoadDynamicPluginsStep implements BootstrapStep {
             return;
         }
         ActivityRegistry.Builder builder = ActivityRegistry.builder().registerAll(base.getHandlers());
+        for (String jarPath : config.getDynamicPluginJarsEffective()) {
+            if (jarPath == null || jarPath.isBlank()) {
+                continue;
+            }
+            Map<String, StageHandler> loaded = DynamicPluginLoader.loadAll(jarPath);
+            loaded.forEach(builder::register);
+        }
         for (Map.Entry<String, String> entry : dynamicPlugins.entrySet()) {
             String pluginName = entry.getKey();
             String jarPath = entry.getValue();

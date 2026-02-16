@@ -23,22 +23,17 @@ import com.openllmorchestrator.worker.contract.PluginTypes;
 import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.contract.StageResult;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Sample plugin that depends only on plugin-contract.
- * Echoes original input into output. Implements {@link ContractCompatibility},
- * {@link PlannerInputDescriptor} and {@link PluginTypeDescriptor} so it can be
- * sent as an "available tool" when the planner filters by type.
- */
-public final class SampleEchoPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+/** Stub filter plugin: passes document through as a single tokenized chunk. For demos and contract-only plugins module. */
+public final class StubFilterPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
-    /** Contract version this plugin was built against (match plugin-contract dependency version). */
     private static final String CONTRACT_VERSION = "0.0.1";
-
-    public static final String NAME = "com.openllmorchestrator.worker.sample.SampleEchoPlugin";
+    public static final String NAME = "com.openllmorchestrator.worker.sample.StubFilterPlugin";
 
     @Override
     public String name() {
@@ -47,11 +42,14 @@ public final class SampleEchoPlugin implements StageHandler, ContractCompatibili
 
     @Override
     public StageResult execute(PluginContext context) {
-        Map<String, Object> out = new HashMap<>(context.getOriginalInput());
-        out.put("_echo", true);
-        for (Map.Entry<String, Object> e : out.entrySet()) {
-            context.putOutput(e.getKey(), e.getValue());
+        Map<String, Object> input = context.getOriginalInput();
+        Object doc = input.get("document");
+        String text = doc != null ? doc.toString() : "";
+        List<Map<String, Object>> chunks = new ArrayList<>();
+        if (!text.isBlank()) {
+            chunks.add(Map.of("text", text, "index", 0));
         }
+        context.putOutput("tokenizedChunks", chunks);
         return StageResult.builder()
                 .stageName(NAME)
                 .output(new HashMap<>(context.getCurrentPluginOutput()))
@@ -65,16 +63,16 @@ public final class SampleEchoPlugin implements StageHandler, ContractCompatibili
 
     @Override
     public Set<String> getRequiredInputFieldsForPlanner() {
-        return Set.of("question", "document", "messages");
+        return Set.of("document");
     }
 
     @Override
     public String getPlannerDescription() {
-        return "Echo plugin: forwards original input to output.";
+        return "Filter (stub): tokenize document into chunks.";
     }
 
     @Override
     public String getPluginType() {
-        return PluginTypes.TOOL;
+        return PluginTypes.FILTER;
     }
 }

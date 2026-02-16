@@ -1,1 +1,5 @@
 com.openllmorchestrator.worker.sample.SampleEchoPlugin
+com.openllmorchestrator.worker.sample.StubFilterPlugin
+com.openllmorchestrator.worker.sample.StubRetrievalPlugin
+com.openllmorchestrator.worker.sample.StubModelPlugin
+com.openllmorchestrator.worker.sample.StubRefinementPlugin

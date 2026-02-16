@@ -17,7 +17,11 @@ package com.openllmorchestrator.worker.plugin.llm;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.openllmorchestrator.worker.contract.ContractCompatibility;
 import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
+import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
+import com.openllmorchestrator.worker.contract.PluginTypes;
 import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.contract.StageResult;
 
@@ -30,42 +34,75 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * Chat plugin that always uses a fixed Ollama model. Used in the "query-all-models" ASYNC pipeline
- * so each stage has one model; outputs modelLabel for the merge handler.
+ * RAG LLM plugin via Ollama. Supports any model: use input.modelId or pipeline name (e.g. rag-mistral).
+ * Base URL from env OLLAMA_BASE_URL; default model from OLLAMA_MODEL.
+ * Input: "question" (string) or "messages" (chat array); optional "modelId". Uses retrievedChunks for RAG context.
  */
-public abstract class FixedModelChatPlugin implements StageHandler {
+public final class Llama32ModelPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
+    private static final String CONTRACT_VERSION = "0.0.1";
+    public static final String NAME = "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin";
     private static final String OLLAMA_BASE = getEnv("OLLAMA_BASE_URL", "http://localhost:11434");
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final HttpClient HTTP = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
 
     private static String getEnv(String key, String defaultValue) {
         String v = System.getenv(key);
         if (v != null && !v.isBlank()) return v.trim();
         return System.getProperty(key, defaultValue);
     }
+    private static final HttpClient HTTP = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
 
-    protected abstract String getModelId();
-    protected abstract String getModelLabel();
+    @Override
+    public String name() {
+        return NAME;
+    }
 
     @Override
     public StageResult execute(PluginContext context) {
         Map<String, Object> input = context.getOriginalInput();
+        Map<String, Object> accumulated = context.getAccumulatedOutput();
+
         String question = (String) input.get("question");
         if (question == null || question.isBlank()) {
             question = deriveQuestionFromMessages(input);
         }
-        String response = callOllama(question, getModelId());
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> chunks = (List<Map<String, Object>>) accumulated.get("retrievedChunks");
+
+        String modelId = OllamaModelResolver.resolveModelId(context);
+        String response = callOllama(question, chunks, modelId);
         context.putOutput("response", response);
         context.putOutput("result", response);
-        context.putOutput("modelLabel", getModelLabel());
-        return StageResult.builder().stageName(name()).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+
+        return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
     }
 
+    @Override
+    public String getRequiredContractVersion() {
+        return CONTRACT_VERSION;
+    }
+
+    @Override
+    public Set<String> getRequiredInputFieldsForPlanner() {
+        return Set.of("question", "messages", "modelId", "retrievedChunks");
+    }
+
+    @Override
+    public String getPlannerDescription() {
+        return "Model: RAG/completion via Ollama; needs question or messages, optional modelId and retrievedChunks.";
+    }
+
+    @Override
+    public String getPluginType() {
+        return PluginTypes.MODEL;
+    }
+
+    /** When input has "messages" (chat UI) but no "question", use the last user message content. */
     @SuppressWarnings("unchecked")
     private static String deriveQuestionFromMessages(Map<String, Object> input) {
         Object messagesObj = input.get("messages");
@@ -84,8 +121,11 @@ public abstract class FixedModelChatPlugin implements StageHandler {
         return "";
     }
 
-    private static String callOllama(String prompt, String modelId) {
-        if (prompt == null || prompt.isBlank()) return "";
+    private String callOllama(String question, List<Map<String, Object>> contextChunks, String modelId) {
+        if (question == null || question.isBlank()) {
+            return "";
+        }
+        String prompt = buildPrompt(question, contextChunks);
         try {
             Map<String, Object> body = Map.of(
                     "model", modelId,
@@ -109,6 +149,22 @@ public abstract class FixedModelChatPlugin implements StageHandler {
         } catch (Exception e) {
             return "Error calling Ollama: " + e.getMessage();
         }
+    }
+
+    private static String buildPrompt(String question, List<Map<String, Object>> chunks) {
+        StringBuilder sb = new StringBuilder();
+        if (chunks != null && !chunks.isEmpty()) {
+            sb.append("Use the following context to answer the question.\n\nContext:\n");
+            for (Map<String, Object> chunk : chunks) {
+                Object text = chunk != null ? (chunk.get("text") != null ? chunk.get("text") : chunk.get("content")) : null;
+                if (text != null) {
+                    sb.append(text).append("\n");
+                }
+            }
+            sb.append("\n");
+        }
+        sb.append("Question: ").append(question).append("\n\nAnswer:");
+        return sb.toString();
     }
 }
 

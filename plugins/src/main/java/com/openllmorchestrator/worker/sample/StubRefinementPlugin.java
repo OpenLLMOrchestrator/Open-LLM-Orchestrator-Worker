@@ -27,18 +27,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Sample plugin that depends only on plugin-contract.
- * Echoes original input into output. Implements {@link ContractCompatibility},
- * {@link PlannerInputDescriptor} and {@link PluginTypeDescriptor} so it can be
- * sent as an "available tool" when the planner filters by type.
- */
-public final class SampleEchoPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+/** Stub refinement plugin: formats result/response as ANS: "...". For demos and contract-only plugins module. */
+public final class StubRefinementPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
-    /** Contract version this plugin was built against (match plugin-contract dependency version). */
     private static final String CONTRACT_VERSION = "0.0.1";
-
-    public static final String NAME = "com.openllmorchestrator.worker.sample.SampleEchoPlugin";
+    public static final String NAME = "com.openllmorchestrator.worker.sample.StubRefinementPlugin";
 
     @Override
     public String name() {
@@ -47,11 +40,14 @@ public final class SampleEchoPlugin implements StageHandler, ContractCompatibili
 
     @Override
     public StageResult execute(PluginContext context) {
-        Map<String, Object> out = new HashMap<>(context.getOriginalInput());
-        out.put("_echo", true);
-        for (Map.Entry<String, Object> e : out.entrySet()) {
-            context.putOutput(e.getKey(), e.getValue());
+        Map<String, Object> accumulated = context.getAccumulatedOutput();
+        Object result = accumulated.get("result");
+        if (result == null) {
+            result = accumulated.get("response");
         }
+        String text = result != null ? result.toString().trim() : "";
+        String formatted = "ANS: \"" + (text.isEmpty() ? "" : text.replace("\\", "\\\\").replace("\"", "\\\"")) + "\"";
+        context.putOutput("output", formatted);
         return StageResult.builder()
                 .stageName(NAME)
                 .output(new HashMap<>(context.getCurrentPluginOutput()))
@@ -65,16 +61,16 @@ public final class SampleEchoPlugin implements StageHandler, ContractCompatibili
 
     @Override
     public Set<String> getRequiredInputFieldsForPlanner() {
-        return Set.of("question", "document", "messages");
+        return Set.of("result", "response");
     }
 
     @Override
     public String getPlannerDescription() {
-        return "Echo plugin: forwards original input to output.";
+        return "Refinement (stub): format result as ANS: \"...\".";
     }
 
     @Override
     public String getPluginType() {
-        return PluginTypes.TOOL;
+        return PluginTypes.REFINEMENT;
     }
 }

@@ -34,6 +34,18 @@ import com.openllmorchestrator.worker.plugin.llm.Gemma2_2bChatPlugin;
 import com.openllmorchestrator.worker.plugin.llm.Qwen2_1_5bChatPlugin;
 import com.openllmorchestrator.worker.plugin.tokenizer.DocumentTokenizerPlugin;
 import com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin;
+import com.openllmorchestrator.worker.plugin.access.AllowAllAccessControlPlugin;
+import com.openllmorchestrator.worker.plugin.tool.EchoToolPlugin;
+import com.openllmorchestrator.worker.plugin.memory.ContextMemoryPlugin;
+import com.openllmorchestrator.worker.plugin.guardrail.SimpleGuardrailPlugin;
+import com.openllmorchestrator.worker.plugin.prompt.SimplePromptBuilderPlugin;
+import com.openllmorchestrator.worker.plugin.caching.InMemoryCachingPlugin;
+import com.openllmorchestrator.worker.plugin.observability.PassThroughObservabilityPlugin;
+import com.openllmorchestrator.worker.sample.SampleEchoPlugin;
+import com.openllmorchestrator.worker.sample.StubFilterPlugin;
+import com.openllmorchestrator.worker.sample.StubRefinementPlugin;
+import com.openllmorchestrator.worker.sample.StubModelPlugin;
+import com.openllmorchestrator.worker.sample.StubRetrievalPlugin;
 
 /** Registers plugin handlers by FQCN so pipeline config can reference them by class name. */
 public final class BuildActivityRegistryStep implements BootstrapStep {
@@ -54,6 +66,18 @@ public final class BuildActivityRegistryStep implements BootstrapStep {
         StageHandler tokenizer = new DocumentTokenizerPlugin();
         StageHandler folderIngestion = new FolderIngestionPlugin();
         StageHandler answerFormat = new AnswerFormatPlugin();
+        StageHandler allowAllAccess = new AllowAllAccessControlPlugin();
+        StageHandler echoTool = new EchoToolPlugin();
+        StageHandler contextMemory = new ContextMemoryPlugin();
+        StageHandler simpleGuardrail = new SimpleGuardrailPlugin();
+        StageHandler simplePromptBuilder = new SimplePromptBuilderPlugin();
+        StageHandler inMemoryCaching = new InMemoryCachingPlugin();
+        StageHandler passThroughObservability = new PassThroughObservabilityPlugin();
+        StageHandler sampleEcho = new SampleEchoPlugin();
+        StageHandler stubFilter = new StubFilterPlugin();
+        StageHandler stubRetrieval = new StubRetrievalPlugin();
+        StageHandler stubModel = new StubModelPlugin();
+        StageHandler stubRefinement = new StubRefinementPlugin();
         StageHandler lastWins = new LastWinsMergeHandler();
         StageHandler firstWins = new FirstWinsMergeHandler();
         StageHandler prefixByActivity = new PrefixByActivityMergeHandler();
@@ -66,6 +90,18 @@ public final class BuildActivityRegistryStep implements BootstrapStep {
                 .register(FQCN_TOKENIZER, tokenizer)
                 .register(FQCN_FOLDER_INGESTION, folderIngestion)
                 .register(FQCN_ANSWER_FORMAT, answerFormat)
+                .register(AllowAllAccessControlPlugin.NAME, allowAllAccess)
+                .register(EchoToolPlugin.NAME, echoTool)
+                .register(ContextMemoryPlugin.NAME, contextMemory)
+                .register(SimpleGuardrailPlugin.NAME, simpleGuardrail)
+                .register(SimplePromptBuilderPlugin.NAME, simplePromptBuilder)
+                .register(InMemoryCachingPlugin.NAME, inMemoryCaching)
+                .register(PassThroughObservabilityPlugin.NAME, passThroughObservability)
+                .register(SampleEchoPlugin.NAME, sampleEcho)
+                .register(StubFilterPlugin.NAME, stubFilter)
+                .register(StubRetrievalPlugin.NAME, stubRetrieval)
+                .register(StubModelPlugin.NAME, stubModel)
+                .register(StubRefinementPlugin.NAME, stubRefinement)
                 .register(LastWinsMergeHandler.NAME, lastWins)
                 .register(FirstWinsMergeHandler.NAME, firstWins)
                 .register(PrefixByActivityMergeHandler.NAME, prefixByActivity)

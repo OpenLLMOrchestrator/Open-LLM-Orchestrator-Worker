@@ -6,16 +6,20 @@ All engine behaviour is driven by configuration. **Nothing is hardcoded in the e
 
 ---
 
-## Community reference configs (3 versions)
+## Config examples (dedicated per use case)
 
-Three example configuration files are provided for different use cases. Copy and adapt as needed.
+Example configs live under [`config-examples/`](../config-examples/). Copy and adapt as needed. Each file targets one use case.
 
 | File | Use case |
 |------|----------|
-| [`docs/config-examples/engine-config-minimal.json`](config-examples/engine-config-minimal.json) | **Minimal** — Bare minimum: worker queue + `pipelines` with one pipeline (`default`) and root as stages map. No temporal, redis, database, or activity overrides. Good for local quick start. |
-| [`docs/config-examples/engine-config-stages.json`](config-examples/engine-config-stages.json) | **Stages-based** — Top-level flow using `pipeline.stages`. Each stage has groups (SYNC/ASYNC); group children are **activity names** (plugin ids). Shows ACCESS → MEMORY → RETRIEVAL → MODEL → OBSERVABILITY with real plugin names. |
-| [`docs/config-examples/engine-config-full.json`](config-examples/engine-config-full.json) | **Full** — All sections populated: worker, temporal, activity (timeouts + retry), redis, database, `pipelines` with `root` (stages map). Use as a production-style reference; in production, queue/Redis/DB are overridden from environment. |
-| [`docs/config-examples/engine-config-multi-pipeline.json`](config-examples/engine-config-multi-pipeline.json) | **Multiple flows** — `pipelines` map with user-defined names (`chat`, `document-extraction`). Workflow payload must set `pipelineName` to one of these names to pick the pipeline. |
+| [`engine-config-minimal.json`](../config-examples/engine-config-minimal.json) | **Minimal** — Bare minimum: worker queue + one pipeline (`default`) with root (stage map). No temporal, redis, database, or activity. Template plugin names (`com.example.*`). Good for quick start or as a copy-paste base. |
+| [`engine-config-full.json`](../config-examples/engine-config-full.json) | **Full** — All sections: worker, temporal, activity (timeouts + retry), redis, database, stageOrder, pipelines with root (stage map). Template plugin names. Use when you need every section in one file. |
+| [`engine-config-stages.json`](../config-examples/engine-config-stages.json) | **Stages format** — Same pipeline flow expressed with `pipelines.default.stages` (array of stage blocks). Each stage has groups; group `children` are activity names (plugin ids). Use when you prefer the stages-array style over root map. |
+| [`engine-config-multi-pipeline.json`](../config-examples/engine-config-multi-pipeline.json) | **Multiple pipelines** — Two pipelines: `chat` and `document-extraction`. Workflow payload must set `pipelineName` to one of these. Shows mergePolicy and rootByStage. Template plugin names. |
+| [`engine-config-document-ingestion.json`](../config-examples/engine-config-document-ingestion.json) | **Document ingestion** — Single pipeline: FILTER (DocumentTokenizerPlugin) → RETRIEVAL (VectorStoreRetrievalPlugin). Uses real OLO plugin FQCNs. For indexing/digesting documents into a vector store. |
+| [`engine-config-chat-only.json`](../config-examples/engine-config-chat-only.json) | **Chat only** — Single pipeline: MODEL (Llama32ChatPlugin) → POST_PROCESS (AnswerFormatPlugin). No retrieval. Uses real OLO plugins; requires Ollama (or compatible) for the model. |
+| [`engine-config-rag.json`](../config-examples/engine-config-rag.json) | **RAG** — Single pipeline: RETRIEVAL (VectorStoreRetrievalPlugin) → MODEL (Llama32ModelPlugin) → POST_PROCESS (AnswerFormatPlugin). Uses real OLO plugins. For question-answer over indexed documents. |
+| [`engine-config-production.json`](../config-examples/engine-config-production.json) | **Production-style** — Same shape as full: worker, temporal, activity, redis, database, stageOrder, pipelines. In production, set queue/Redis/DB via env (see [Production: environment variables (container)](#production-environment-variables-container)). |
 
 ---
 
@@ -35,7 +39,9 @@ In production, **queue name, Redis, and DB connection** come **only from environ
 | `DB_USERNAME` | `postgres` | DB user. |
 | `DB_PASSWORD` | `postgres` | DB password. |
 | `CONFIG_RETRY_SLEEP_SECONDS` | `30` | Seconds to sleep before retrying when config is not found anywhere. |
-| `CONFIG_FILE_PATH` | `config/engine-config.json` | Mounted config file path (fallback when Redis and DB have no config). |
+| `CONFIG_KEY` | `default` | Config key used in Redis key: `olo:engine:config:<CONFIG_KEY>:<version>`. Set via env; unset uses default. |
+| `CONFIG_VERSION` | `1.0` | Config version used for Redis key on **read**: `olo:engine:config:<CONFIG_KEY>:<CONFIG_VERSION>`. |
+| `CONFIG_FILE_PATH` | (none) | Optional. When set, this path is used for file fallback. When unset, file path is **`config/<CONFIG_KEY>.json`** (e.g. `config/default.json`). Multiple config files can live in `config/`; the one loaded is determined by `CONFIG_KEY`. |
 | `MAX_CONCURRENT_WORKFLOW_TASK_POLLERS` | `5` | Max concurrent workflow task pollers (worker tuning). |
 | `MAX_CONCURRENT_ACTIVITY_TASK_POLLERS` | `10` | Max concurrent activity task pollers (worker tuning). |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API base URL (used by Llama32ModelPlugin). |
@@ -49,13 +55,13 @@ In production, **queue name, Redis, and DB connection** come **only from environ
 
 Config is **retrieved once** at bootstrap, in this order:
 
-1. **Redis** – key `olo:engine:config` (JSON blob).
+1. **Redis** – key `olo:engine:config:<config_key>:<version>` (e.g. `olo:engine:config:default:1.0`) (JSON blob). `config_key` from env `CONFIG_KEY` (default `default`). Version for **read** from env `CONFIG_VERSION` (default `1.0`). When config is written (e.g. after loading from file), version is taken from the JSON `configVersion` field.
 2. **DB** – table `olo_config` (created if missing): `config_key VARCHAR(255) PRIMARY KEY`, `config_value TEXT`. Engine config is stored with `config_key = 'engine_config'`.
-3. **Mounted file** – path from `CONFIG_FILE_PATH` (or default).
+3. **File** – path is **`config/<CONFIG_KEY>.json`** when `CONFIG_FILE_PATH` is unset (e.g. `config/default.json`). Multiple files can exist in `config/` (e.g. `config/default.json`, `config/production.json`); the file chosen is the one whose name matches `CONFIG_KEY`. Set `CONFIG_FILE_PATH` to override this path.
 
 If **not found** in any of the three, the process **sleeps** for `CONFIG_RETRY_SLEEP_SECONDS`, then **retries** (Redis → DB → file) until config is found.
 
-When config is **found in the mounted file**, it is **written to Redis and DB** so the next boot (or other instances) can read it from Redis or DB.
+When config is **found in the file**, it is **written back to Redis and DB** so that other pods (or the next boot) can read it from Redis, replicating the same config across instances.
 
 After config is loaded, **connection values** (queue name, Redis, DB) are **overridden from env**. Only then does the worker **connect to Temporal** and register. So Temporal registration happens **only after** a valid config is available.
 

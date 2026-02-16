@@ -184,7 +184,7 @@ If the file is missing or the JAR fails to load, the engine registers a **no-op 
 
 ## 6. Pipeline config: how to reference your plugin
 
-In `engine-config.json`, pipelines define stages and groups. Each STAGE node has:
+In the engine config (e.g. `config/default.json` or `config/<CONFIG_KEY>.json`), pipelines define stages and groups. Each STAGE node has:
 
 - **`type`:** `"STAGE"`
 - **`name`:** The activity name (FQCN or short name) that the registry uses. **Must match** the name you used when registering.
@@ -326,6 +326,69 @@ public interface OutputContract {
 ```
 
 Implement `OutputContract` in addition to `StageHandler` if you want the engine to validate `getCurrentPluginOutput()` (and returned result) against `getSchema()`. Interpretation of the schema depends on the registered `OutputContractValidator`.
+
+### 8.4 PlannerInputDescriptor (required fields for planner phase LL query)
+
+When the **PLANNER** stage runs (e.g. an LLM that produces a dynamic plan), the worker needs to know which input keys to pull from `originalInput` and `accumulatedOutput` so the planner’s LL (language model) query has the right context. Implement **`PlannerInputDescriptor`** so your plugin declares the fields it reads; the worker then collects the **union** of these sets across all compatible plugins and uses it to render the data input for the planner phase.
+
+```java
+public interface PlannerInputDescriptor {
+
+    /** Keys from originalInput/accumulatedOutput this plugin reads. Union is used for planner LL query data input. */
+    Set<String> getRequiredInputFieldsForPlanner();
+
+    /** Optional one-line description for the planner (e.g. for LLM system prompt or tool list). */
+    default String getPlannerDescription() { return null; }
+}
+```
+
+- **`getRequiredInputFieldsForPlanner()`** — Return the key names (e.g. `"question"`, `"document"`, `"modelId"`, `"messages"`) that your plugin reads from context. The worker aggregates these across all plugins and includes them in the planner’s data payload so the planner LLM can make informed decisions.
+- **`getPlannerDescription()`** — Optional short description (e.g. “Vector retrieval; needs question and optional filters”) for inclusion in planner prompts or tool lists.
+
+**Helpers on the contract:** `PlannerInputDescriptor.collectRequiredFields(handlers)` returns the union of all required field keys. `PlannerInputDescriptor.collectPluginInfo(handlers)` returns a list of `PlannerPluginInfo` (plugin name, required fields, description, optional type). **`PlannerInputDescriptor.collectAvailableTools(handlers, typesToInclude)`** returns only plugins whose type is in `typesToInclude` (e.g. `Set.of(PluginTypes.TOOL)`), so you can send "available tools" to the planner LLM; see §8.5.
+
+Plugins that do not implement `PlannerInputDescriptor` are skipped when aggregating; no default is assumed.
+
+**Example:**
+```java
+public final class MyRetrievalPlugin implements StageHandler, PlannerInputDescriptor {
+
+    @Override
+    public Set<String> getRequiredInputFieldsForPlanner() {
+        return Set.of("question", "filters", "topK");
+    }
+
+    @Override
+    public String getPlannerDescription() {
+        return "Vector retrieval: needs question, optional filters and topK.";
+    }
+    // ... name(), execute(PluginContext)
+}
+```
+
+### 8.5 PluginTypeDescriptor (available tools by type)
+
+Implement **`PluginTypeDescriptor`** so the worker can **check the plugin type** and send only matching plugins as **available tools** to the planner. Use constants from **`PluginTypes`** (e.g. `PluginTypes.TOOL`, `PluginTypes.MODEL`) so types align with pipeline config `pluginType`.
+
+```java
+public interface PluginTypeDescriptor {
+
+    /** The plugin type (e.g. PluginTypes.TOOL, PluginTypes.MODEL). */
+    String getPluginType();
+}
+```
+
+When building the planner's "available tools" list, call **`PlannerInputDescriptor.collectAvailableTools(handlers, typesToInclude)`**: it returns only handlers that implement both `PlannerInputDescriptor` and `PluginTypeDescriptor` and whose `getPluginType()` is in `typesToInclude`. For example, to send only tool plugins:
+
+```java
+List<PlannerPluginInfo> availableTools = PlannerInputDescriptor.collectAvailableTools(
+    compatibleHandlers,
+    Set.of(PluginTypes.TOOL)
+);
+// Render availableTools as the planner LLM's tool list (name, required fields, description).
+```
+
+If `typesToInclude` is null or empty, all handlers that implement `PlannerInputDescriptor` are included (no type filter). `PlannerPluginInfo` includes an optional `pluginType` field when the handler implements `PluginTypeDescriptor`.
 
 ---
 

@@ -15,20 +15,26 @@
  */
 package com.openllmorchestrator.worker.plugin.output;
 
+import com.openllmorchestrator.worker.contract.ContractCompatibility;
 import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
+import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
+import com.openllmorchestrator.worker.contract.PluginTypes;
 import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.contract.StageResult;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Post-process stage that renders the model output as a single line: ANS: "&lt;response&gt;".
  * Reads "result" or "response" from accumulated output and writes "output" in that format.
  */
-public final class AnswerFormatPlugin implements StageHandler {
+public final class AnswerFormatPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
-    public static final String NAME = "AnswerFormatPlugin";
+    private static final String CONTRACT_VERSION = "0.0.1";
+    public static final String NAME = "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin";
     private static final String PREFIX = "ANS: \"";
 
     @Override
@@ -56,6 +62,26 @@ public final class AnswerFormatPlugin implements StageHandler {
         String formatted = PREFIX + escapeQuotes(text) + "\"";
         context.putOutput("output", formatted);
         return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+    }
+
+    @Override
+    public String getRequiredContractVersion() {
+        return CONTRACT_VERSION;
+    }
+
+    @Override
+    public Set<String> getRequiredInputFieldsForPlanner() {
+        return Set.of("result", "response");
+    }
+
+    @Override
+    public String getPlannerDescription() {
+        return "Refinement: format result/response as ANS: \"...\".";
+    }
+
+    @Override
+    public String getPluginType() {
+        return PluginTypes.REFINEMENT;
     }
 
     private static String escapeQuotes(String s) {

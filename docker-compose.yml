@@ -12,7 +12,8 @@ services:
       TEMPORAL_TARGET: ${TEMPORAL_TARGET:-temporal:7233}
       TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
       QUEUE_NAME: ${QUEUE_NAME:-core-task-queue}
-      CONFIG_FILE_PATH: ${CONFIG_FILE_PATH:-/app/config/engine-config.json}
+      # Optional: set to override file path; unset => config/<CONFIG_KEY>.json (e.g. /app/config/default.json)
+      CONFIG_FILE_PATH: ${CONFIG_FILE_PATH:-}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
       DB_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/olo_config}

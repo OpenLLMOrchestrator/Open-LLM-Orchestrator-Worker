@@ -66,6 +66,10 @@ public class EngineFileConfig {
      * At bootstrap the engine tries to load each JAR and register a StageHandler; if the file is missing or load fails, a no-op wrapper is registered and a log message is emitted. At runtime, if the plugin was not loaded, the wrapper logs and returns empty output.
      */
     private Map<String, String> dynamicPlugins;
+    /**
+     * JAR paths that provide multiple plugins via ServiceLoader. Each JAR is loaded with {@link com.openllmorchestrator.worker.engine.plugin.DynamicPluginLoader#loadAll(String)} and every StageHandler is registered by its {@link com.openllmorchestrator.worker.contract.StageHandler#name()}.
+     */
+    private List<String> dynamicPluginJars;
 
     /**
      * Allowed plugins for static pipelines and dynamic use (PLANNER, PLAN_EXECUTOR).
@@ -98,6 +102,7 @@ public class EngineFileConfig {
         merged.stagePlugins = fromStorage != null ? fromStorage.stagePlugins : null;
         merged.mergePolicies = fromStorage != null ? fromStorage.mergePolicies : null;
         merged.dynamicPlugins = fromStorage != null ? fromStorage.dynamicPlugins : null;
+        merged.dynamicPluginJars = fromStorage != null ? fromStorage.dynamicPluginJars : null;
         merged.plugins = fromStorage != null ? fromStorage.plugins : null;
         merged.enabledFeatures = fromStorage != null ? fromStorage.enabledFeatures : null;
         merged.queueTopology = fromStorage != null ? fromStorage.queueTopology : null;
@@ -144,6 +149,11 @@ public class EngineFileConfig {
     /** Effective dynamic plugin name → JAR path. */
     public Map<String, String> getDynamicPluginsEffective() {
         return dynamicPlugins != null ? dynamicPlugins : Collections.emptyMap();
+    }
+
+    /** Effective list of JAR paths that provide multiple plugins (loadAll). */
+    public List<String> getDynamicPluginJarsEffective() {
+        return dynamicPluginJars != null ? dynamicPluginJars : Collections.emptyList();
     }
 
     /** Allowed plugin names for static/dynamic use. Null or empty = no allow-list (all compatible plugins allowed). */

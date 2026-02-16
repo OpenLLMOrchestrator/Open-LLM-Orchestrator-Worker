@@ -21,12 +21,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-/** Reads engine config JSON from mounted file. Path from env. Write not supported. */
+/** Reads engine config JSON from mounted file. Path from env (default config/&lt;CONFIG_KEY&gt;.json). Write not supported. */
 public final class FileConfigRepository implements ConfigRepository {
+    private static final String DEFAULT_PATH = "config/default.json";
+
     private final String configFilePath;
 
     public FileConfigRepository(String configFilePath) {
-        this.configFilePath = configFilePath != null ? configFilePath : "config/engine-config.json";
+        this.configFilePath = configFilePath != null && !configFilePath.isBlank() ? configFilePath : DEFAULT_PATH;
     }
 
     @Override

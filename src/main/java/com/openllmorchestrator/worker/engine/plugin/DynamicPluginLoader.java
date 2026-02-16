@@ -24,6 +24,8 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
@@ -82,6 +84,42 @@ public final class DynamicPluginLoader {
             log.warn("Dynamic plugin '{}' failed to load from '{}': {}; skipping.", pluginName, resolved, e.getMessage(), e);
             return null;
         }
+    }
+
+    /**
+     * Load all StageHandler implementations from the given JAR. Each handler is registered by its {@link StageHandler#name()}.
+     * Use when one JAR provides multiple plugins (e.g. sample-plugins.jar).
+     *
+     * @param jarPath path to the JAR (absolute or relative to current working directory)
+     * @return map of plugin name to handler; empty if file missing, not a JAR, or no services found; never null
+     */
+    public static Map<String, StageHandler> loadAll(String jarPath) {
+        Map<String, StageHandler> out = new LinkedHashMap<>();
+        if (jarPath == null || jarPath.isBlank()) {
+            return out;
+        }
+        Path resolved = Paths.get(jarPath).normalize();
+        File file = resolved.toFile();
+        if (!file.exists() || !file.isFile() || !file.getName().toLowerCase().endsWith(".jar")) {
+            log.debug("Dynamic plugin JAR '{}' not available or not a JAR; skipping loadAll.", resolved);
+            return out;
+        }
+        try {
+            URL jarUrl = file.toURI().toURL();
+            try (URLClassLoader loader = new URLClassLoader(new URL[]{jarUrl}, Thread.currentThread().getContextClassLoader())) {
+                ServiceLoader<StageHandler> serviceLoader = ServiceLoader.load(StageHandler.class, loader);
+                for (StageHandler handler : serviceLoader) {
+                    String name = handler != null ? handler.name() : null;
+                    if (name != null && !name.isBlank()) {
+                        out.put(name, handler);
+                        log.info("Dynamic plugin '{}' loaded from JAR '{}'.", name, resolved);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Dynamic plugin JAR '{}' failed to load: {}; skipping.", resolved, e.getMessage(), e);
+        }
+        return out;
     }
 }
 

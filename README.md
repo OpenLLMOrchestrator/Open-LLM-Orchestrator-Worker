@@ -9,7 +9,7 @@ A **Temporal-native worker** that runs **config-driven pipelines** for document 
 ## What it does
 
 - **Runs workflows** on a Temporal task queue (`CoreWorkflow`): you send an `ExecutionCommand` with a pipeline name and input; the worker executes the pipeline and returns the accumulated output (including the LLM **result**).
-- **Pipelines** are defined in config (e.g. `config/engine-config.json`): recursive GROUP/STAGE trees or stage-based flows with SYNC/ASYNC groups. Each stage is implemented by a **plugin** (activity) registered by name.
+- **Pipelines** are defined in config (e.g. `config/default.json` or `config/<CONFIG_KEY>.json`): recursive GROUP/STAGE trees or stage-based flows with SYNC/ASYNC groups. Each stage is implemented by a **plugin** (activity) registered by name.
 - **Built-in pipelines** in the default config:
   - **document-ingestion** — Tokenize a document and store chunks in the vector store.
   - **document-ingestion-folder** — Read all files from a folder and store them as chunks.
@@ -55,7 +55,7 @@ For local development, **Temporal** is required; **Ollama** is optional (the LLM
    ```bash
    ./gradlew run
    ```
-   The worker loads config from `config/engine-config.json` (or Redis/DB if configured), connects to Temporal, and polls the task queue (`core-task-queue` by default).
+   The worker loads config in order **Redis → DB → file**. The file path is **`config/<CONFIG_KEY>.json`** (default: `config/default.json`) when `CONFIG_FILE_PATH` is unset. Set `CONFIG_KEY` in the environment to pick a different config (e.g. `config/production.json`). The worker then connects to Temporal and polls the task queue (`core-task-queue` by default).
 
 4. **Trigger a workflow** (e.g. from [Temporal Web UI](https://docs.temporal.io/develop/ui)):
    - **Workflow Type:** `CoreWorkflowImpl`
@@ -90,11 +90,11 @@ Workflow **input** is always an **ExecutionCommand**: `{ "pipelineName": "<id>",
 
 ## Configuration
 
-- **Location**: Config is loaded once at startup from (in order) **Redis** → **DB** → **file**. Default file: `config/engine-config.json`.
+- **Location**: Config is loaded once at startup in order **Redis** → **DB** → **file**. The file path is **`config/<CONFIG_KEY>.json`** when `CONFIG_FILE_PATH` is unset (e.g. `config/default.json` for `CONFIG_KEY=default`). Multiple config files can live in `config/` (e.g. `default.json`, `production.json`); set **`CONFIG_KEY`** to choose which one to load. When config is loaded from file, it is written back to Redis and DB so other pods can use it.
 - **Content**: `worker` (task queue), `temporal`, `activity` (timeouts/retry), `pipelines` (required), optional `redis`, `database`, `stageOrder`, `mergePolicies`. See [Config reference](docs/config-reference.md).
-- **Production**: Queue name, Redis, and DB URLs are overridden by **environment variables** (e.g. `QUEUE_NAME`, `REDIS_HOST`, `DB_URL`). See the [config reference — environment variables](docs/config-reference.md#production-environment-variables-container) section.
+- **Production**: Queue name, Redis, and DB URLs are overridden by **environment variables** (e.g. `QUEUE_NAME`, `REDIS_HOST`, `DB_URL`, `CONFIG_KEY`). See the [config reference — environment variables](docs/config-reference.md#production-environment-variables-container) section.
 
-Example config snippets and multiple pipeline examples are in **`docs/config-examples/`**.
+Example configs for each use case (minimal, full, stages, multi-pipeline, document-ingestion, chat-only, RAG, production) are in **`config-examples/`**.
 
 ---
 
@@ -102,7 +102,9 @@ Example config snippets and multiple pipeline examples are in **`docs/config-exa
 
 | Path | Description |
 |------|-------------|
-| **`config/engine-config.json`** | Default pipeline and worker config. |
+| **`config/`** | Config files: **`config/<CONFIG_KEY>.json`** (e.g. `config/default.json`). Load order: Redis → DB → file; file choice by `CONFIG_KEY`. |
+| **`config-examples/`** | Example configs per use case (minimal, full, stages, multi-pipeline, document-ingestion, chat-only, RAG, production). |
+| **`docs/README.md`** | Documentation index (all docs and config/env summary). |
 | **`docs/architecture.md`** | High-level architecture and package layout. |
 | **`docs/config-reference.md`** | Full config reference, env vars, and merge policies. |
 | **`docs/temporal-ui-rag-flows.md`** | Step-by-step: running train and question-answer flows from Temporal UI. |
@@ -124,6 +126,6 @@ Detailed steps and sample payloads: [Temporal UI: RAG flows](docs/temporal-ui-ra
 
 ## Docker
 
-- **Env file:** Copy `.env.example` to `.env` and set values (Temporal, queue, Redis, DB, Ollama, config path). All connection and plugin URLs are driven by env; see [Config reference — environment variables](docs/config-reference.md#production-environment-variables-container).
-- **Run with Compose:** `docker compose up -d` builds the worker image and starts the worker, Temporal, Redis, Postgres, and Ollama. The worker uses `TEMPORAL_TARGET=temporal:7233`, `OLLAMA_BASE_URL=http://ollama:11434`, and mounts `./config` for engine config. Override any variable in `.env`.
-- **Standalone image:** `docker build -t open-llm-orchestrator-worker .` then run with env vars or `--env-file .env` and a volume for `config/`.
+- **Env file:** Copy `.env.example` to `.env` and set values (Temporal, queue, Redis, DB, Ollama, `CONFIG_KEY`). All connection and plugin URLs are driven by env; see [Config reference — environment variables](docs/config-reference.md#production-environment-variables-container).
+- **Run with Compose:** `docker compose up -d` builds the worker image and starts the worker, Temporal, Redis, Postgres, and Ollama. The worker uses `TEMPORAL_TARGET=temporal:7233`, `OLLAMA_BASE_URL=http://ollama:11434`, and mounts `./config` for engine config. Config file is **`config/<CONFIG_KEY>.json`** (e.g. `/app/config/default.json`). Override any variable in `.env`.
+- **Standalone image:** `docker build -t open-llm-orchestrator-worker .` then run with env vars or `--env-file .env` and a volume for `config/` (ensure the chosen `config/<CONFIG_KEY>.json` exists).

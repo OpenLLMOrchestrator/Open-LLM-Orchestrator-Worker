@@ -12,7 +12,7 @@ High-level architecture and package layout for the worker engine.
 flowchart LR
     subgraph External["External"]
         Temporal[Temporal Server]
-        ConfigFile["config/engine-config.json"]
+        ConfigFile["config/<CONFIG_KEY>.json"]
     end
 
     subgraph Worker["Worker Process"]
@@ -29,7 +29,7 @@ flowchart LR
 ```
 
 - **Temporal** drives workflows and activities.
-- **Config file** is loaded once at bootstrap; pipeline is recursive (GROUP/STAGE tree).
+- **Config** is loaded once at bootstrap in order **Redis → DB → file**. File path is **`config/<CONFIG_KEY>.json`** (e.g. `config/default.json`) when `CONFIG_FILE_PATH` is unset. Pipeline is recursive (GROUP/STAGE tree).
 - **Worker** runs workflows and activities on the configured task queue.
 
 ---
@@ -350,7 +350,7 @@ flowchart TD
 
 | Concern | Location |
 |--------|----------|
-| Config file path | `config/engine-config.json` or `-Dengine.config.path` |
+| Config file path | `config/<CONFIG_KEY>.json` (e.g. `config/default.json`) when `CONFIG_FILE_PATH` unset; or `CONFIG_FILE_PATH` / `-Dengine.config.path` |
 | Root config | `engine.config.EngineFileConfig` |
 | Load config | `engine.config.loader.HierarchicalConfigLoader` (sources: Redis, DB, file) |
 | Validate config | `engine.config.validation.EngineConfigValidator` |
