@@ -38,7 +38,7 @@ public final class GroupNodeProcessor implements NodeProcessor {
             throw new IllegalStateException("Group recursion depth " + depth + " exceeds max " + effectiveMax);
         }
         if ("ASYNC".equalsIgnoreCase(node.getExecutionMode())) {
-            List<String> names = collectStageNames(node);
+            List<String> names = collectStageNames(node, ctx);
             int timeout = node.getTimeoutSeconds() != null ? node.getTimeoutSeconds() : ctx.getDefaultTimeoutSeconds();
             AsyncCompletionPolicy policy = node.getAsyncCompletionPolicy() != null && !node.getAsyncCompletionPolicy().isBlank()
                     ? AsyncCompletionPolicy.fromConfig(node.getAsyncCompletionPolicy())
@@ -52,7 +52,8 @@ public final class GroupNodeProcessor implements NodeProcessor {
                     ActivityOptionsFromConfig.scheduleToClose(node, ctx),
                     ActivityOptionsFromConfig.retryOptions(node, ctx),
                     policy,
-                    mergePolicyName
+                    mergePolicyName,
+                    ctx.getCurrentStageBucketName()
             );
         } else {
             for (NodeConfig child : node.getChildren()) {
@@ -68,15 +69,22 @@ public final class GroupNodeProcessor implements NodeProcessor {
         return legacyAsyncOutputMergePolicy != null && !legacyAsyncOutputMergePolicy.isBlank() ? legacyAsyncOutputMergePolicy : "LAST_WINS";
     }
 
-    private static List<String> collectStageNames(NodeConfig node) {
+    private static List<String> collectStageNames(NodeConfig node, PlanBuildContext ctx) {
         List<String> names = new ArrayList<>();
         for (NodeConfig child : node.getChildren()) {
             if (child.isStage()) {
-                names.add(child.getName());
+                String name = child.getName();
+                if (ctx.getAllowedPluginNames() != null && !ctx.getAllowedPluginNames().contains(name)) {
+                    throw new IllegalStateException(
+                            "Plugin not allowed or incompatible: " + name
+                                    + ". Add it to config.plugins and ensure contract compatibility.");
+                }
+                names.add(name);
             } else if (child.isGroup()) {
-                names.addAll(collectStageNames(child));
+                names.addAll(collectStageNames(child, ctx));
             }
         }
         return names;
     }
 }
+

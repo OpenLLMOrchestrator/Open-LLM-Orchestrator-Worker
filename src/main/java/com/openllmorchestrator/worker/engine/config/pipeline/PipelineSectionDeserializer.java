@@ -69,3 +69,4 @@ public final class PipelineSectionDeserializer extends JsonDeserializer<Pipeline
         return section;
     }
 }
+

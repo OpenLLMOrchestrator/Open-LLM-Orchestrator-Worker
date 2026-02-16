@@ -36,4 +36,7 @@ public class StageDefinition {
     private final Duration scheduleToCloseTimeout;
     /** Optional retry policy; null = use default from config. */
     private final StageRetryOptions retryOptions;
+    /** Stage bucket name (e.g. RETRIEVAL, MODEL) for Temporal UI activity summary; null = use plugin name only. */
+    private final String stageBucketName;
 }
+

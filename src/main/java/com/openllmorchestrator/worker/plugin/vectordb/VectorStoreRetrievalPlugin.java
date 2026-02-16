@@ -15,9 +15,9 @@
  */
 package com.openllmorchestrator.worker.plugin.vectordb;
 
-import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.contract.StageResult;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.StageHandler;
+import com.openllmorchestrator.worker.contract.StageResult;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ public final class VectorStoreRetrievalPlugin implements StageHandler {
     }
 
     @Override
-    public StageResult execute(ExecutionContext context) {
+    public StageResult execute(PluginContext context) {
         Map<String, Object> accumulated = context.getAccumulatedOutput();
         Map<String, Object> input = context.getOriginalInput();
 
@@ -58,3 +58,5 @@ public final class VectorStoreRetrievalPlugin implements StageHandler {
         return new ArrayList<>();
     }
 }
+
+

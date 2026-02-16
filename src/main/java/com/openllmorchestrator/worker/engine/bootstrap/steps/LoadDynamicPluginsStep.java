@@ -19,7 +19,7 @@ import com.openllmorchestrator.worker.engine.bootstrap.BootstrapContext;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapStep;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.plugin.DynamicPluginLoader;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.engine.stage.activity.ActivityRegistry;
 import com.openllmorchestrator.worker.engine.stage.handler.DynamicPluginWrapper;
 
@@ -60,3 +60,4 @@ public final class LoadDynamicPluginsStep implements BootstrapStep {
         ctx.setActivityRegistry(builder.build());
     }
 }
+

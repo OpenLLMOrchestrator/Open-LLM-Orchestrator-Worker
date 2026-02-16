@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.stage.predefined;
 
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.StageHandler;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -63,3 +63,4 @@ public final class PredefinedPluginBucket {
         }
     }
 }
+

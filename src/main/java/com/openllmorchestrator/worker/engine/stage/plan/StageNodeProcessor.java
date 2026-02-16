@@ -31,6 +31,11 @@ public final class StageNodeProcessor implements NodeProcessor {
 
     @Override
     public void process(NodeConfig node, PlanBuildContext ctx, StagePlanBuilder builder, PipelineWalker walker, int depth) {
+        if (ctx.getAllowedPluginNames() != null && !ctx.getAllowedPluginNames().contains(node.getName())) {
+            throw new IllegalStateException(
+                    "Plugin not allowed or incompatible: " + node.getName()
+                            + ". Add it to config.plugins and ensure contract compatibility.");
+        }
         int timeout = node.getTimeoutSeconds() != null ? node.getTimeoutSeconds() : ctx.getDefaultTimeoutSeconds();
         builder.addSyncWithCustomConfig(
                 node.getName(),
@@ -39,7 +44,9 @@ public final class StageNodeProcessor implements NodeProcessor {
                 ctx.getTaskQueue(),
                 ActivityOptionsFromConfig.scheduleToStart(node, ctx),
                 ActivityOptionsFromConfig.scheduleToClose(node, ctx),
-                ActivityOptionsFromConfig.retryOptions(node, ctx)
+                ActivityOptionsFromConfig.retryOptions(node, ctx),
+                ctx.getCurrentStageBucketName()
         );
     }
 }
+

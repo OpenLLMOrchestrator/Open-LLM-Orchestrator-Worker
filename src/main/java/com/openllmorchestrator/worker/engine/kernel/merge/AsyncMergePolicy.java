@@ -32,3 +32,4 @@ public interface AsyncMergePolicy {
      */
     void mergeAll(Map<String, Object> accumulated, List<AsyncOutputMergePolicy.NamedStageResult> results);
 }
+

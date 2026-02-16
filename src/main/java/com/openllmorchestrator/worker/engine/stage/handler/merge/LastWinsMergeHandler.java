@@ -16,9 +16,9 @@
 package com.openllmorchestrator.worker.engine.stage.handler.merge;
 
 import com.openllmorchestrator.worker.engine.contract.AsyncGroupResultEntry;
-import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.contract.StageResult;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.StageHandler;
+import com.openllmorchestrator.worker.contract.StageResult;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,7 +36,7 @@ public final class LastWinsMergeHandler implements StageHandler {
     }
 
     @Override
-    public StageResult execute(ExecutionContext context) {
+    public StageResult execute(PluginContext context) {
         Map<String, Object> merged = merge(context);
         for (Map.Entry<String, Object> e : merged.entrySet()) {
             context.putOutput(e.getKey(), e.getValue());
@@ -44,7 +44,7 @@ public final class LastWinsMergeHandler implements StageHandler {
         return StageResult.builder().stageName(NAME).data(merged).build();
     }
 
-    private static Map<String, Object> merge(ExecutionContext context) {
+    private static Map<String, Object> merge(PluginContext context) {
         Map<String, Object> acc = new HashMap<>(context.getAccumulatedOutput());
         List<AsyncGroupResultEntry> results = getResults(context);
         for (AsyncGroupResultEntry entry : results) {
@@ -56,8 +56,10 @@ public final class LastWinsMergeHandler implements StageHandler {
     }
 
     @SuppressWarnings("unchecked")
-    private static List<AsyncGroupResultEntry> getResults(ExecutionContext context) {
+    private static List<AsyncGroupResultEntry> getResults(PluginContext context) {
         Object o = context.get("asyncStageResults");
         return o instanceof List ? (List<AsyncGroupResultEntry>) o : Collections.emptyList();
     }
 }
+
+

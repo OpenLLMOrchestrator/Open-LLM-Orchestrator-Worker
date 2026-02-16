@@ -31,3 +31,4 @@ public class WorkerConfig {
         return new WorkerConfig(queueName, strictBoot);
     }
 }
+

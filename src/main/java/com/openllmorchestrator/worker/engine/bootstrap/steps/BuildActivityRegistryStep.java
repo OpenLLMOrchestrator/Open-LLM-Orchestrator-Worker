@@ -18,7 +18,7 @@ package com.openllmorchestrator.worker.engine.bootstrap.steps;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapContext;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapStep;
 import com.openllmorchestrator.worker.engine.stage.activity.ActivityRegistry;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.engine.stage.handler.merge.FirstWinsMergeHandler;
 import com.openllmorchestrator.worker.engine.stage.handler.merge.LastWinsMergeHandler;
 import com.openllmorchestrator.worker.engine.stage.handler.merge.PrefixByActivityMergeHandler;
@@ -80,3 +80,4 @@ public final class BuildActivityRegistryStep implements BootstrapStep {
         ctx.setActivityRegistry(registry);
     }
 }
+

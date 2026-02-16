@@ -40,3 +40,4 @@ public interface MergePolicyActivity {
                               Map<String, Object> accumulatedOutput,
                               List<AsyncGroupResultEntry> asyncResults);
 }
+

@@ -15,9 +15,9 @@
  */
 package com.openllmorchestrator.worker.engine.stage.handler;
 
-import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.contract.StageResult;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.StageHandler;
+import com.openllmorchestrator.worker.contract.StageResult;
 
 /** Default ACCESS stage handler. Reads originalInput/accumulatedOutput; writes output via putOutput. */
 public final class AccessStageHandler implements StageHandler {
@@ -29,9 +29,11 @@ public final class AccessStageHandler implements StageHandler {
     }
 
     @Override
-    public StageResult execute(ExecutionContext context) {
+    public StageResult execute(PluginContext context) {
         // Plugins can read: context.getOriginalInput(), context.getAccumulatedOutput()
         // and write: context.putOutput(key, value) for consumption by next stages
         return StageResult.builder().stageName(NAME).build();
     }
 }
+
+

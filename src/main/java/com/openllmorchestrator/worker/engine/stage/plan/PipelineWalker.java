@@ -22,3 +22,4 @@ import com.openllmorchestrator.worker.engine.stage.StagePlanBuilder;
 public interface PipelineWalker {
     void processNode(NodeConfig node, PlanBuildContext ctx, StagePlanBuilder builder, int depth);
 }
+

@@ -22,3 +22,4 @@ import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
 public interface ConfigValidator {
     void validate(EngineFileConfig config, StageResolver resolver);
 }
+

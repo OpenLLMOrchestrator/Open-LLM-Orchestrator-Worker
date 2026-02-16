@@ -21,22 +21,36 @@ import java.util.Set;
 /** Predefined pipeline stage names. Others are custom and use custom bucket. */
 public final class PredefinedStages {
     public static final String ACCESS = "ACCESS";
-    public static final String MEMORY = "MEMORY";
-    public static final String RETRIEVAL = "RETRIEVAL";
+    public static final String PRE_CONTEXT_SETUP = "PRE_CONTEXT_SETUP";
+    /** LLM call to design further execution structure; typically runs last in planning phase. */
+    public static final String PLANNER = "PLANNER";
+    public static final String PLAN_EXECUTOR = "PLAN_EXECUTOR";
+    public static final String EXECUTION_CONTROLLER = "EXECUTION_CONTROLLER";
+    public static final String ITERATIVE_BLOCK = "ITERATIVE_BLOCK";
     public static final String MODEL = "MODEL";
-    public static final String MCP = "MCP";
+    public static final String RETRIEVAL = "RETRIEVAL";
     public static final String TOOL = "TOOL";
+    public static final String MCP = "MCP";
+    public static final String MEMORY = "MEMORY";
+    public static final String REFLECTION = "REFLECTION";
+    public static final String SUB_OBSERVABILITY = "SUB_OBSERVABILITY";
+    public static final String SUB_CUSTOM = "SUB_CUSTOM";
+    public static final String ITERATIVE_BLOCK_END = "ITERATIVE_BLOCK_END";
     public static final String FILTER = "FILTER";
+    public static final String CUSTOM = "CUSTOM";
     public static final String POST_PROCESS = "POST_PROCESS";
     public static final String OBSERVABILITY = "OBSERVABILITY";
-    public static final String CUSTOM = "CUSTOM";
 
     private static final Set<String> NAMES = Set.of(
-            ACCESS, MEMORY, RETRIEVAL, MODEL, MCP, TOOL, FILTER, POST_PROCESS, OBSERVABILITY, CUSTOM);
+            ACCESS, PRE_CONTEXT_SETUP, PLANNER, PLAN_EXECUTOR, EXECUTION_CONTROLLER, ITERATIVE_BLOCK,
+            MODEL, RETRIEVAL, TOOL, MCP, MEMORY, REFLECTION, SUB_OBSERVABILITY,
+            SUB_CUSTOM, ITERATIVE_BLOCK_END, FILTER, POST_PROCESS, OBSERVABILITY, CUSTOM);
 
     /** Canonical order for execution when config does not set stageOrder. */
     private static final List<String> ORDERED_NAMES = List.of(
-            ACCESS, MEMORY, RETRIEVAL, MODEL, MCP, TOOL, FILTER, POST_PROCESS, OBSERVABILITY, CUSTOM);
+            ACCESS, PRE_CONTEXT_SETUP, PLANNER, PLAN_EXECUTOR, EXECUTION_CONTROLLER, ITERATIVE_BLOCK,
+            MODEL, RETRIEVAL, TOOL, MCP, MEMORY, REFLECTION, SUB_OBSERVABILITY,
+            SUB_CUSTOM, ITERATIVE_BLOCK_END, FILTER, POST_PROCESS, OBSERVABILITY, CUSTOM);
 
     private PredefinedStages() {}
 
@@ -53,3 +67,4 @@ public final class PredefinedStages {
         return ORDERED_NAMES;
     }
 }
+

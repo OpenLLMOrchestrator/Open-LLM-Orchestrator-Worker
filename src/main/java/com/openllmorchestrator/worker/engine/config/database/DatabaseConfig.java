@@ -32,3 +32,4 @@ public class DatabaseConfig {
         return new DatabaseConfig(url, username, password != null ? password : "");
     }
 }
+

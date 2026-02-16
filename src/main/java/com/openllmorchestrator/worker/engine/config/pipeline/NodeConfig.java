@@ -60,3 +60,4 @@ public class NodeConfig {
         return "STAGE".equalsIgnoreCase(type);
     }
 }
+

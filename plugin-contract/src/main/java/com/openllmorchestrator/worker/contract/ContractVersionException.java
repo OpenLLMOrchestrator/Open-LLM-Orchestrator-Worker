@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.openllmorchestrator.worker.engine.contract;
+package com.openllmorchestrator.worker.contract;
 
-import lombok.*;
+/**
+ * Thrown when a plugin declares a required contract version that is not compatible
+ * with the runtime contract version (see {@link ContractVersion#requireCompatible(StageHandler)}).
+ */
+public class ContractVersionException extends IllegalStateException {
 
-import java.util.Map;
+    public ContractVersionException(String message) {
+        super(message);
+    }
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class StageResult {
-
-    private String stageName;
-    private Map<String, Object> data;
+    public ContractVersionException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

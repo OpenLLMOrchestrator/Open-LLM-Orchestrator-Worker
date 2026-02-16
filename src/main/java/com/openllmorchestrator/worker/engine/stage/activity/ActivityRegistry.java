@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.stage.activity;
 
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.engine.stage.handler.PluginActivityHandler;
 
 import java.util.Collections;
@@ -110,3 +110,4 @@ public final class ActivityRegistry {
         }
     }
 }
+

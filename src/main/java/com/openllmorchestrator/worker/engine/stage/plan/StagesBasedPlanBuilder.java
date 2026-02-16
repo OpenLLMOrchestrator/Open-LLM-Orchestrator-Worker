@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Builds StagePlan from pipeline.stages: top-level stages, each with groups (sync/async recursive);
@@ -50,6 +51,12 @@ public final class StagesBasedPlanBuilder {
 
     /** Build from a specific pipeline section (for named pipelines). */
     public static void build(EngineFileConfig fileConfig, PipelineSection section, StagePlanBuilder builder) {
+        build(fileConfig, section, builder, null);
+    }
+
+    /** Build from a specific pipeline section; when allowedPluginNames is non-null, only those plugins may appear. */
+    public static void build(EngineFileConfig fileConfig, PipelineSection section, StagePlanBuilder builder,
+                             Set<String> allowedPluginNames) {
         if (fileConfig == null || section == null) {
             return;
         }
@@ -63,7 +70,9 @@ public final class StagesBasedPlanBuilder {
                 fileConfig.getWorker().getQueueName(),
                 fileConfig.getActivity(),
                 section.getDefaultAsyncCompletionPolicy(),
-                defaultMaxDepth
+                defaultMaxDepth,
+                null,
+                allowedPluginNames
         );
         for (StageBlockConfig stageBlock : stages) {
             if (stageBlock == null || stageBlock.getGroupsSafe().isEmpty()) {
@@ -90,7 +99,7 @@ public final class StagesBasedPlanBuilder {
         StageRetryOptions retryOptions = ActivityOptionsFromConfig.retryOptions(null, ctx);
 
         if (group.isAsync()) {
-            List<String> activityNames = flattenActivityNames(group);
+            List<String> activityNames = flattenActivityNames(group, ctx);
             AsyncCompletionPolicy policy = group.getAsyncCompletionPolicy() != null && !group.getAsyncCompletionPolicy().isBlank()
                     ? AsyncCompletionPolicy.fromConfig(group.getAsyncCompletionPolicy())
                     : ctx.getDefaultAsyncPolicy();
@@ -112,6 +121,11 @@ public final class StagesBasedPlanBuilder {
                 if (child instanceof String) {
                     String name = ((String) child).trim();
                     if (!name.isEmpty()) {
+                        if (ctx.getAllowedPluginNames() != null && !ctx.getAllowedPluginNames().contains(name)) {
+                            throw new IllegalStateException(
+                                    "Plugin not allowed or incompatible: " + name
+                                            + ". Add it to config.plugins and ensure contract compatibility.");
+                        }
                         builder.addSyncWithCustomConfig(
                                 name,
                                 StageExecutionMode.SYNC,
@@ -144,19 +158,25 @@ public final class StagesBasedPlanBuilder {
         return "LAST_WINS";
     }
 
-    private static List<String> flattenActivityNames(GroupConfig group) {
+    private static List<String> flattenActivityNames(GroupConfig group, PlanBuildContext ctx) {
         List<String> out = new ArrayList<>();
         for (Object child : group.getChildrenAsList()) {
             if (child instanceof String) {
                 String name = ((String) child).trim();
                 if (!name.isEmpty()) {
+                    if (ctx.getAllowedPluginNames() != null && !ctx.getAllowedPluginNames().contains(name)) {
+                        throw new IllegalStateException(
+                                "Plugin not allowed or incompatible: " + name
+                                        + ". Add it to config.plugins and ensure contract compatibility.");
+                    }
                     out.add(name);
                 }
             } else if (child instanceof Map) {
                 GroupConfig nested = MAPPER.convertValue(child, GroupConfig.class);
-                out.addAll(flattenActivityNames(nested));
+                out.addAll(flattenActivityNames(nested, ctx));
             }
         }
         return out;
     }
 }
+

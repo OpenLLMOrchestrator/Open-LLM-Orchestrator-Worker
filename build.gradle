@@ -11,6 +11,7 @@ repositories {
 }
 
 dependencies {
+    implementation project(':plugin-contract')
     implementation 'io.temporal:temporal-sdk:1.24.1'
     implementation 'org.slf4j:slf4j-simple:2.0.9'
     implementation 'redis.clients:jedis:5.1.0'
@@ -25,6 +26,8 @@ dependencies {
 application {
     mainClass = 'com.openllmorchestrator.worker.WorkerApplication'
     applicationName = 'worker'
+    // Bundle plugin JARs from plugins/ into the distribution (plugins/*.jar are gitignored)
+    applicationDistribution.from(fileTree(dir: 'plugins', include: '*.jar')).into('plugins')
 }
 
 java {

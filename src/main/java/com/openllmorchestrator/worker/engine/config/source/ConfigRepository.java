@@ -26,3 +26,4 @@ public interface ConfigRepository {
     /** Stores config JSON. */
     void set(String configJson);
 }
+

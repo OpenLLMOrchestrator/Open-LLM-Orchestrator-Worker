@@ -31,6 +31,14 @@ public final class StagePlanBuilder {
                                                     Duration timeout, String taskQueue,
                                                     Duration scheduleToStart, Duration scheduleToClose,
                                                     StageRetryOptions retryOptions) {
+        return addSyncWithCustomConfig(stageName, mode, timeout, taskQueue, scheduleToStart, scheduleToClose, retryOptions, null);
+    }
+
+    public StagePlanBuilder addSyncWithCustomConfig(String stageName, StageExecutionMode mode,
+                                                    Duration timeout, String taskQueue,
+                                                    Duration scheduleToStart, Duration scheduleToClose,
+                                                    StageRetryOptions retryOptions,
+                                                    String stageBucketName) {
         StageDefinition def = StageDefinition.builder()
                 .name(stageName)
                 .executionMode(mode)
@@ -40,6 +48,7 @@ public final class StagePlanBuilder {
                 .scheduleToStartTimeout(scheduleToStart)
                 .scheduleToCloseTimeout(scheduleToClose)
                 .retryOptions(retryOptions)
+                .stageBucketName(stageBucketName)
                 .build();
         groups.add(new StageGroupSpec(Collections.singletonList(def), null));
         return this;
@@ -58,10 +67,19 @@ public final class StagePlanBuilder {
                                           StageRetryOptions retryOptions,
                                           AsyncCompletionPolicy asyncPolicy,
                                           String asyncOutputMergePolicyName) {
+        return addAsyncGroup(stageNames, timeout, taskQueue, scheduleToStart, scheduleToClose, retryOptions, asyncPolicy, asyncOutputMergePolicyName, null);
+    }
+
+    public StagePlanBuilder addAsyncGroup(List<String> stageNames, Duration timeout, String taskQueue,
+                                          Duration scheduleToStart, Duration scheduleToClose,
+                                          StageRetryOptions retryOptions,
+                                          AsyncCompletionPolicy asyncPolicy,
+                                          String asyncOutputMergePolicyName,
+                                          String stageBucketName) {
         List<StageDefinition> definitions = new ArrayList<>();
-        for (String stageName : stageNames) {
+        for (String name : stageNames) {
             definitions.add(StageDefinition.builder()
-                    .name(stageName)
+                    .name(name)
                     .executionMode(StageExecutionMode.ASYNC)
                     .group(groupCounter)
                     .taskQueue(taskQueue)
@@ -69,6 +87,7 @@ public final class StagePlanBuilder {
                     .scheduleToStartTimeout(scheduleToStart)
                     .scheduleToCloseTimeout(scheduleToClose)
                     .retryOptions(retryOptions)
+                    .stageBucketName(stageBucketName)
                     .build());
         }
         groupCounter++;
@@ -81,3 +100,4 @@ public final class StagePlanBuilder {
         return new StagePlan(groups);
     }
 }
+

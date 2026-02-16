@@ -37,3 +37,4 @@ public class StageBlockConfig {
         return groups != null ? groups : Collections.emptyList();
     }
 }
+

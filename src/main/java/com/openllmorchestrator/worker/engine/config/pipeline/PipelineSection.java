@@ -49,3 +49,4 @@ public class PipelineSection {
      */
     private Map<String, NodeConfig> rootByStage;
 }
+

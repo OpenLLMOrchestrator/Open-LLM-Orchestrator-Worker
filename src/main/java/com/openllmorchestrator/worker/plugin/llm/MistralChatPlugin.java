@@ -22,3 +22,4 @@ public final class MistralChatPlugin extends FixedModelChatPlugin {
     @Override protected String getModelId() { return "mistral:latest"; }
     @Override protected String getModelLabel() { return "mistral"; }
 }
+

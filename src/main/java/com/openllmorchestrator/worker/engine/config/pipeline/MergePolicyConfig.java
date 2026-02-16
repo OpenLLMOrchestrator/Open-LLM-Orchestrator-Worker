@@ -33,3 +33,4 @@ public class MergePolicyConfig {
     /** Activity/plugin name or FQCN (e.g. "LAST_WINS", "com.example.plugin.RankedMerge"). */
     private String name;
 }
+

@@ -57,3 +57,4 @@ public class GroupConfig {
         return "SYNC".equalsIgnoreCase(executionMode);
     }
 }
+

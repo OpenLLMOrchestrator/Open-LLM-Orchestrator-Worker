@@ -33,3 +33,4 @@ public interface OutputMergePolicy {
      */
     void merge(Map<String, Object> accumulated, Map<String, Object> pluginOutput, String sourceId);
 }
+

@@ -22,3 +22,4 @@ public final class Llama32FixedChatPlugin extends FixedModelChatPlugin {
     @Override protected String getModelId() { return "llama3.2:latest"; }
     @Override protected String getModelLabel() { return "llama3.2"; }
 }
+

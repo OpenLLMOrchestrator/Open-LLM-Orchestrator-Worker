@@ -16,10 +16,12 @@
 package com.openllmorchestrator.worker.engine.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.openllmorchestrator.worker.engine.contract.ExecutionGraph;
 import com.openllmorchestrator.worker.engine.config.activity.ActivityDefaultsConfig;
 import com.openllmorchestrator.worker.engine.config.database.DatabaseConfig;
 import com.openllmorchestrator.worker.engine.config.env.EnvConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
+import com.openllmorchestrator.worker.engine.config.queue.QueueTopologyConfig;
 import com.openllmorchestrator.worker.engine.config.redis.RedisConfig;
 import com.openllmorchestrator.worker.engine.config.temporal.TemporalConfig;
 import com.openllmorchestrator.worker.engine.config.worker.WorkerConfig;
@@ -29,6 +31,7 @@ import lombok.Setter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Root engine config. One package per section (OCP). Nothing hardcoded in engine. */
 @Getter
@@ -64,6 +67,23 @@ public class EngineFileConfig {
      */
     private Map<String, String> dynamicPlugins;
 
+    /**
+     * Allowed plugins for static pipelines and dynamic use (PLANNER, PLAN_EXECUTOR).
+     * List of plugin names (FQCN or activity id) that may be used. At bootstrap the engine checks each for
+     * contract compatibility and builds a compatible map; only these plugins are available for static pipeline
+     * structure and for dynamic resolution. If null or empty, all registered plugins that pass compatibility are allowed.
+     */
+    private List<String> plugins;
+
+    /**
+     * Enabled feature flags by name (e.g. HUMAN_SIGNAL, STREAMING, AGENT_CONTEXT).
+     * Only these features execute; disabled features run no code. Loaded at bootstrap.
+     */
+    private List<String> enabledFeatures;
+
+    /** Queue topology for concurrency isolation (queue-per-stage, queue-per-tenant). When CONCURRENCY_ISOLATION enabled. */
+    private QueueTopologyConfig queueTopology;
+
     /** Merge: connection config (queue, redis, db) from env; server config from storage. */
     public static EngineFileConfig mergeFromEnv(EnvConfig env, EngineFileConfig fromStorage) {
         EngineFileConfig merged = new EngineFileConfig();
@@ -78,7 +98,16 @@ public class EngineFileConfig {
         merged.stagePlugins = fromStorage != null ? fromStorage.stagePlugins : null;
         merged.mergePolicies = fromStorage != null ? fromStorage.mergePolicies : null;
         merged.dynamicPlugins = fromStorage != null ? fromStorage.dynamicPlugins : null;
+        merged.plugins = fromStorage != null ? fromStorage.plugins : null;
+        merged.enabledFeatures = fromStorage != null ? fromStorage.enabledFeatures : null;
+        merged.queueTopology = fromStorage != null ? fromStorage.queueTopology : null;
         return merged;
+    }
+
+    /** Effective feature flags from config; when null/empty, no optional features are enabled. */
+    public com.openllmorchestrator.worker.engine.config.FeatureFlags getFeatureFlagsEffective() {
+        return com.openllmorchestrator.worker.engine.config.FeatureFlags.fromNames(
+                enabledFeatures != null ? enabledFeatures : List.of());
     }
 
     /** Effective merge policies from config (may be null/empty). */
@@ -92,6 +121,14 @@ public class EngineFileConfig {
             return stageOrder;
         }
         return com.openllmorchestrator.worker.engine.stage.predefined.PredefinedStages.orderedNames();
+    }
+
+    /**
+     * Effective execution graph. When only stageOrder is set, a linear graph is built (backward compatibility).
+     * For future DAG support, config can provide an explicit graph; until then, graph is derived from stageOrder.
+     */
+    public ExecutionGraph getExecutionGraphEffective() {
+        return ExecutionGraph.fromLinearOrder(getStageOrderEffective());
     }
 
     /** Effective stage plugins: engine-level if set. */
@@ -108,4 +145,13 @@ public class EngineFileConfig {
     public Map<String, String> getDynamicPluginsEffective() {
         return dynamicPlugins != null ? dynamicPlugins : Collections.emptyMap();
     }
+
+    /** Allowed plugin names for static/dynamic use. Null or empty = no allow-list (all compatible plugins allowed). */
+    public Set<String> getPluginsEffective() {
+        if (plugins == null || plugins.isEmpty()) {
+            return null;
+        }
+        return Set.copyOf(plugins);
+    }
 }
+

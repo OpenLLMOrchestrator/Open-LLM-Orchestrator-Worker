@@ -24,3 +24,4 @@ public interface NodeProcessor {
 
     void process(NodeConfig node, PlanBuildContext ctx, StagePlanBuilder builder, PipelineWalker walker, int depth);
 }
+

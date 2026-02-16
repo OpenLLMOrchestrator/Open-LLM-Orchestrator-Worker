@@ -23,6 +23,9 @@ import com.openllmorchestrator.worker.engine.stage.handler.McpStageHandler;
 import com.openllmorchestrator.worker.engine.stage.handler.MemoryStageHandler;
 import com.openllmorchestrator.worker.engine.stage.handler.ModelStageHandler;
 import com.openllmorchestrator.worker.engine.stage.handler.ObservabilityStageHandler;
+import com.openllmorchestrator.worker.engine.stage.handler.PlanExecutorStageHandler;
+import com.openllmorchestrator.worker.engine.stage.handler.PlannerStageHandler;
+import com.openllmorchestrator.worker.engine.stage.handler.PluginActivityHandler;
 import com.openllmorchestrator.worker.engine.stage.handler.PostProcessStageHandler;
 import com.openllmorchestrator.worker.engine.stage.handler.RetrievalStageHandler;
 import com.openllmorchestrator.worker.engine.stage.handler.ToolStageHandler;
@@ -42,11 +45,20 @@ public final class StageBucketFactory {
     public static PredefinedPluginBucket.Builder predefinedBucketBuilder() {
         return PredefinedPluginBucket.builder()
                 .register(PredefinedStages.ACCESS, DEFAULT_PLUGIN_ID, new AccessStageHandler())
-                .register(PredefinedStages.MEMORY, DEFAULT_PLUGIN_ID, new MemoryStageHandler())
-                .register(PredefinedStages.RETRIEVAL, DEFAULT_PLUGIN_ID, new RetrievalStageHandler())
+                .register(PredefinedStages.PRE_CONTEXT_SETUP, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.PRE_CONTEXT_SETUP))
+                .register(PredefinedStages.PLANNER, DEFAULT_PLUGIN_ID, new PlannerStageHandler())
+                .register(PredefinedStages.PLAN_EXECUTOR, DEFAULT_PLUGIN_ID, new PlanExecutorStageHandler())
+                .register(PredefinedStages.EXECUTION_CONTROLLER, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.EXECUTION_CONTROLLER))
+                .register(PredefinedStages.ITERATIVE_BLOCK, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.ITERATIVE_BLOCK))
                 .register(PredefinedStages.MODEL, DEFAULT_PLUGIN_ID, new ModelStageHandler())
-                .register(PredefinedStages.MCP, DEFAULT_PLUGIN_ID, new McpStageHandler())
+                .register(PredefinedStages.RETRIEVAL, DEFAULT_PLUGIN_ID, new RetrievalStageHandler())
                 .register(PredefinedStages.TOOL, DEFAULT_PLUGIN_ID, new ToolStageHandler())
+                .register(PredefinedStages.MCP, DEFAULT_PLUGIN_ID, new McpStageHandler())
+                .register(PredefinedStages.MEMORY, DEFAULT_PLUGIN_ID, new MemoryStageHandler())
+                .register(PredefinedStages.REFLECTION, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.REFLECTION))
+                .register(PredefinedStages.SUB_OBSERVABILITY, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.SUB_OBSERVABILITY))
+                .register(PredefinedStages.SUB_CUSTOM, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.SUB_CUSTOM))
+                .register(PredefinedStages.ITERATIVE_BLOCK_END, DEFAULT_PLUGIN_ID, new PluginActivityHandler(PredefinedStages.ITERATIVE_BLOCK_END))
                 .register(PredefinedStages.FILTER, DEFAULT_PLUGIN_ID, new FilterStageHandler())
                 .register(PredefinedStages.POST_PROCESS, DEFAULT_PLUGIN_ID, new PostProcessStageHandler())
                 .register(PredefinedStages.OBSERVABILITY, DEFAULT_PLUGIN_ID, new ObservabilityStageHandler())
@@ -57,3 +69,4 @@ public final class StageBucketFactory {
         return CustomStageBucket.builder().build();
     }
 }
+

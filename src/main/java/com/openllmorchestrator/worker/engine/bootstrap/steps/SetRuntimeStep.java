@@ -26,6 +26,8 @@ public final class SetRuntimeStep implements BootstrapStep {
         EngineRuntime.setStageResolver(ctx.getResolver());
         EngineRuntime.setConfig(ctx.getConfig());
         EngineRuntime.setStagePlans(ctx.getPlans());
+        EngineRuntime.setFeatureFlags(ctx.getConfig().getFeatureFlagsEffective());
         EngineRuntime.CONFIG = ctx.getConfig();
     }
 }
+

@@ -15,9 +15,9 @@
  */
 package com.openllmorchestrator.worker.plugin.tokenizer;
 
-import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.contract.StageResult;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.StageHandler;
+import com.openllmorchestrator.worker.contract.StageResult;
 
 import java.util.List;
 import java.util.Map;
@@ -36,7 +36,7 @@ public final class DocumentTokenizerPlugin implements StageHandler {
     }
 
     @Override
-    public StageResult execute(ExecutionContext context) {
+    public StageResult execute(PluginContext context) {
         Map<String, Object> input = context.getOriginalInput();
 
         Object docObj = input.get("document");
@@ -56,3 +56,5 @@ public final class DocumentTokenizerPlugin implements StageHandler {
         return List.of(Map.<String, Object>of("text", content, "index", 0));
     }
 }
+
+

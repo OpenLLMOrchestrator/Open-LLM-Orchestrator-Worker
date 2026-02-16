@@ -24,6 +24,8 @@ import java.util.List;
 /**
  * Execution hierarchy: ordered list of stage groups. Built once at bootstrap from config
  * and reused for the container lifecycle. Immutable; holds no transactional or request-scoped data.
+ * Graph-capable: each group may declare {@link StageGroupSpec#getDependsOnGroupIndices()}; kernel runs
+ * a group when all its dependencies have completed (deterministic ready set).
  */
 @Getter
 public class StagePlan {
@@ -37,3 +39,4 @@ public class StagePlan {
         return new StagePlanBuilder();
     }
 }
+

@@ -15,9 +15,9 @@
  */
 package com.openllmorchestrator.worker.plugin.output;
 
-import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.contract.StageResult;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.StageHandler;
+import com.openllmorchestrator.worker.contract.StageResult;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +37,7 @@ public final class AnswerFormatPlugin implements StageHandler {
     }
 
     @Override
-    public StageResult execute(ExecutionContext context) {
+    public StageResult execute(PluginContext context) {
         Map<String, Object> accumulated = context.getAccumulatedOutput();
         String text = null;
         Object result = accumulated.get("result");
@@ -63,3 +63,5 @@ public final class AnswerFormatPlugin implements StageHandler {
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
+
+

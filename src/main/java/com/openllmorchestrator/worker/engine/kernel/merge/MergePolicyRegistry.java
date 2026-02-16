@@ -60,3 +60,4 @@ public final class MergePolicyRegistry {
         return byName.getOrDefault(name.toUpperCase(), AsyncOutputMergePolicy.LAST_WINS);
     }
 }
+

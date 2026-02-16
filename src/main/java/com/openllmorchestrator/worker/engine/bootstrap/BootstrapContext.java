@@ -37,9 +37,12 @@ public class BootstrapContext {
     private PredefinedPluginBucket predefinedBucket;
     private CustomStageBucket customBucket;
     private ActivityRegistry activityRegistry;
+    /** Registry containing only plugins that pass compatibility and (if config.plugins is set) are in the allowed list. Used for resolution and static plan build. */
+    private ActivityRegistry compatibleActivityRegistry;
     private StageResolver resolver;
     /** Single plan (legacy); used when plans map is not set. */
     private StagePlan plan;
     /** Named pipeline plans: pipeline name → StagePlan. When set, use getStagePlan(name) at runtime. */
     private Map<String, StagePlan> plans;
 }
+

@@ -1,5 +1,13 @@
 {
     "configVersion": "1.0",
+    "enabledFeatures": [
+        "VERSIONED_STATE",
+        "STAGE_RESULT_ENVELOPE",
+        "EXECUTION_GRAPH",
+        "PLANNER_PLAN_EXECUTOR",
+        "INTERCEPTORS",
+        "EXECUTION_SNAPSHOT"
+    ],
     "worker": {
         "queueName": "core-task-queue",
         "strictBoot": false
@@ -9,6 +17,10 @@
         "namespace": "default"
     },
     "activity": {
+        "payload": {
+            "maxAccumulatedOutputKeys": 0,
+            "maxResultOutputKeys": 0
+        },
         "defaultTimeouts": {
             "scheduleToStartSeconds": 60,
             "startToCloseSeconds": 30,
@@ -35,11 +47,20 @@
     },
     "stageOrder": [
         "ACCESS",
-        "MEMORY",
-        "RETRIEVAL",
+        "PRE_CONTEXT_SETUP",
+        "PLANNER",
+        "PLAN_EXECUTOR",
+        "EXECUTION_CONTROLLER",
+        "ITERATIVE_BLOCK",
         "MODEL",
-        "MCP",
+        "RETRIEVAL",
         "TOOL",
+        "MCP",
+        "MEMORY",
+        "REFLECTION",
+        "SUB_OBSERVABILITY",
+        "SUB_CUSTOM",
+        "ITERATIVE_BLOCK_END",
         "FILTER",
         "POST_PROCESS",
         "OBSERVABILITY",
@@ -49,6 +70,23 @@
         "DEFAULT_ASYNC": "LAST_WINS",
         "PREFIX_KEYS": "PREFIX_BY_ACTIVITY"
     },
+    "plugins": [
+        "com.openllmorchestrator.worker.plugin.tokenizer.DocumentTokenizerPlugin",
+        "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin",
+        "com.openllmorchestrator.worker.plugin.folder.FolderIngestionPlugin",
+        "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
+        "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
+        "com.openllmorchestrator.worker.plugin.llm.MistralChatPlugin",
+        "com.openllmorchestrator.worker.plugin.llm.Llama32FixedChatPlugin",
+        "com.openllmorchestrator.worker.plugin.llm.Phi3ChatPlugin",
+        "com.openllmorchestrator.worker.plugin.llm.Gemma2_2bChatPlugin",
+        "com.openllmorchestrator.worker.plugin.llm.Qwen2_1_5bChatPlugin",
+        "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin",
+        "LAST_WINS",
+        "FIRST_WINS",
+        "PREFIX_BY_ACTIVITY",
+        "ALL_MODELS_RESPONSE_FORMAT"
+    ],
     "pipelines": {
         "document-ingestion": {
             "defaultTimeoutSeconds": 60,
@@ -210,7 +248,10 @@
             "root": {
                 "MODEL": {
                     "type": "GROUP",
-                    "executionMode": "SYNC",
+                    "executionMode": "ASYNC",
+                    "asyncCompletionPolicy": "ALL",
+                    "asyncOutputMergePolicy": "ALL_MODELS_RESPONSE_FORMAT",
+                    "timeoutSeconds": 180,
                     "children": [
                         {
                             "type": "STAGE",

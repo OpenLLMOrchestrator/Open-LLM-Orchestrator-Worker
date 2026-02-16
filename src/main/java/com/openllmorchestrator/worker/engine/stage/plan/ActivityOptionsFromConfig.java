@@ -54,3 +54,4 @@ final class ActivityOptionsFromConfig {
         return StageRetryOptions.from(c);
     }
 }
+

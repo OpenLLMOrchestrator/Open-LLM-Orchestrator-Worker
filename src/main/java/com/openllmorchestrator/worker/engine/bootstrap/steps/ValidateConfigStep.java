@@ -26,3 +26,4 @@ public final class ValidateConfigStep implements BootstrapStep {
         EngineConfigValidator.validate(ctx.getConfig(), ctx.getResolver());
     }
 }
+

@@ -32,3 +32,4 @@ public class RedisConfig {
         return new RedisConfig(host, port, password != null ? password : "");
     }
 }
+

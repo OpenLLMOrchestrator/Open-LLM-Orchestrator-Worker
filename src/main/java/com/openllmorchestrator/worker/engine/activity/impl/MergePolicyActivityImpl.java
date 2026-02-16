@@ -18,9 +18,9 @@ package com.openllmorchestrator.worker.engine.activity.impl;
 import com.openllmorchestrator.worker.engine.activity.MergePolicyActivity;
 import com.openllmorchestrator.worker.engine.contract.AsyncGroupResultEntry;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.contract.StageResult;
+import com.openllmorchestrator.worker.contract.StageResult;
 import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.engine.stage.predefined.PredefinedStages;
 import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
 import lombok.extern.slf4j.Slf4j;
@@ -64,3 +64,4 @@ public class MergePolicyActivityImpl implements MergePolicyActivity {
         return new HashMap<>(context.getCurrentPluginOutput());
     }
 }
+

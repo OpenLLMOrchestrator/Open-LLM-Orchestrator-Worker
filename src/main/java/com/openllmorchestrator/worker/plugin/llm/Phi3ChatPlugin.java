@@ -22,3 +22,4 @@ public final class Phi3ChatPlugin extends FixedModelChatPlugin {
     @Override protected String getModelId() { return "phi3:latest"; }
     @Override protected String getModelLabel() { return "phi3"; }
 }
+

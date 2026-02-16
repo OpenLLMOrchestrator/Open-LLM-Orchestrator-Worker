@@ -2,6 +2,8 @@
 # Build output
 # ========================
 /build/
+plugin-contract/build/
+plugins/build/
 .gradle/
 
 # ========================
@@ -38,6 +40,11 @@ out/
 # ========================
 .DS_Store
 Thumbs.db
+
+# ========================
+# Plugin JARs (place JARs in plugins/; they are bundled at build time)
+# ========================
+/plugins/*.jar
 
 # ========================
 # Temporary files

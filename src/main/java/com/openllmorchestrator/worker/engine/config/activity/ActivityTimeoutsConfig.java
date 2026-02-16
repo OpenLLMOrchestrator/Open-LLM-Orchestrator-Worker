@@ -24,3 +24,4 @@ public class ActivityTimeoutsConfig {
     private Integer startToCloseSeconds = 30;
     private Integer scheduleToCloseSeconds;
 }
+

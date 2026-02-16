@@ -16,6 +16,12 @@
 package com.openllmorchestrator.worker.engine.runtime;
 
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
+import com.openllmorchestrator.worker.engine.config.FeatureFlags;
+import com.openllmorchestrator.worker.engine.plan.PlanValidator;
+import com.openllmorchestrator.worker.engine.policy.BudgetGuardrailEnforcer;
+import com.openllmorchestrator.worker.engine.policy.ExecutionPolicyResolver;
+import com.openllmorchestrator.worker.engine.security.SecurityHardeningGate;
+import com.openllmorchestrator.worker.contract.OutputContractValidator;
 import com.openllmorchestrator.worker.engine.stage.StagePlan;
 import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
 
@@ -36,6 +42,12 @@ public final class EngineRuntime {
     private static volatile EngineFileConfig config;
     private static volatile Map<String, StagePlan> stagePlansByName;
     private static volatile StageResolver stageResolver;
+    private static volatile OutputContractValidator outputContractValidator;
+    private static volatile FeatureFlags featureFlags;
+    private static volatile ExecutionPolicyResolver executionPolicyResolver;
+    private static volatile BudgetGuardrailEnforcer budgetGuardrailEnforcer;
+    private static volatile SecurityHardeningGate securityHardeningGate;
+    private static volatile PlanValidator planValidator;
 
     /** Set during bootstrap; never null after successful init. */
     public static EngineFileConfig getConfig() {
@@ -86,7 +98,59 @@ public final class EngineRuntime {
         EngineRuntime.stageResolver = stageResolver;
     }
 
+    /** Optional validator for stages implementing {@link com.openllmorchestrator.worker.contract.OutputContract}. */
+    public static OutputContractValidator getOutputContractValidator() {
+        return outputContractValidator;
+    }
+
+    public static void setOutputContractValidator(OutputContractValidator outputContractValidator) {
+        EngineRuntime.outputContractValidator = outputContractValidator;
+    }
+
+    /** Feature flags loaded at bootstrap; only enabled features execute. Returns empty (all disabled) when not yet set. */
+    public static FeatureFlags getFeatureFlags() {
+        FeatureFlags f = featureFlags;
+        return f != null ? f : FeatureFlags.fromNames(Collections.emptyList());
+    }
+
+    public static void setFeatureFlags(FeatureFlags featureFlags) {
+        EngineRuntime.featureFlags = featureFlags;
+    }
+
+    /** When POLICY_ENGINE is enabled. */
+    public static ExecutionPolicyResolver getExecutionPolicyResolver() {
+        return executionPolicyResolver;
+    }
+    public static void setExecutionPolicyResolver(ExecutionPolicyResolver executionPolicyResolver) {
+        EngineRuntime.executionPolicyResolver = executionPolicyResolver;
+    }
+
+    /** When BUDGET_GUARDRAIL is enabled. */
+    public static BudgetGuardrailEnforcer getBudgetGuardrailEnforcer() {
+        return budgetGuardrailEnforcer;
+    }
+    public static void setBudgetGuardrailEnforcer(BudgetGuardrailEnforcer budgetGuardrailEnforcer) {
+        EngineRuntime.budgetGuardrailEnforcer = budgetGuardrailEnforcer;
+    }
+
+    /** When SECURITY_HARDENING is enabled. */
+    public static SecurityHardeningGate getSecurityHardeningGate() {
+        return securityHardeningGate;
+    }
+    public static void setSecurityHardeningGate(SecurityHardeningGate securityHardeningGate) {
+        EngineRuntime.securityHardeningGate = securityHardeningGate;
+    }
+
+    /** When PLAN_SAFETY_VALIDATION is enabled. */
+    public static PlanValidator getPlanValidator() {
+        return planValidator;
+    }
+    public static void setPlanValidator(PlanValidator planValidator) {
+        EngineRuntime.planValidator = planValidator;
+    }
+
     /** Backward compatibility; set by bootstrap together with config. Prefer getConfig(). */
     @Deprecated
     public static EngineFileConfig CONFIG;
 }
+

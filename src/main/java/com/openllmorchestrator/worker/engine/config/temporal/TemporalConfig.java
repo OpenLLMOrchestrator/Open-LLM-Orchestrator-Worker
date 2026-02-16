@@ -23,3 +23,4 @@ public class TemporalConfig {
     private String target = "localhost:7233";
     private String namespace = "default";
 }
+

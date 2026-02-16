@@ -29,3 +29,4 @@ public class QueueConfig {
     private List<String> stages;
     private Duration defaultTimeout;
 }
+

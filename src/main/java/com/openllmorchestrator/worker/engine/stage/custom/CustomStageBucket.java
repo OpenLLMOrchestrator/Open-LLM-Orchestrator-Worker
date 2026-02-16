@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.stage.custom;
 
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.engine.stage.predefined.PredefinedStages;
 
 import java.util.Collections;
@@ -71,3 +71,4 @@ public final class CustomStageBucket {
         }
     }
 }
+

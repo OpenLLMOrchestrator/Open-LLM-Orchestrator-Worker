@@ -24,11 +24,13 @@ import com.openllmorchestrator.worker.engine.stage.plan.StagePlanFactory;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Step: build execution hierarchy (stage plans) once from config.
  * When config has named pipelines, builds one plan per name; otherwise builds single "default" plan.
- * Plans are immutable and reused for the container lifecycle.
+ * Plans are immutable and reused for the container lifecycle. Only plugins in the compatible
+ * registry (from bootstrap compatibility check) are allowed in static pipeline structure.
  */
 public final class BuildPlanStep implements BootstrapStep {
     @Override
@@ -38,11 +40,14 @@ public final class BuildPlanStep implements BootstrapStep {
         if (effective.isEmpty()) {
             throw new IllegalStateException("No pipeline config. Set pipelines with at least one pipeline in config.");
         }
+        Set<String> allowedPluginNames = ctx.getCompatibleActivityRegistry() != null
+                ? ctx.getCompatibleActivityRegistry().registeredNames()
+                : null;
         Map<String, StagePlan> plans = new LinkedHashMap<>();
         for (Map.Entry<String, PipelineSection> e : effective.entrySet()) {
             String name = e.getKey();
             PipelineSection section = e.getValue();
-            plans.put(name, StagePlanFactory.fromPipelineSection(ctx.getConfig(), section));
+            plans.put(name, StagePlanFactory.fromPipelineSection(ctx.getConfig(), section, allowedPluginNames));
         }
         ctx.setPlans(plans);
         if (plans.containsKey("default")) {
@@ -50,3 +55,4 @@ public final class BuildPlanStep implements BootstrapStep {
         }
     }
 }
+

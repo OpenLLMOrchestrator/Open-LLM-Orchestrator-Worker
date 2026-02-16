@@ -1,0 +1,68 @@
+# Copyright 2026 Open LLM Orchestrator contributors. Licensed under the Apache License, Version 2.0; see LICENSE file.
+# Publish plugin-contract to Maven (GitHub Packages) on push to main/master or on release tag.
+name: Publish plugin-contract to Maven
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  release:
+    types: [published]
+
+env:
+  JAVA_VERSION: '21'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            # Use tag as version (strip leading 'v' if present)
+            TAG="${GITHUB_REF#refs/tags/}"
+            echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(./gradlew :plugin-contract:properties -q 2>/dev/null | grep "^version:" | head -1 | sed 's/^version: *//')
+            echo "version=${VERSION:-0.0.1}" >> $GITHUB_OUTPUT
+          fi
+          echo "Publishing version: ${{ steps.version.outputs.version }}"
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Publish plugin-contract to GitHub Packages
+        env:
+          MAVEN_REPO_URL: https://maven.pkg.github.com/${{ github.repository }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            ./gradlew :plugin-contract:publish -Pversion=${{ steps.version.outputs.version }}
+          else
+            ./gradlew :plugin-contract:publish
+          fi
+          echo "Published plugin-contract ${{ steps.version.outputs.version }} to GitHub Packages"
+
+  # Optional: Publish to Maven Central (uncomment and set OSSRH + signing secrets if needed)
+  # publish-maven-central:
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'release'
+  #   needs: publish
+  #   ...

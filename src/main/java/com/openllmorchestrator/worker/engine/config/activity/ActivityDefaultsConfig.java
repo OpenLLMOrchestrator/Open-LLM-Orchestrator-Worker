@@ -16,10 +16,15 @@
 package com.openllmorchestrator.worker.engine.config.activity;
 
 import lombok.Getter;
+import lombok.Setter;
 
-/** Default activity options: timeouts and retry policy. No hardcoded values in engine. */
+/** Default activity options: timeouts, retry policy, payload limits for minimal Temporal history. */
 @Getter
+@Setter
 public class ActivityDefaultsConfig {
     private ActivityTimeoutsConfig defaultTimeouts = new ActivityTimeoutsConfig();
     private RetryPolicyConfig retryPolicy = new RetryPolicyConfig();
+    /** Optional payload limits so activity args/results stay small (Temporal records in DB/Elastic). */
+    private ActivityPayloadConfig payload = new ActivityPayloadConfig();
 }
+

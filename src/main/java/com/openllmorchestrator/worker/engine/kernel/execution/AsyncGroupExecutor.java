@@ -15,9 +15,16 @@
  */
 package com.openllmorchestrator.worker.engine.kernel.execution;
 
+import com.openllmorchestrator.worker.engine.config.FeatureFlag;
+import com.openllmorchestrator.worker.engine.config.FeatureFlags;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.contract.StageResult;
+import com.openllmorchestrator.worker.contract.StageMetadata;
+import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.engine.contract.VersionedState;
+import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
 import com.openllmorchestrator.worker.engine.kernel.StageInvoker;
+import com.openllmorchestrator.worker.engine.kernel.interceptor.ExecutionInterceptorChain;
+import com.openllmorchestrator.worker.engine.kernel.interceptor.StageContext;
 import com.openllmorchestrator.worker.engine.stage.AsyncCompletionPolicy;
 import com.openllmorchestrator.worker.engine.stage.StageDefinition;
 import com.openllmorchestrator.worker.engine.stage.StageExecutionMode;
@@ -38,8 +45,14 @@ public final class AsyncGroupExecutor implements GroupExecutor {
     }
 
     @Override
-    public void execute(StageGroupSpec spec, StageInvoker invoker, ExecutionContext context) {
+    public void execute(StageGroupSpec spec, StageInvoker invoker, ExecutionContext context,
+                        int groupIndex, ExecutionInterceptorChain interceptorChain) {
         List<StageDefinition> group = spec.getDefinitions();
+        VersionedState stateBefore = context.getVersionedState();
+        for (StageDefinition def : group) {
+            StageContext stageCtx = StageContext.from(groupIndex, def, stateBefore, context);
+            interceptorChain.beforeStage(stageCtx);
+        }
         AsyncCompletionPolicy policy = spec.getAsyncPolicy() != null ? spec.getAsyncPolicy() : AsyncCompletionPolicy.ALL;
         List<Promise<StageResult>> promises = new ArrayList<>();
         for (StageDefinition def : group) {
@@ -52,20 +65,40 @@ public final class AsyncGroupExecutor implements GroupExecutor {
         for (int i = 0; i < group.size(); i++) {
             StageDefinition def = group.get(i);
             names.add(def.getName());
+            StageContext stageCtx = StageContext.from(groupIndex, def, stateBefore, context);
             try {
-                results.add(promises.get(i).get());
+                StageResult r = promises.get(i).get();
+                results.add(r);
+                interceptorChain.afterStage(stageCtx, r);
             } catch (Exception e) {
                 results.add(StageResult.builder().stageName(def.getName()).build());
+                interceptorChain.onError(stageCtx, e);
             }
         }
         String taskQueue = group.isEmpty() ? null : group.get(0).getTaskQueue();
         java.time.Duration timeout = group.isEmpty() ? java.time.Duration.ofSeconds(30) : group.get(0).getTimeout();
         Map<String, Object> merged = invoker.invokeMerge(
                 spec.getAsyncOutputMergePolicyName(), taskQueue, timeout, context, names, results);
-        context.getAccumulatedOutput().clear();
-        context.getAccumulatedOutput().putAll(merged != null ? merged : Map.of());
-        for (StageResult r : results) {
-            log.info("Completed ASYNC stage: {}", r.getStageName());
+        VersionedState current = context.getVersionedState();
+        VersionedState next = current.withNextStepAfterAsync(merged != null ? merged : Map.of(), group.size());
+        context.setVersionedState(next);
+        boolean allRequestBreak = !results.isEmpty() && results.stream().allMatch(r -> r != null && r.isRequestPipelineBreak());
+        if (allRequestBreak) {
+            context.setPipelineBreakRequested(true);
+        }
+        FeatureFlags flags = EngineRuntime.getFeatureFlags();
+        for (int i = 0; i < results.size(); i++) {
+            StageResult r = results.get(i);
+            if (flags != null && flags.isEnabled(FeatureFlag.STAGE_RESULT_ENVELOPE) && r.getMetadata() == null && i < group.size()) {
+                StageDefinition def = group.get(i);
+                r.setMetadata(StageMetadata.builder()
+                        .stageName(def.getName())
+                        .stepId(next.getStepId())
+                        .executionId(next.getExecutionId())
+                        .stageBucketName(def.getStageBucketName())
+                        .build());
+            }
+            log.info("Completed ASYNC stage: {} (stepId after async={})", r.getStageName(), next.getStepId());
         }
     }
 
@@ -84,3 +117,4 @@ public final class AsyncGroupExecutor implements GroupExecutor {
         }
     }
 }
+

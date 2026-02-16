@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.kernel.merge;
 
-import com.openllmorchestrator.worker.engine.contract.StageResult;
+import com.openllmorchestrator.worker.contract.StageResult;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -86,3 +86,4 @@ public enum AsyncOutputMergePolicy implements AsyncMergePolicy {
         }
     }
 }
+

@@ -17,9 +17,9 @@ package com.openllmorchestrator.worker.plugin.llm;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.contract.StageResult;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.StageHandler;
+import com.openllmorchestrator.worker.contract.StageResult;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -57,7 +57,7 @@ public final class Llama32ModelPlugin implements StageHandler {
     }
 
     @Override
-    public StageResult execute(ExecutionContext context) {
+    public StageResult execute(PluginContext context) {
         Map<String, Object> input = context.getOriginalInput();
         Map<String, Object> accumulated = context.getAccumulatedOutput();
 
@@ -141,3 +141,5 @@ public final class Llama32ModelPlugin implements StageHandler {
         return sb.toString();
     }
 }
+
+

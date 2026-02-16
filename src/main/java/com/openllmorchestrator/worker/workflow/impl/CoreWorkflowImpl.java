@@ -17,6 +17,8 @@ package com.openllmorchestrator.worker.workflow.impl;
 
 import com.openllmorchestrator.worker.engine.contract.ExecutionCommand;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
+import com.openllmorchestrator.worker.engine.contract.ExecutionSignal;
+import com.openllmorchestrator.worker.engine.contract.KernelExecutionOutcome;
 import com.openllmorchestrator.worker.engine.kernel.KernelOrchestrator;
 import com.openllmorchestrator.worker.engine.kernel.StageInvoker;
 import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
@@ -31,14 +33,20 @@ import java.util.Map;
 /**
  * Uses one-time bootstrapped plan and invoker; no config read per execution.
  * Returns the accumulated output (including "result" from the LLM plugin) as the response.
+ * <p><b>Suspend/resume</b>: If a stage requests suspend for signal, workflow awaits {@link #receiveSignal(ExecutionSignal)};
+ * on signal, workflow injects it into context and continues kernel (re-run so the stage can read the signal).
+ * <p><b>Deterministic</b>: Workflow code must not use non-deterministic APIs so that Temporal replay produces the same decisions.
  */
 public class CoreWorkflowImpl implements CoreWorkflow {
 
     private static final Logger log = Workflow.getLogger(CoreWorkflowImpl.class);
 
+    /** Set by {@link #receiveSignal(ExecutionSignal)}; workflow awaits until non-null when kernel is suspended. */
+    private ExecutionSignal receivedSignal;
+
     @Override
     public Map<String, Object> execute(ExecutionCommand command) {
-        ExecutionContext context = ExecutionContext.from(command);
+        ExecutionContext context = ExecutionContext.from(command, com.openllmorchestrator.worker.engine.runtime.EngineRuntime.getFeatureFlags());
         String pipelineName = command.getPipelineName() != null && !command.getPipelineName().isBlank()
                 ? command.getPipelineName()
                 : "default";
@@ -46,7 +54,21 @@ public class CoreWorkflowImpl implements CoreWorkflow {
         log.info("Executing pipeline: {}", pipelineName);
         StageInvoker invoker = new StageInvoker();
         KernelOrchestrator kernel = new KernelOrchestrator(invoker);
-        kernel.execute(plan, context);
+        KernelExecutionOutcome outcome = kernel.execute(plan, context);
+        com.openllmorchestrator.worker.engine.config.FeatureFlags flags = com.openllmorchestrator.worker.engine.runtime.EngineRuntime.getFeatureFlags();
+        while (flags != null && flags.isEnabled(com.openllmorchestrator.worker.engine.config.FeatureFlag.HUMAN_SIGNAL) && outcome.isSuspended()) {
+            log.info("Workflow suspended at step {}; awaiting signal.", outcome.getSuspendedAtStepId());
+            Workflow.await(() -> receivedSignal != null);
+            context.setResumeSignal(receivedSignal);
+            receivedSignal = null;
+            outcome = kernel.execute(plan, context);
+        }
         return new HashMap<>(context.getAccumulatedOutput());
     }
+
+    @Override
+    public void receiveSignal(ExecutionSignal signal) {
+        this.receivedSignal = signal;
+    }
 }
+

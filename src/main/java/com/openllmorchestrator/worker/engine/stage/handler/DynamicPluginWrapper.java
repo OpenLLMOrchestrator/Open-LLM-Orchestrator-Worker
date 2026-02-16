@@ -15,9 +15,9 @@
  */
 package com.openllmorchestrator.worker.engine.stage.handler;
 
-import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.contract.StageResult;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.StageHandler;
+import com.openllmorchestrator.worker.contract.StageResult;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
@@ -44,7 +44,7 @@ public final class DynamicPluginWrapper implements StageHandler {
     }
 
     @Override
-    public StageResult execute(ExecutionContext context) {
+    public StageResult execute(PluginContext context) {
         if (delegate == null) {
             log.warn("Dynamic plugin '{}' is not available (JAR was missing or failed to load); skipping stage and continuing.", pluginName);
             return StageResult.builder()
@@ -55,3 +55,5 @@ public final class DynamicPluginWrapper implements StageHandler {
         return delegate.execute(context);
     }
 }
+
+

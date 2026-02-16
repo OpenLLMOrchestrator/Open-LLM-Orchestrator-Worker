@@ -22,3 +22,4 @@ public final class Qwen2_1_5bChatPlugin extends FixedModelChatPlugin {
     @Override protected String getModelId() { return "qwen2:1.5b"; }
     @Override protected String getModelLabel() { return "qwen2:1.5b"; }
 }
+

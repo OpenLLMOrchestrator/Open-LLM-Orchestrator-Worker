@@ -47,3 +47,4 @@ public final class FileConfigRepository implements ConfigRepository {
         // File is read-only; persistence goes to Redis/DB only
     }
 }
+

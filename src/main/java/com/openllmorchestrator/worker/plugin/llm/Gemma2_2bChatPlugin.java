@@ -22,3 +22,4 @@ public final class Gemma2_2bChatPlugin extends FixedModelChatPlugin {
     @Override protected String getModelId() { return "gemma2:2b"; }
     @Override protected String getModelLabel() { return "gemma2:2b"; }
 }
+

@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.plugin.llm;
 
-import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
+import com.openllmorchestrator.worker.contract.PluginContext;
 
 import java.util.Map;
 
@@ -36,14 +36,14 @@ public final class OllamaModelResolver {
     /**
      * Resolve model id: input.modelId &gt; from pipeline name (rag-X / chat-X) &gt; OLLAMA_MODEL.
      */
-    public static String resolveModelId(ExecutionContext context) {
+    public static String resolveModelId(PluginContext context) {
         Map<String, Object> input = context.getOriginalInput();
         Object modelIdObj = input != null ? input.get("modelId") : null;
         if (modelIdObj instanceof String) {
             String s = ((String) modelIdObj).trim();
             if (!s.isEmpty()) return toOllamaModelTag(s);
         }
-        String pipelineName = context.getCommand() != null ? context.getCommand().getPipelineName() : null;
+        String pipelineName = context.getPipelineName();
         if (pipelineName != null && !pipelineName.isBlank()) {
             String fromPipeline = modelIdFromPipelineName(pipelineName.trim());
             if (fromPipeline != null) return fromPipeline;
@@ -84,3 +84,4 @@ public final class OllamaModelResolver {
         }
     }
 }
+

@@ -2,6 +2,8 @@
 
 # Engine config
 
+For **full schema, every field, allowed values, and UI/drag-and-drop guidance**, see **[Configuration Reference](../docs/configuration-reference.md)**. It covers `engine-config.json` top-to-bottom (feature flags, pipelines, activity, queue topology, validation) so you can build config editors or pipeline builders from it.
+
 ## Workflow
 
 - **Workflow Type:** `CoreWorkflowImpl`

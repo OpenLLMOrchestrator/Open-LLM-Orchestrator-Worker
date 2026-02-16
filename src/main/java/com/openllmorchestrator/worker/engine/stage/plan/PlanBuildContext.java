@@ -19,6 +19,8 @@ import com.openllmorchestrator.worker.engine.config.activity.ActivityDefaultsCon
 import com.openllmorchestrator.worker.engine.stage.AsyncCompletionPolicy;
 import lombok.Getter;
 
+import java.util.Set;
+
 /** Context for building a stage plan from config. No hardcoded defaults. */
 @Getter
 public class PlanBuildContext {
@@ -28,21 +30,61 @@ public class PlanBuildContext {
     private final AsyncCompletionPolicy defaultAsyncPolicy;
     /** Max depth for GROUP recursion (default 5). */
     private final int defaultMaxGroupDepth;
+    /** Current stage bucket name (e.g. RETRIEVAL, MODEL) when building from rootByStage; used for activity summary in UI. */
+    private final String currentStageBucketName;
+    /** When non-null, only these plugin names may appear in the plan (compatible plugins from bootstrap). */
+    private final Set<String> allowedPluginNames;
 
     public PlanBuildContext(int defaultTimeoutSeconds, String taskQueue,
                             ActivityDefaultsConfig activityDefaults,
                             String defaultAsyncCompletionPolicy) {
-        this(defaultTimeoutSeconds, taskQueue, activityDefaults, defaultAsyncCompletionPolicy, 5);
+        this(defaultTimeoutSeconds, taskQueue, activityDefaults, defaultAsyncCompletionPolicy, 5, null, null);
     }
 
     public PlanBuildContext(int defaultTimeoutSeconds, String taskQueue,
                             ActivityDefaultsConfig activityDefaults,
                             String defaultAsyncCompletionPolicy,
                             int defaultMaxGroupDepth) {
+        this(defaultTimeoutSeconds, taskQueue, activityDefaults, defaultAsyncCompletionPolicy, defaultMaxGroupDepth, null, null);
+    }
+
+    public PlanBuildContext(int defaultTimeoutSeconds, String taskQueue,
+                            ActivityDefaultsConfig activityDefaults,
+                            String defaultAsyncCompletionPolicy,
+                            int defaultMaxGroupDepth,
+                            String currentStageBucketName) {
+        this(defaultTimeoutSeconds, taskQueue, activityDefaults, defaultAsyncCompletionPolicy, defaultMaxGroupDepth, currentStageBucketName, null);
+    }
+
+    public PlanBuildContext(int defaultTimeoutSeconds, String taskQueue,
+                            ActivityDefaultsConfig activityDefaults,
+                            String defaultAsyncCompletionPolicy,
+                            int defaultMaxGroupDepth,
+                            String currentStageBucketName,
+                            Set<String> allowedPluginNames) {
         this.defaultTimeoutSeconds = defaultTimeoutSeconds;
         this.taskQueue = taskQueue;
         this.activityDefaults = activityDefaults != null ? activityDefaults : new com.openllmorchestrator.worker.engine.config.activity.ActivityDefaultsConfig();
         this.defaultAsyncPolicy = AsyncCompletionPolicy.fromConfig(defaultAsyncCompletionPolicy);
         this.defaultMaxGroupDepth = defaultMaxGroupDepth > 0 ? defaultMaxGroupDepth : 5;
+        this.currentStageBucketName = currentStageBucketName != null && !currentStageBucketName.isBlank() ? currentStageBucketName : null;
+        this.allowedPluginNames = allowedPluginNames;
+    }
+
+    /** Returns a new context with the given stage bucket name (for activity summary in Temporal UI). */
+    public PlanBuildContext withCurrentStageBucketName(String stageBucketName) {
+        return new PlanBuildContext(
+                defaultTimeoutSeconds, taskQueue, activityDefaults,
+                defaultAsyncPolicy.name(), defaultMaxGroupDepth,
+                stageBucketName, allowedPluginNames);
+    }
+
+    /** Returns a new context with the given allowed plugin names (for compatibility check during plan build). */
+    public PlanBuildContext withAllowedPluginNames(Set<String> allowedPluginNames) {
+        return new PlanBuildContext(
+                defaultTimeoutSeconds, taskQueue, activityDefaults,
+                defaultAsyncPolicy.name(), defaultMaxGroupDepth,
+                currentStageBucketName, allowedPluginNames);
     }
 }
+

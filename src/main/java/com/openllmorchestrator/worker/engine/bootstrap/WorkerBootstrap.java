@@ -16,6 +16,7 @@
 package com.openllmorchestrator.worker.engine.bootstrap;
 
 import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildActivityRegistryStep;
+import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildCompatiblePluginsStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.LoadDynamicPluginsStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildPlanStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildResolverStep;
@@ -35,6 +36,7 @@ public final class WorkerBootstrap {
             new LoadConfigStep(),
             new BuildActivityRegistryStep(),
             new LoadDynamicPluginsStep(),
+            new BuildCompatiblePluginsStep(),
             new BuildResolverStep(),
             new ValidateConfigStep(),
             new BuildPlanStep(),
@@ -69,3 +71,4 @@ public final class WorkerBootstrap {
         }
     }
 }
+

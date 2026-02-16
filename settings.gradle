@@ -1,1 +1,3 @@
 rootProject.name = 'open-llm-orchestrator-worker'
+include 'plugin-contract'
+include 'plugins'

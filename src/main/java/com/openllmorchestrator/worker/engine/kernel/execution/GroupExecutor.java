@@ -17,11 +17,17 @@ package com.openllmorchestrator.worker.engine.kernel.execution;
 
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.engine.kernel.StageInvoker;
+import com.openllmorchestrator.worker.engine.kernel.interceptor.ExecutionInterceptorChain;
 import com.openllmorchestrator.worker.engine.stage.StageGroupSpec;
 
 /** Executes one group of stages. Add new modes by adding implementations (OCP). */
 public interface GroupExecutor {
     boolean supports(StageGroupSpec spec);
 
-    void execute(StageGroupSpec spec, StageInvoker invoker, ExecutionContext context);
+    /**
+     * Execute the group. Interceptor chain is invoked before/after each stage and on error (non-optional).
+     */
+    void execute(StageGroupSpec spec, StageInvoker invoker, ExecutionContext context,
+                 int groupIndex, ExecutionInterceptorChain interceptorChain);
 }
+

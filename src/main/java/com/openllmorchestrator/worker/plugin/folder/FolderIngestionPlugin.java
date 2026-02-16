@@ -15,9 +15,9 @@
  */
 package com.openllmorchestrator.worker.plugin.folder;
 
-import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.contract.StageResult;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.StageHandler;
+import com.openllmorchestrator.worker.contract.StageResult;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -51,7 +51,7 @@ public final class FolderIngestionPlugin implements StageHandler {
     }
 
     @Override
-    public StageResult execute(ExecutionContext context) {
+    public StageResult execute(PluginContext context) {
         Map<String, Object> input = context.getOriginalInput();
         String folderPath = (String) input.get("folderPath");
         if (folderPath == null || folderPath.isBlank()) {
@@ -124,3 +124,5 @@ public final class FolderIngestionPlugin implements StageHandler {
         return out;
     }
 }
+
+

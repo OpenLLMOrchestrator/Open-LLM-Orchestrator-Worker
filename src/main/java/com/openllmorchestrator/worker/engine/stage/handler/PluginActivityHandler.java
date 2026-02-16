@@ -15,9 +15,9 @@
  */
 package com.openllmorchestrator.worker.engine.stage.handler;
 
-import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.contract.StageResult;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.contract.StageHandler;
+import com.openllmorchestrator.worker.contract.StageResult;
 
 /**
  * StageHandler that represents one plugin/activity by name.
@@ -39,7 +39,9 @@ public final class PluginActivityHandler implements StageHandler {
     }
 
     @Override
-    public StageResult execute(ExecutionContext context) {
+    public StageResult execute(PluginContext context) {
         return StageResult.builder().stageName(activityName).build();
     }
 }
+
+

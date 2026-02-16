@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.plugin;
 
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.StageHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -28,7 +28,7 @@ import java.util.ServiceLoader;
 
 /**
  * Loads a StageHandler from a JAR file. The JAR must provide a service implementation via
- * META-INF/services/com.openllmorchestrator.worker.engine.stage.StageHandler.
+ * META-INF/services/com.openllmorchestrator.worker.contract.StageHandler.
  * If the file does not exist or loading fails, returns null (caller should log and register a no-op wrapper).
  */
 @Slf4j
@@ -68,7 +68,7 @@ public final class DynamicPluginLoader {
                 ServiceLoader<StageHandler> serviceLoader = ServiceLoader.load(StageHandler.class, loader);
                 Iterator<StageHandler> it = serviceLoader.iterator();
                 if (!it.hasNext()) {
-                    log.info("Dynamic plugin '{}': no StageHandler service found in JAR '{}' (expect META-INF/services/com.openllmorchestrator.worker.engine.stage.StageHandler); skipping.", pluginName, resolved);
+                    log.info("Dynamic plugin '{}': no StageHandler service found in JAR '{}' (expect META-INF/services/com.openllmorchestrator.worker.contract.StageHandler); skipping.", pluginName, resolved);
                     return null;
                 }
                 StageHandler handler = it.next();
@@ -84,3 +84,4 @@ public final class DynamicPluginLoader {
         }
     }
 }
+

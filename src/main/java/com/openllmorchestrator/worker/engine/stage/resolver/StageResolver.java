@@ -16,7 +16,7 @@
 package com.openllmorchestrator.worker.engine.stage.resolver;
 
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
-import com.openllmorchestrator.worker.engine.stage.StageHandler;
+import com.openllmorchestrator.worker.contract.StageHandler;
 import com.openllmorchestrator.worker.engine.stage.activity.ActivityRegistry;
 import com.openllmorchestrator.worker.engine.stage.custom.CustomStageBucket;
 import com.openllmorchestrator.worker.engine.stage.predefined.PredefinedPluginBucket;
@@ -84,3 +84,4 @@ public final class StageResolver {
         return pluginId == null || pluginId.isBlank() ? DEFAULT_PLUGIN_ID : pluginId;
     }
 }
+

@@ -29,7 +29,11 @@ public final class BuildResolverStep implements BootstrapStep {
             activityRegistry = ActivityRegistry.createDefault();
             ctx.setActivityRegistry(activityRegistry);
         }
+        ActivityRegistry registryForResolution = ctx.getCompatibleActivityRegistry() != null
+                ? ctx.getCompatibleActivityRegistry()
+                : activityRegistry;
         ctx.setResolver(new StageResolver(
-                ctx.getConfig(), ctx.getPredefinedBucket(), ctx.getCustomBucket(), activityRegistry));
+                ctx.getConfig(), ctx.getPredefinedBucket(), ctx.getCustomBucket(), registryForResolution));
     }
 }
+
