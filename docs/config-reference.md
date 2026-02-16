@@ -2,7 +2,7 @@
 
 # Engine configuration reference
 
-All engine behaviour is driven by configuration. **Nothing is hardcoded in the engine.**
+All engine behaviour is driven by configuration. **Nothing is hardcoded in the engine.** For **Configuration UI** and **Stage Debugging UI** (stages, plugin types, activity names, context keys), see [**ui-reference.md**](ui-reference.md).
 
 ---
 

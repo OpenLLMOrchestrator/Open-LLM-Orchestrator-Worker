@@ -8,6 +8,8 @@ This document describes **every field** in the engine configuration file. The co
 
 The config is **JSON**. All keys are case-sensitive. Unknown keys are ignored (`JsonIgnoreProperties`).
 
+**For Configuration UI and Stage Debugging UI:** See [**ui-reference.md**](ui-reference.md) for a single source of truth: predefined stages table, plugin types table, config schema at a glance, pipeline structure, activity naming, and context keys for debugging.
+
 ---
 
 ## 1. Top-level structure
@@ -149,7 +151,8 @@ All values in **seconds**.
 **Default:** If null/empty, predefined order in code is used.
 
 **Allowed values (predefined stages):**  
-`ACCESS`, `PRE_CONTEXT_SETUP`, `PLANNER`, `PLAN_EXECUTOR`, `EXECUTION_CONTROLLER`, `ITERATIVE_BLOCK`, `MODEL`, `RETRIEVAL`, `TOOL`, `MCP`, `MEMORY`, `REFLECTION`, `SUB_OBSERVABILITY`, `SUB_CUSTOM`, `ITERATIVE_BLOCK_END`, `FILTER`, `POST_PROCESS`, `OBSERVABILITY`, `CUSTOM`.
+`ACCESS`, `PRE_CONTEXT_SETUP`, `PLANNER`, `PLAN_EXECUTOR`, `EXECUTION_CONTROLLER`, `ITERATIVE_BLOCK`, `MODEL`, `RETRIEVAL`, `RETRIEVE`, `TOOL`, `MCP`, `MEMORY`, `REFLECTION`, `SUB_OBSERVABILITY`, `SUB_CUSTOM`, `ITERATIVE_BLOCK_END`, `FILTER`, `POST_PROCESS`, `EVALUATION`, `EVALUATE`, `FEEDBACK`, `FEEDBACK_CAPTURE`, `LEARNING`, `DATASET_BUILD`, `TRAIN_TRIGGER`, `MODEL_REGISTRY`, `OBSERVABILITY`, `CUSTOM`.  
+Full table with descriptions and order: [ui-reference.md §1](ui-reference.md#1-predefined-stages-for-config-and-debugging).
 
 **Semantics:** When a pipeline uses `root` (as stage-name → GROUP map, i.e. rootByStage), only stages **present in this list** and **present in the pipeline root** are included, in this order. Stages not in the list or not in the root are skipped.
 
@@ -296,7 +299,8 @@ Used inside `root` (tree or rootByStage) and inside `stages` → `groups` → ch
 | `retryPolicy` | object | Same shape as `activity.retryPolicy`. |
 
 **Allowed plugin types (`pluginType`):**  
-`AccessControlPlugin`, `TenantPolicyPlugin`, `RateLimitPlugin`, `MemoryPlugin`, `VectorStorePlugin`, `ModelPlugin`, `MCPPlugin`, `ToolPlugin`, `FilterPlugin`, `GuardrailPlugin`, `RefinementPlugin`, `PromptBuilderPlugin`, `ObservabilityPlugin`, `TracingPlugin`, `BillingPlugin`, `FeatureFlagPlugin`, `AuditPlugin`, `SecurityScannerPlugin`, `CachingPlugin`, `SearchPlugin`, `LangChainAdapterPlugin`, `AgentOrchestratorPlugin`, `WorkflowExtensionPlugin`, `CustomStagePlugin`.
+`AccessControlPlugin`, `TenantPolicyPlugin`, `RateLimitPlugin`, `MemoryPlugin`, `VectorStorePlugin`, `ModelPlugin`, `MCPPlugin`, `ToolPlugin`, `FilterPlugin`, `GuardrailPlugin`, `RefinementPlugin`, `EvaluationPlugin`, `FeedbackPlugin`, `LearningPlugin`, `DatasetBuildPlugin`, `TrainTriggerPlugin`, `ModelRegistryPlugin`, `PromptBuilderPlugin`, `ObservabilityPlugin`, `TracingPlugin`, `BillingPlugin`, `FeatureFlagPlugin`, `AuditPlugin`, `SecurityScannerPlugin`, `CachingPlugin`, `SearchPlugin`, `LangChainAdapterPlugin`, `AgentOrchestratorPlugin`, `WorkflowExtensionPlugin`, `CustomStagePlugin`.  
+Full table with typical stages: [ui-reference.md §2](ui-reference.md#2-plugin-types-for-stage-node-plugintype).
 
 ### 9.6 Pipeline `stages` (alternative to root)
 
@@ -444,4 +448,4 @@ Used when feature flag `CONCURRENCY_ISOLATION` is enabled.
 | **Payload limits** | `activity.payload` | Optional; two numbers (0 = no limit). |
 | **Queue topology** | `queueTopology` | Optional; strategy + two maps. |
 
-This reference plus the validation rules above are enough to drive a drag-and-drop pipeline and feature-flag UI that produces valid engine config JSON (e.g. for `config/<CONFIG_KEY>.json`).
+This reference plus the validation rules above are enough to drive a drag-and-drop pipeline and feature-flag UI that produces valid engine config JSON (e.g. for `config/<CONFIG_KEY>.json`). For a consolidated reference (stages, plugin types, config schema, and **stage debugging** — activity names, context keys, execution flow), use [**ui-reference.md**](ui-reference.md).

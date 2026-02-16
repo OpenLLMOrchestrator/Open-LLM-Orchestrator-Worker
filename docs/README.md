@@ -8,6 +8,7 @@ Index of project documentation. Config loading and environment variables are doc
 
 | Document | Description |
 |----------|-------------|
+| [**ui-reference.md**](ui-reference.md) | **Configuration UI & Stage Debugging UI:** Single reference for building config UIs and stage-debugging UIs: predefined stages table, plugin types table, config schema at a glance, pipeline structure, activity naming, context keys, and execution flow. Use for dropdowns, validation, and run inspection. |
 | [**config-reference.md**](config-reference.md) | **Config reference:** Load order (Redis → DB → file), file path **`config/<CONFIG_KEY>.json`**, env vars (`CONFIG_KEY`, `CONFIG_VERSION`, `CONFIG_FILE_PATH`, Redis, DB, Temporal, Ollama), config examples table, root sections, merge policies. |
 | [**configuration-reference.md**](configuration-reference.md) | **Full schema:** Every config field (feature flags, worker, temporal, activity, stageOrder, pipelines, plugins, dynamicPlugins, queue topology), validation, UI/drag-and-drop guidance. |
 | [**architecture.md**](architecture.md) | High-level architecture, package layout, bootstrap flow, config loading (Redis → DB → file, `config/<CONFIG_KEY>.json`). |
