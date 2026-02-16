@@ -78,8 +78,11 @@ public final class StagesBasedPlanBuilder {
             if (stageBlock == null || stageBlock.getGroupsSafe().isEmpty()) {
                 continue;
             }
+            PlanBuildContext ctxWithStage = stageBlock.getStage() != null && !stageBlock.getStage().isBlank()
+                    ? ctx.withCurrentStageBucketName(stageBlock.getStage().trim())
+                    : ctx;
             for (GroupConfig group : stageBlock.getGroupsSafe()) {
-                processGroup(group, section, ctx, builder, 0);
+                processGroup(group, section, ctxWithStage, builder, 0);
             }
         }
     }
@@ -114,7 +117,8 @@ public final class StagesBasedPlanBuilder {
                     scheduleToClose,
                     retryOptions,
                     policy,
-                    mergePolicyName
+                    mergePolicyName,
+                    ctx.getCurrentStageBucketName()
             );
         } else {
             for (Object child : group.getChildrenAsList()) {
@@ -133,7 +137,8 @@ public final class StagesBasedPlanBuilder {
                                 ctx.getTaskQueue(),
                                 scheduleToStart,
                                 scheduleToClose,
-                                retryOptions
+                                retryOptions,
+                                ctx.getCurrentStageBucketName()
                         );
                     }
                 } else if (child instanceof Map) {

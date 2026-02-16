@@ -90,13 +90,16 @@ public class StageInvoker {
         return b.build();
     }
 
-    /** Activity type for Temporal UI: "Stage::PluginName" or "PluginName"; fallback "Execute" for typed handler. */
+    /** Activity type for Temporal UI: "Stage::PluginName" or "PluginName". Never "Execute" so container and non-container show the same. */
     private static String activityTypeFor(StageDefinition d) {
         String summary = buildActivitySummary(d);
-        return summary != null && !summary.isEmpty() ? summary : "Execute";
+        if (summary != null && !summary.isEmpty()) return summary;
+        String bucket = d.getStageBucketName();
+        if (bucket != null && !bucket.isBlank()) return bucket + "::Unknown";
+        return "Stage::Unknown";
     }
 
-    /** Builds "Stage::PluginName" or "PluginName" for Temporal UI. */
+    /** Builds "Stage::PluginName" or "PluginName" for Temporal UI (and for DynamicActivity routing). */
     private static String buildActivitySummary(StageDefinition d) {
         String pluginName = d.getName();
         if (pluginName == null || pluginName.isBlank()) return null;
