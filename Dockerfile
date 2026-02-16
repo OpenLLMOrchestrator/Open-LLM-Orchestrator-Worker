@@ -4,9 +4,17 @@ WORKDIR /app
 
 COPY gradlew .
 COPY build.gradle .
+COPY settings.gradle .
 COPY gradle gradle/
 
-RUN chmod +x gradlew && ./gradlew dependencies --no-daemon || true
+# Subprojects required by root build.gradle (project(':plugin-contract'), project(':plugins'))
+COPY plugin-contract plugin-contract/
+COPY plugins plugins/
+
+# Fix CRLF in gradlew (Windows) so Linux can run it (shebang must be #!/bin/sh not #!/bin/sh\r)
+RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
+
+RUN ./gradlew dependencies --no-daemon || true
 
 COPY src src/
 RUN ./gradlew installDist --no-daemon
