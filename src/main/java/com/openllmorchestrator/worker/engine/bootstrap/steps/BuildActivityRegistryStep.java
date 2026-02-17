@@ -42,10 +42,16 @@ import com.openllmorchestrator.worker.plugin.prompt.SimplePromptBuilderPlugin;
 import com.openllmorchestrator.worker.plugin.caching.InMemoryCachingPlugin;
 import com.openllmorchestrator.worker.plugin.observability.PassThroughObservabilityPlugin;
 import com.openllmorchestrator.worker.sample.SampleEchoPlugin;
+import com.openllmorchestrator.worker.sample.StubDatasetBuildPlugin;
+import com.openllmorchestrator.worker.sample.StubEvaluationPlugin;
+import com.openllmorchestrator.worker.sample.StubFeedbackPlugin;
 import com.openllmorchestrator.worker.sample.StubFilterPlugin;
-import com.openllmorchestrator.worker.sample.StubRefinementPlugin;
+import com.openllmorchestrator.worker.sample.StubLearningPlugin;
 import com.openllmorchestrator.worker.sample.StubModelPlugin;
+import com.openllmorchestrator.worker.sample.StubModelRegistryPlugin;
+import com.openllmorchestrator.worker.sample.StubRefinementPlugin;
 import com.openllmorchestrator.worker.sample.StubRetrievalPlugin;
+import com.openllmorchestrator.worker.sample.StubTrainTriggerPlugin;
 
 /** Registers plugin handlers by FQCN so pipeline config can reference them by class name. */
 public final class BuildActivityRegistryStep implements BootstrapStep {
@@ -78,6 +84,12 @@ public final class BuildActivityRegistryStep implements BootstrapStep {
         StageHandler stubRetrieval = new StubRetrievalPlugin();
         StageHandler stubModel = new StubModelPlugin();
         StageHandler stubRefinement = new StubRefinementPlugin();
+        StageHandler stubEvaluation = new StubEvaluationPlugin();
+        StageHandler stubFeedback = new StubFeedbackPlugin();
+        StageHandler stubLearning = new StubLearningPlugin();
+        StageHandler stubDatasetBuild = new StubDatasetBuildPlugin();
+        StageHandler stubTrainTrigger = new StubTrainTriggerPlugin();
+        StageHandler stubModelRegistry = new StubModelRegistryPlugin();
         StageHandler lastWins = new LastWinsMergeHandler();
         StageHandler firstWins = new FirstWinsMergeHandler();
         StageHandler prefixByActivity = new PrefixByActivityMergeHandler();
@@ -102,6 +114,12 @@ public final class BuildActivityRegistryStep implements BootstrapStep {
                 .register(StubRetrievalPlugin.NAME, stubRetrieval)
                 .register(StubModelPlugin.NAME, stubModel)
                 .register(StubRefinementPlugin.NAME, stubRefinement)
+                .register(StubEvaluationPlugin.NAME, stubEvaluation)
+                .register(StubFeedbackPlugin.NAME, stubFeedback)
+                .register(StubLearningPlugin.NAME, stubLearning)
+                .register(StubDatasetBuildPlugin.NAME, stubDatasetBuild)
+                .register(StubTrainTriggerPlugin.NAME, stubTrainTrigger)
+                .register(StubModelRegistryPlugin.NAME, stubModelRegistry)
                 .register(LastWinsMergeHandler.NAME, lastWins)
                 .register(FirstWinsMergeHandler.NAME, firstWins)
                 .register(PrefixByActivityMergeHandler.NAME, prefixByActivity)
