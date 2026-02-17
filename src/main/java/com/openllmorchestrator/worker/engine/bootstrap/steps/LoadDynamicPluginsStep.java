@@ -24,47 +24,73 @@ import com.openllmorchestrator.worker.engine.capability.activity.ActivityRegistr
 import com.openllmorchestrator.worker.engine.capability.handler.DynamicPluginWrapper;
 
 import java.util.Map;
+import java.util.ServiceLoader;
 
 /**
- * After the base activity registry is built, loads dynamic plugins from JAR paths in config.
- * For each entry in dynamicPlugins (plugin name → JAR path): tries to load the plugin; if the JAR
- * is missing or load fails, registers a {@link DynamicPluginWrapper} that logs and no-ops at runtime.
+ * After the base activity registry is built, loads plugins from:
+ * (1) Classpath (compile-time plugins): all {@link CapabilityHandler} implementations via ServiceLoader.
+ *    Registered by name(), by class name (FQCN), and by worker-package alias when config sets pluginRepoPackagePrefix.
+ * (2) Config dynamicPluginJars (list of JAR paths, loadAll each) for additional runtime JARs.
+ * (3) Config dynamicPlugins (plugin name → JAR path), for explicit name→path mapping.
+ * If a JAR is missing or load fails, registers a {@link DynamicPluginWrapper} that logs and no-ops at runtime.
  */
 public final class LoadDynamicPluginsStep implements BootstrapStep {
 
+    private static final String WORKER_PLUGIN_PACKAGE_PREFIX = "com.openllmorchestrator.worker.plugin.";
+
     @Override
     public void run(BootstrapContext ctx) {
-        EngineFileConfig config = ctx.getConfig();
-        if (config == null) {
-            return;
-        }
-        Map<String, String> dynamicPlugins = config.getDynamicPluginsEffective();
-        if (dynamicPlugins.isEmpty()) {
-            return;
-        }
         ActivityRegistry base = ctx.getActivityRegistry();
         if (base == null) {
             return;
         }
         ActivityRegistry.Builder builder = ActivityRegistry.builder().registerAll(base.getHandlers());
-        for (String jarPath : config.getDynamicPluginJarsEffective()) {
-            if (jarPath == null || jarPath.isBlank()) {
-                continue;
+        EngineFileConfig config = ctx.getConfig();
+        String pluginRepoPrefix = config != null ? config.getPluginRepoPackagePrefix() : null;
+
+        // (1) Compile-time plugins: discover from classpath (same worker JAR / fat JAR)
+        ServiceLoader.load(CapabilityHandler.class).forEach(handler ->
+                registerHandler(builder, handler, pluginRepoPrefix));
+
+        if (config != null) {
+            for (String jarPath : config.getDynamicPluginJarsEffective()) {
+                if (jarPath == null || jarPath.isBlank()) continue;
+                Map<String, CapabilityHandler> loaded = DynamicPluginLoader.loadAll(jarPath);
+                loaded.forEach((name, handler) -> registerHandler(builder, handler, pluginRepoPrefix));
             }
-            Map<String, CapabilityHandler> loaded = DynamicPluginLoader.loadAll(jarPath);
-            loaded.forEach(builder::register);
         }
-        for (Map.Entry<String, String> entry : dynamicPlugins.entrySet()) {
-            String pluginName = entry.getKey();
-            String jarPath = entry.getValue();
-            if (pluginName == null || pluginName.isBlank()) {
-                continue;
+
+        if (config != null) {
+            for (Map.Entry<String, String> entry : config.getDynamicPluginsEffective().entrySet()) {
+                String pluginName = entry.getKey();
+                String jarPath = entry.getValue();
+                if (pluginName == null || pluginName.isBlank()) continue;
+                CapabilityHandler loaded = DynamicPluginLoader.load(jarPath, pluginName);
+                CapabilityHandler handler = loaded != null ? loaded : new DynamicPluginWrapper(pluginName, null);
+                builder.register(pluginName, handler);
+                registerHandler(builder, handler, pluginRepoPrefix);
             }
-            CapabilityHandler loaded = DynamicPluginLoader.load(jarPath, pluginName);
-            CapabilityHandler handler = loaded != null ? loaded : new DynamicPluginWrapper(pluginName, null);
-            builder.register(pluginName, handler);
         }
+
         ctx.setActivityRegistry(builder.build());
+    }
+
+    private static void registerHandler(ActivityRegistry.Builder builder, CapabilityHandler handler, String pluginRepoPackagePrefix) {
+        if (handler == null) return;
+        String name = handler.name();
+        if (name != null && !name.isBlank()) {
+            builder.register(name, handler);
+        }
+        String className = handler.getClass().getName();
+        if (className != null && !className.equals(name)) {
+            builder.register(className, handler);
+        }
+        if (pluginRepoPackagePrefix != null && !pluginRepoPackagePrefix.isBlank() && className != null && className.startsWith(pluginRepoPackagePrefix)) {
+            String suffix = className.substring(pluginRepoPackagePrefix.length());
+            if (suffix.startsWith(".")) suffix = suffix.substring(1);
+            String workerAlias = WORKER_PLUGIN_PACKAGE_PREFIX + suffix;
+            builder.register(workerAlias, handler);
+        }
     }
 }
 

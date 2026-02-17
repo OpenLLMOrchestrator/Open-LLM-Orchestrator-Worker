@@ -1,54 +1,42 @@
-# Plugin JARs and plugins module
+# Plugins (compile-time, same worker JAR)
 
-This directory serves two purposes:
-
-1. **Drop folder for JARs** — Place plugin JAR files here (see below). They are bundled at build time.
-2. **Gradle `plugins` module** — Contains sample and stub plugins (contract-only). Build with `./gradlew :plugins:jar`; the JAR is in `plugins/build/libs/sample-plugins-0.0.1.jar`. Copy it into this folder to bundle it.
+All plugins available in this folder are **compile-time** dependencies. Their code is built into the **same worker JAR** after build (no separate plugin JARs loaded at runtime for these).
 
 ---
 
-## Plugins in this module (use cases)
+## What counts as “plugins in the folder”
 
-| Plugin | Type | Use case | Description |
-|--------|------|----------|-------------|
-| **SampleEchoPlugin** | Tool | Dynamic / tools | Echoes input to output; available as tool for planner. |
-| **StubFilterPlugin** | Filter | Static / document ingestion | Tokenizes `document` into one chunk (stub). |
-| **StubRetrievalPlugin** | VectorStore | Static / RAG | Stores chunks or returns stub chunk from `question`. |
-| **StubModelPlugin** | Model | Static / chat or RAG | Stub response from `question` (no LLM). |
-| **StubRefinementPlugin** | Refinement | Static / post-process | Formats result as `ANS: "..."`. |
-
-All implement ContractCompatibility, PlannerInputDescriptor, and PluginTypeDescriptor. Use in **static** pipelines (reference by FQCN in config and `plugins` allow-list), or load via **dynamicPluginJars** for dynamic/planner use cases.
+1. **In-repo `plugins` project** — If `plugins/build.gradle` exists, the worker adds `implementation project(':plugins')`. Plugin classes and their `META-INF/services` entries are included in the worker fat JAR.
+2. **Plugin zips (from another repo)** — Place **`*.zip`** files here. The **unpackPluginZips** task unpacks each zip, expands **olo** (directory or `olo.zip`) if present, collects all JARs into `build/plugin-jars/`. Those JARs are added as `implementation` dependencies, so their contents are merged into the worker fat JAR (Shadow JAR with merged service files).
+3. **Loose JARs** — Any **`*.jar`** files directly in this folder are also `implementation` dependencies and end up inside the worker JAR.
 
 ---
 
-## Drop folder: plugin JARs
+## Build
 
-Place **plugin JAR files** here. They are:
+- Run `./gradlew unpackPluginZips` (or any task that needs plugin JARs; `compileJava` and `shadowJar` depend on it).
+- The **fat JAR** is produced by:  
+  `./gradlew shadowJar`  
+  Output: `build/libs/open-llm-orchestrator-worker-0.0.1-all.jar`. This JAR contains the worker and all compile-time plugin code; run with:  
+  `java -jar build/libs/open-llm-orchestrator-worker-0.0.1-all.jar`.
+- `./gradlew installDist` still builds a distribution with `lib/` (worker + dependencies). For a single JAR deployment, use `shadowJar` and run the `-all` JAR as above.
 
-- **Ignored by Git** (see `.gitignore`) so you can add local or proprietary plugins without committing them.
-- **Bundled at build time**: when you run `./gradlew installDist` (or `distZip` / `distTar`), all `*.jar` files in this folder are copied into the distribution under `plugins/`.
+At **runtime**, plugins are discovered from the **classpath** via `ServiceLoader.load(CapabilityHandler.class)` (no separate “plugins directory” loading for compile-time plugins). You can still add extra runtime JARs via config **dynamicPluginJars** (list of paths) and **dynamicPlugins** (plugin name → JAR path). See [Configuration Reference](../docs/configuration-reference.md) and [Plugin Contract](../docs/plugin-contract.md).
 
-After building, the distribution layout includes:
+---
 
-```text
-worker/
-  bin/
-  lib/
-  plugins/    <-- your plugin JARs (if any were in this folder at build time)
-```
+## Zip layout (for plugin zips from another repo)
 
-**Option 1 — One JAR, multiple plugins:** set `dynamicPluginJars` to a list of JAR paths; the worker loads all StageHandler implementations from each JAR and registers each by its `name()`:
+Each zip in this folder is expanded **twice** when present:
 
-```json
-"dynamicPluginJars": ["plugins/sample-plugins-0.0.1.jar"]
-```
+1. **First expansion:** the main `*.zip` is unpacked.
+2. **Second expansion:** every **`*.olo`** file found inside (at any path) is treated as a zip and unpacked; all `**/*.jar` from each expanded `.olo` are collected into `build/plugin-jars/`.
 
-**Option 2 — One plugin per JAR:** set `dynamicPlugins` to a map of plugin name → JAR path; the worker loads the first StageHandler from each JAR:
+Because JARs from different `.olo` files often have the same name (e.g. `plugin.jar`), each copied JAR gets a **unique filename**: `<oloBasename>-<originalJarName>`. If that would collide, a number is inserted: `<oloBasename>-<n>-<originalJarName>` (e.g. `FolderIngestion-plugin.jar`, `VectorStore-plugin.jar`).
 
-```json
-"dynamicPlugins": {
-  "my-plugin": "plugins/my-plugin-1.0.0.jar"
-}
-```
+Supported layouts:
 
-Add plugin FQCNs to `plugins` if you use an allow-list. See [Configuration Reference](../docs/configuration-reference.md) and [Plugin Contract](../docs/plugin-contract.md).
+- **Multiple .olo files** (recommended): the zip contains one or more `*.olo` files (each is a zip). Each `.olo` is expanded and JARs inside it are collected.
+- **Fallback:** a single **`olo/`** directory with JARs, or a single **`olo.zip`** that contains JARs, or JARs at the root of the main zip.
+
+Plugin JARs must declare `META-INF/services/com.openllmorchestrator.worker.contract.CapabilityHandler` (one implementation class name per line) so they are discoverable when merged into the worker JAR.

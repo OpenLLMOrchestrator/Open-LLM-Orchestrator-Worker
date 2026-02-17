@@ -1,3 +1,0 @@
-# Ignore all JAR files in this folder so plugin JARs are not committed.
-# The folder and this .gitignore are tracked; add your JARs locally or via CI.
-*.jar

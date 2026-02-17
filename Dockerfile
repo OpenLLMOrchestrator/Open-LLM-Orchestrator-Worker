@@ -7,7 +7,7 @@ COPY build.gradle .
 COPY settings.gradle .
 COPY gradle gradle/
 
-# Subprojects required by root build.gradle (project(':plugin-contract'), project(':plugins'))
+# Required: plugin-contract. plugins/ must exist (e.g. plugins/README.md); put plugins/*.zip here to bundle them into the fat JAR
 COPY plugin-contract plugin-contract/
 COPY plugins plugins/
 
@@ -17,20 +17,20 @@ RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
 RUN ./gradlew dependencies --no-daemon || true
 
 COPY src src/
-RUN ./gradlew installDist --no-daemon
+# Build fat JAR (shadowJar) so runtime is a single JAR with worker + plugin-contract + any plugin zips from plugins/
+RUN ./gradlew unpackPluginZips shadowJar --no-daemon
 
-# Run stage
+# Run stage: single fat JAR (no installDist)
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 RUN adduser -D -u 1000 appuser
 
-COPY --from=build /app/build/install/worker /app/install
+COPY --from=build /app/build/libs/open-llm-orchestrator-worker-*-all.jar /app/worker.jar
 COPY config config/
 
 USER appuser
 
-ENV PATH="/app/install/bin:${PATH}"
-# Config file: when CONFIG_FILE_PATH is unset, path is config/<CONFIG_KEY>.json (e.g. /app/config/default.json)
-
-ENTRYPOINT ["worker"]
+# Config: CONFIG_FILE_PATH unset => config/<CONFIG_KEY>.json (e.g. /app/config/default.json)
+ENV CONFIG_FILE_PATH=/app/config/default.json
+ENTRYPOINT ["java", "-jar", "/app/worker.jar"]

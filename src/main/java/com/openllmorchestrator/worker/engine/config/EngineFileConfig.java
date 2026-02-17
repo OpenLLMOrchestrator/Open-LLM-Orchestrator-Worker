@@ -90,6 +90,12 @@ public class EngineFileConfig {
     private List<String> plugins;
 
     /**
+     * Package prefix used by the plugin repo (e.g. {@code com.openllmorchestrator.worker.plugin}).
+     * When set, handlers from that package are also registered under worker-package FQCN so config/pipelines can match.
+     */
+    private String pluginRepoPackagePrefix;
+
+    /**
      * Enabled feature flags by name (e.g. HUMAN_SIGNAL, STREAMING, AGENT_CONTEXT).
      * Only these features execute; disabled features run no code. Loaded at bootstrap.
      */
@@ -115,6 +121,7 @@ public class EngineFileConfig {
         merged.dynamicPlugins = fromStorage != null ? fromStorage.dynamicPlugins : null;
         merged.dynamicPluginJars = fromStorage != null ? fromStorage.dynamicPluginJars : null;
         merged.plugins = fromStorage != null ? fromStorage.plugins : null;
+        merged.pluginRepoPackagePrefix = fromStorage != null ? fromStorage.pluginRepoPackagePrefix : null;
         merged.enabledFeatures = fromStorage != null ? fromStorage.enabledFeatures : null;
         merged.queueTopology = fromStorage != null ? fromStorage.queueTopology : null;
         return merged;

@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'application'
+    id 'com.gradleup.shadow' version '9.0.0'
 }
 
 group = 'com.openllm'
@@ -10,9 +11,15 @@ repositories {
     mavenCentral()
 }
 
+// Compile-time plugins: in-repo project (when present) + JARs from plugins/ folder (unpacked zips + loose *.jar)
 dependencies {
     implementation project(':plugin-contract')
-    implementation project(':plugins')
+    if (project.findProject(':plugins') != null) {
+        implementation project(':plugins')
+    }
+    implementation fileTree(dir: file("${layout.buildDirectory.get().asFile}/plugin-jars"), include: '*.jar')
+    implementation fileTree(dir: file('plugins'), include: '*.jar')
+
     implementation 'io.temporal:temporal-sdk:1.24.1'
     implementation 'org.slf4j:slf4j-simple:2.0.9'
     implementation 'redis.clients:jedis:5.1.0'
@@ -23,12 +30,103 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
 }
 
+// Unpack plugin zips (from another repo) placed in plugins/: expand zip once, then expand each *.olo (olo files are zips), collect JARs
+def pluginZipsDir = file('plugins')
+def pluginJarsDir = layout.buildDirectory.dir('plugin-jars').get().asFile
+tasks.register('unpackPluginZips') {
+    group = 'build'
+    description = 'Unpacks *.zip in plugins/, then expands each *.olo (zip) inside, collects JARs into build/plugin-jars'
+    outputs.dir(pluginJarsDir)
+    doLast {
+        pluginJarsDir.mkdirs()
+        if (!pluginZipsDir.isDirectory()) {
+            logger.lifecycle('unpackPluginZips: plugins/ not found, skipping.')
+            return
+        }
+        def zips = fileTree(dir: pluginZipsDir, include: '*.zip').files
+        if (zips.isEmpty()) {
+            logger.lifecycle('unpackPluginZips: no *.zip in plugins/, skipping.')
+            return
+        }
+        // List of [File jar, String namePrefix] so we can assign unique output names (all JARs may have same name)
+        def allJarEntries = [] as List
+        def zipBasename = ''
+        zips.each { zipFile ->
+            zipBasename = zipFile.name.replaceAll(~/(?i)\.zip$/, '')
+            logger.lifecycle("unpackPluginZips: expanding ${zipFile.name} ...")
+            def expandedRoot = file("${layout.buildDirectory.get()}/plugin-zips-expanded/${zipBasename}")
+            expandedRoot.mkdirs()
+            copy { from zipTree(zipFile); into expandedRoot }
+            // First level: look for *.olo files (each .olo is a zip); expand each and collect JARs with prefix from .olo name
+            def oloFiles = fileTree(dir: expandedRoot, include: '**/*.olo').files
+            if (!oloFiles.isEmpty()) {
+                oloFiles.each { oloFile ->
+                    def oloBase = oloFile.name.replaceAll(~/(?i)\.olo$/, '')
+                    logger.lifecycle("unpackPluginZips: expanding .olo ${oloFile.name} ...")
+                    def oloExpanded = new File(expandedRoot, "olo-expanded-${oloBase}")
+                    oloExpanded.mkdirs()
+                    copy { from zipTree(oloFile); into oloExpanded }
+                    fileTree(dir: oloExpanded, include: '**/*.jar').files.each { jar -> allJarEntries << [jar, oloBase] }
+                }
+            } else {
+                // Fallback: single olo dir or olo.zip, or JARs at root; use zip basename as prefix
+                def oloDir = new File(expandedRoot, 'olo')
+                def oloZip = new File(expandedRoot, 'olo.zip')
+                def fallbackJars = [] as List<File>
+                if (oloDir.isDirectory()) {
+                    fallbackJars = fileTree(dir: oloDir, include: '**/*.jar').files as List
+                } else if (oloZip.isFile()) {
+                    def oloExpanded = new File(expandedRoot, 'olo-expanded')
+                    oloExpanded.mkdirs()
+                    copy { from zipTree(oloZip); into oloExpanded }
+                    fallbackJars = fileTree(dir: oloExpanded, include: '**/*.jar').files as List
+                } else {
+                    fallbackJars = fileTree(dir: expandedRoot, include: '**/*.jar').files as List
+                }
+                fallbackJars.each { jar -> allJarEntries << [jar, zipBasename] }
+            }
+        }
+        def usedNames = [] as Set<String>
+        allJarEntries.each { entry ->
+            def jar = entry[0]
+            def prefix = entry[1]
+            def baseName = prefix + '-' + jar.name
+            def uniqueName = baseName
+            def n = 0
+            while (usedNames.contains(uniqueName)) {
+                uniqueName = prefix + '-' + (++n) + '-' + jar.name
+            }
+            usedNames.add(uniqueName)
+            logger.lifecycle("unpackPluginZips: plugin JAR ${uniqueName} (from ${prefix}, original: ${jar.name})")
+            copy { from jar; into pluginJarsDir; rename { uniqueName } }
+        }
+        logger.lifecycle("unpackPluginZips: ${allJarEntries.size()} JAR(s) -> ${pluginJarsDir}")
+    }
+}
 
 application {
     mainClass = 'com.openllmorchestrator.worker.WorkerApplication'
     applicationName = 'worker'
-    // Bundle plugin JARs from plugins/ into the distribution (plugins/*.jar are gitignored)
-    applicationDistribution.from(fileTree(dir: 'plugins', include: '*.jar')).into('plugins')
+    // Plugins are compile-time: code is in the worker fat JAR (shadowJar), not in a separate plugins/ dir
+}
+
+// Ensure plugin JARs exist before compile/runtime; they are included in the worker JAR via dependencies
+tasks.named('compileJava').configure { dependsOn tasks.named('unpackPluginZips') }
+tasks.named('shadowJar').configure {
+    dependsOn tasks.named('unpackPluginZips')
+    // Rebuild fat JAR when plugin JARs change (otherwise shadowJar stays UP-TO-DATE with stale/empty plugins)
+    inputs.dir(tasks.named('unpackPluginZips').map { it.outputs.files.singleFile })
+}
+
+shadowJar {
+    archiveClassifier = 'all'
+    mergeServiceFiles()
+    // Merge plugin JARs from unpack output at execution time (fileTree dependency can be empty at config time)
+    from(provider({
+        def dir = tasks.named('unpackPluginZips').get().outputs.files.singleFile
+        if (!dir.exists()) return []
+        fileTree(dir: dir, include: '*.jar').files.collect { zipTree(it) }
+    }))
 }
 
 java {
