@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Execution graph for capability ordering. Replaces linear stageOrder with a DAG-capable structure.
+ * Execution graph for capability ordering. Replaces linear capabilityOrder with a DAG-capable structure.
  * Backward compatibility: a linear list auto-converts to a simple chain (nodes in order, edges A→B→C).
  */
 @Getter
@@ -41,8 +41,8 @@ public class ExecutionGraph {
      * Build a linear graph from an ordered list (backward compatibility).
      * Each stage is a node; edges are stage[i] → stage[i+1].
      */
-    public static ExecutionGraph fromLinearOrder(List<String> stageOrder) {
-        if (stageOrder == null || stageOrder.isEmpty()) {
+    public static ExecutionGraph fromLinearOrder(List<String> capabilityOrder) {
+        if (capabilityOrder == null || capabilityOrder.isEmpty()) {
             return ExecutionGraph.builder()
                     .nodes(Collections.emptyMap())
                     .edges(Collections.emptyMap())
@@ -50,12 +50,12 @@ public class ExecutionGraph {
         }
         Map<String, StageNode> nodes = new LinkedHashMap<>();
         Map<String, List<String>> edges = new LinkedHashMap<>();
-        for (String name : stageOrder) {
+        for (String name : capabilityOrder) {
             nodes.put(name, StageNode.of(name));
         }
-        for (int i = 0; i < stageOrder.size() - 1; i++) {
-            String from = stageOrder.get(i);
-            String to = stageOrder.get(i + 1);
+        for (int i = 0; i < capabilityOrder.size() - 1; i++) {
+            String from = capabilityOrder.get(i);
+            String to = capabilityOrder.get(i + 1);
             edges.computeIfAbsent(from, k -> new ArrayList<>()).add(to);
         }
         return ExecutionGraph.builder()
@@ -116,7 +116,7 @@ public class ExecutionGraph {
         if (nodes != null) {
             for (String id : nodes.keySet()) {
                 StageNode n = nodes.get(id);
-                String label = n != null && n.getStageBucketName() != null ? n.getStageBucketName() : id;
+                String label = n != null && n.getCapabilityBucketName() != null ? n.getCapabilityBucketName() : id;
                 sb.append("  \"").append(escapeDot(id)).append("\" [label=\"").append(escapeDot(label)).append("\"];\n");
             }
         }
@@ -154,7 +154,7 @@ public class ExecutionGraph {
             for (Map.Entry<String, StageNode> e : nodes.entrySet()) {
                 Map<String, String> n = new LinkedHashMap<>();
                 n.put("id", e.getKey());
-                n.put("stageBucketName", e.getValue() != null ? e.getValue().getStageBucketName() : e.getKey());
+                n.put("capabilityBucketName", e.getValue() != null ? e.getValue().getCapabilityBucketName() : e.getKey());
                 nodeList.add(n);
             }
         }

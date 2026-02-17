@@ -21,7 +21,7 @@ import com.openllmorchestrator.worker.engine.config.pipeline.ElseIfBranchConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.GroupConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.MergePolicyConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
-import com.openllmorchestrator.worker.engine.config.pipeline.StageBlockConfig;
+import com.openllmorchestrator.worker.engine.config.pipeline.CapabilityBlockConfig;
 import com.openllmorchestrator.worker.engine.capability.AsyncCompletionPolicy;
 import com.openllmorchestrator.worker.engine.capability.CapabilityDefinition;
 import com.openllmorchestrator.worker.engine.capability.CapabilityExecutionMode;
@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Builds CapabilityPlan from pipeline.stages: top-level stages, each with groups (sync/async recursive);
+ * Builds CapabilityPlan from pipeline.capabilities: top-level capabilities, each with groups (sync/async recursive);
  * group children are activity names (plugin ids), each implemented by one CapabilityHandler.
  */
 public final class CapabilitiesBasedPlanBuilder {
@@ -64,8 +64,8 @@ public final class CapabilitiesBasedPlanBuilder {
         if (fileConfig == null || section == null) {
             return;
         }
-        List<StageBlockConfig> stages = section.getStages();
-        if (stages == null || stages.isEmpty()) {
+        List<CapabilityBlockConfig> capabilities = section.getCapabilities();
+        if (capabilities == null || capabilities.isEmpty()) {
             return;
         }
         int defaultMaxDepth = section.getDefaultMaxGroupDepth() > 0 ? section.getDefaultMaxGroupDepth() : 5;
@@ -78,15 +78,15 @@ public final class CapabilitiesBasedPlanBuilder {
                 null,
                 allowedPluginNames
         );
-        for (StageBlockConfig stageBlock : stages) {
-            if (stageBlock == null || stageBlock.getGroupsSafe().isEmpty()) {
+        for (CapabilityBlockConfig capabilityBlock : capabilities) {
+            if (capabilityBlock == null || capabilityBlock.getGroupsSafe().isEmpty()) {
                 continue;
             }
-            PlanBuildContext ctxWithStage = stageBlock.getStage() != null && !stageBlock.getStage().isBlank()
-                    ? ctx.withCurrentStageBucketName(stageBlock.getStage().trim())
+            PlanBuildContext ctxWithCapability = capabilityBlock.getCapability() != null && !capabilityBlock.getCapability().isBlank()
+                    ? ctx.withCurrentCapabilityBucketName(capabilityBlock.getCapability().trim())
                     : ctx;
-            for (GroupConfig group : stageBlock.getGroupsSafe()) {
-                processGroup(group, section, ctxWithStage, builder, 0);
+            for (GroupConfig group : capabilityBlock.getGroupsSafe()) {
+                processGroup(group, section, ctxWithCapability, builder, 0);
             }
         }
     }
@@ -126,7 +126,7 @@ public final class CapabilitiesBasedPlanBuilder {
                     retryOptions,
                     policy,
                     mergePolicyName,
-                    ctx.getCurrentStageBucketName()
+                    ctx.getCurrentCapabilityBucketName()
             );
         } else {
             for (Object child : group.getChildrenAsList()) {
@@ -146,7 +146,7 @@ public final class CapabilitiesBasedPlanBuilder {
                                 scheduleToStart,
                                 scheduleToClose,
                                 retryOptions,
-                                ctx.getCurrentStageBucketName()
+                                ctx.getCurrentCapabilityBucketName()
                         );
                     }
                 } else if (child instanceof Map) {
@@ -212,7 +212,7 @@ public final class CapabilitiesBasedPlanBuilder {
                 .scheduleToStartTimeout(scheduleToStart)
                 .scheduleToCloseTimeout(scheduleToClose)
                 .retryOptions(retryOptions)
-                .stageBucketName("CONDITION")
+                .capabilityBucketName("CONDITION")
                 .build();
         List<List<CapabilityGroupSpec>> branches = new ArrayList<>();
         branches.add(group.hasThenGroup()
@@ -259,7 +259,7 @@ public final class CapabilitiesBasedPlanBuilder {
                             ActivityOptionsFromConfig.scheduleToStart(null, ctx),
                             ActivityOptionsFromConfig.scheduleToClose(null, ctx),
                             ActivityOptionsFromConfig.retryOptions(null, ctx),
-                            ctx.getCurrentStageBucketName()
+                            ctx.getCurrentCapabilityBucketName()
                     );
                 }
             } else if (child instanceof Map) {

@@ -19,16 +19,16 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * Node in an execution graph (future DAG support). Identified by id; stageBucketName is the stage/bucket to run.
+ * Node in an execution graph (future DAG support). Identified by id; capabilityBucketName is the capability/bucket to run.
  */
 @Getter
 @Builder
 public class StageNode {
     private final String id;
-    private final String stageBucketName;
+    private final String capabilityBucketName;
 
-    public static StageNode of(String stageBucketName) {
-        return StageNode.builder().id(stageBucketName).stageBucketName(stageBucketName).build();
+    public static StageNode of(String capabilityBucketName) {
+        return StageNode.builder().id(capabilityBucketName).capabilityBucketName(capabilityBucketName).build();
     }
 }
 

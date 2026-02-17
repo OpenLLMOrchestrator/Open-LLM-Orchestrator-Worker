@@ -21,21 +21,21 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Predefined stage name + plugin id → handler. */
+/** Predefined capability name + plugin id → handler. */
 public final class PredefinedPluginBucket {
     private static final String DEFAULT_PLUGIN_ID = "default";
 
-    private final Map<String, Map<String, CapabilityHandler>> stageToPlugins;
+    private final Map<String, Map<String, CapabilityHandler>> capabilityToPlugins;
 
-    public PredefinedPluginBucket(Map<String, Map<String, CapabilityHandler>> stageToPlugins) {
-        this.stageToPlugins = stageToPlugins == null ? Collections.emptyMap() : new HashMap<>(stageToPlugins);
+    public PredefinedPluginBucket(Map<String, Map<String, CapabilityHandler>> capabilityToPlugins) {
+        this.capabilityToPlugins = capabilityToPlugins == null ? Collections.emptyMap() : new HashMap<>(capabilityToPlugins);
     }
 
-    public CapabilityHandler get(String stageName, String pluginId) {
+    public CapabilityHandler get(String capabilityName, String pluginId) {
         if (pluginId == null || pluginId.isBlank()) {
             pluginId = DEFAULT_PLUGIN_ID;
         }
-        Map<String, CapabilityHandler> plugins = stageToPlugins.get(stageName);
+        Map<String, CapabilityHandler> plugins = capabilityToPlugins.get(capabilityName);
         return plugins == null ? null : plugins.get(pluginId);
     }
 
@@ -44,22 +44,22 @@ public final class PredefinedPluginBucket {
     }
 
     public static final class Builder {
-        private final Map<String, Map<String, CapabilityHandler>> stageToPlugins = new HashMap<>();
+        private final Map<String, Map<String, CapabilityHandler>> capabilityToPlugins = new HashMap<>();
 
-        public Builder register(String stageName, String pluginId, CapabilityHandler handler) {
-            if (!PredefinedCapabilities.isPredefined(stageName)) {
-                throw new IllegalArgumentException("Not a predefined stage: " + stageName);
+        public Builder register(String capabilityName, String pluginId, CapabilityHandler handler) {
+            if (!PredefinedCapabilities.isPredefined(capabilityName)) {
+                throw new IllegalArgumentException("Not a predefined capability: " + capabilityName);
             }
             if (handler == null) {
                 throw new IllegalArgumentException("Handler must be non-null");
             }
             String pid = pluginId == null || pluginId.isBlank() ? DEFAULT_PLUGIN_ID : pluginId;
-            stageToPlugins.computeIfAbsent(stageName, k -> new HashMap<>()).put(pid, handler);
+            capabilityToPlugins.computeIfAbsent(capabilityName, k -> new HashMap<>()).put(pid, handler);
             return this;
         }
 
         public PredefinedPluginBucket build() {
-            return new PredefinedPluginBucket(stageToPlugins);
+            return new PredefinedPluginBucket(capabilityToPlugins);
         }
     }
 }

@@ -19,13 +19,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.GroupConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
-import com.openllmorchestrator.worker.engine.config.pipeline.StageBlockConfig;
+import com.openllmorchestrator.worker.engine.config.pipeline.CapabilityBlockConfig;
 import com.openllmorchestrator.worker.engine.capability.resolver.CapabilityResolver;
 
 import java.util.List;
 import java.util.Map;
 
-/** Validates pipeline.stages: stage names, group executionMode, and that every activity name is resolvable. */
+/** Validates pipeline.capabilities: capability names, group executionMode, and that every activity name is resolvable. */
 public final class PipelineStagesValidator implements ConfigValidator {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -35,16 +35,16 @@ public final class PipelineStagesValidator implements ConfigValidator {
         for (Map.Entry<String, PipelineSection> e : effective.entrySet()) {
             PipelineSection section = e.getValue();
             if (section == null) continue;
-            List<StageBlockConfig> stages = section.getStages();
-            if (stages == null || stages.isEmpty()) {
+            List<CapabilityBlockConfig> capabilities = section.getCapabilities();
+            if (capabilities == null || capabilities.isEmpty()) {
                 continue;
             }
-            for (StageBlockConfig block : stages) {
+            for (CapabilityBlockConfig block : capabilities) {
                 if (block == null) {
-                    throw new IllegalStateException("pipeline.stages contains a null stage block");
+                    throw new IllegalStateException("pipeline.capabilities contains a null capability block");
                 }
-                if (block.getStage() == null || block.getStage().isBlank()) {
-                    throw new IllegalStateException("pipeline.stages: each stage block must have a non-blank 'stage' name");
+                if (block.getCapability() == null || block.getCapability().isBlank()) {
+                    throw new IllegalStateException("pipeline.capabilities: each capability block must have a non-blank 'capability' name");
                 }
                 for (GroupConfig group : block.getGroupsSafe()) {
                     validateGroup(group, resolver);
@@ -55,20 +55,20 @@ public final class PipelineStagesValidator implements ConfigValidator {
 
     private static void validateGroup(GroupConfig group, CapabilityResolver resolver) {
         if (group == null) {
-            throw new IllegalStateException("pipeline.stages: group is null");
+            throw new IllegalStateException("pipeline.capabilities: group is null");
         }
         String mode = group.getExecutionMode();
         if (mode == null || (!"SYNC".equalsIgnoreCase(mode) && !"ASYNC".equalsIgnoreCase(mode))) {
-            throw new IllegalStateException("pipeline.stages: group must have executionMode SYNC or ASYNC");
+            throw new IllegalStateException("pipeline.capabilities: group must have executionMode SYNC or ASYNC");
         }
         for (Object child : group.getChildrenAsList()) {
             if (child instanceof String) {
                 String name = ((String) child).trim();
                 if (name.isEmpty()) {
-                    throw new IllegalStateException("pipeline.stages: group child activity name must be non-blank");
+                    throw new IllegalStateException("pipeline.capabilities: group child activity name must be non-blank");
                 }
                 if (resolver != null && !resolver.canResolve(name)) {
-                    throw new IllegalStateException("pipeline.stages: activity '" + name
+                    throw new IllegalStateException("pipeline.capabilities: activity '" + name
                             + "' is not resolvable. Register a plugin for this activity name.");
                 }
             } else if (child instanceof Map) {

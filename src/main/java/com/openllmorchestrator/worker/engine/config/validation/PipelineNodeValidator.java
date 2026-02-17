@@ -35,22 +35,22 @@ public final class PipelineNodeValidator implements ConfigValidator {
         for (Map.Entry<String, PipelineSection> e : effective.entrySet()) {
             PipelineSection section = e.getValue();
             if (section == null) continue;
-            if (section.getStages() != null && !section.getStages().isEmpty()) {
-                continue; // stages-based config validated by PipelineStagesValidator
+            if (section.getCapabilities() != null && !section.getCapabilities().isEmpty()) {
+                continue; // capabilities-based config validated by PipelineStagesValidator
             }
             if (section.getRoot() != null) {
                 validateNode(section.getRoot(), section.getDefaultTimeoutSeconds(), new HashSet<>(), resolver);
                 continue;
             }
-            if (section.getRootByStage() != null && !section.getRootByStage().isEmpty()) {
-                for (Map.Entry<String, NodeConfig> entry : section.getRootByStage().entrySet()) {
-                    String stageName = entry.getKey();
+            if (section.getRootByCapability() != null && !section.getRootByCapability().isEmpty()) {
+                for (Map.Entry<String, NodeConfig> entry : section.getRootByCapability().entrySet()) {
+                    String capabilityName = entry.getKey();
                     NodeConfig node = entry.getValue();
                     if (node == null) {
-                        throw new IllegalStateException("Pipeline rootByStage['" + stageName + "'] is null");
+                        throw new IllegalStateException("Pipeline rootByCapability['" + capabilityName + "'] is null");
                     }
                     if (!node.isGroup()) {
-                        throw new IllegalStateException("Pipeline rootByStage['" + stageName + "'] must be GROUP, got: " + node.getType());
+                        throw new IllegalStateException("Pipeline rootByCapability['" + capabilityName + "'] must be GROUP, got: " + node.getType());
                     }
                     validateNode(node, section.getDefaultTimeoutSeconds(), new HashSet<>(), resolver);
                 }
@@ -92,7 +92,7 @@ public final class PipelineNodeValidator implements ConfigValidator {
             throw new IllegalStateException("STAGE/capability timeoutSeconds must be positive: " + node.getName());
         }
         if (resolver != null && !resolver.canResolve(node.getName())) {
-            throw new IllegalStateException("Pipeline references unresolvable stage '" + node.getName()
+            throw new IllegalStateException("Pipeline references unresolvable capability '" + node.getName()
                     + "'. Ensure the class is registered (plugin implementation with FQCN).");
         }
     }

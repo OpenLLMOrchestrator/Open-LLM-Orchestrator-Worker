@@ -34,19 +34,19 @@ public class PipelineSection {
     private int defaultMaxGroupDepth = 5;
     /** Default merge policy hook for ASYNC groups: type MERGE_POLICY, pluginType MergePolicy, name = activity/FQCN. */
     private MergePolicyConfig mergePolicy;
-    /** Legacy: single root GROUP/STAGE tree. Used when stages and rootByStage are null/empty. */
+    /** Legacy: single root GROUP/STAGE tree. Used when capabilities and rootByCapability are null/empty. */
     private NodeConfig root;
-    /** Optional: capability name → plugin id. When absent, engine-level stagePlugins are used. */
-    private Map<String, String> stagePlugins;
+    /** Optional: capability name → plugin id. When absent, engine-level capabilityPlugins are used. */
+    private Map<String, String> capabilityPlugins;
     /**
      * Top-level flow: ordered list of capabilities. Each capability has groups; group children are activity names.
-     * When non-null and non-empty, plan is built from this instead of root/rootByStage.
+     * When non-null and non-empty, plan is built from this instead of root/rootByCapability.
      */
-    private List<StageBlockConfig> stages;
+    private List<CapabilityBlockConfig> capabilities;
     /**
-     * Capability/stage name → GROUP config. Execution order follows engine capabilityOrder (or stageOrder); only capabilities present here are included.
+     * Capability name → GROUP config. Execution order follows engine capabilityOrder; only capabilities present here are included.
      * When non-null and non-empty, plan is built from this. Accepts key "root" or "rootByCapability" in JSON.
      */
-    private Map<String, NodeConfig> rootByStage;
+    private Map<String, NodeConfig> rootByCapability;
 }
 

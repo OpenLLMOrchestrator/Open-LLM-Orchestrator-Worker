@@ -36,11 +36,11 @@ public final class PipelineRootValidator implements ConfigValidator {
             if (section == null) {
                 throw new IllegalStateException("config.pipelines['" + name + "'] is null");
             }
-            boolean hasStages = section.getStages() != null && !section.getStages().isEmpty();
+            boolean hasCapabilities = section.getCapabilities() != null && !section.getCapabilities().isEmpty();
             boolean hasRoot = section.getRoot() != null;
-            boolean hasRootByStage = section.getRootByStage() != null && !section.getRootByStage().isEmpty();
-            if (!hasStages && !hasRoot && !hasRootByStage) {
-                throw new IllegalStateException("Pipeline '" + name + "' must have root, rootByStage, or stages");
+            boolean hasRootByCapability = section.getRootByCapability() != null && !section.getRootByCapability().isEmpty();
+            if (!hasCapabilities && !hasRoot && !hasRootByCapability) {
+                throw new IllegalStateException("Pipeline '" + name + "' must have root, rootByCapability, or capabilities");
             }
             if (section.getDefaultTimeoutSeconds() <= 0) {
                 throw new IllegalStateException("Pipeline '" + name + "': defaultTimeoutSeconds must be positive");

@@ -19,7 +19,7 @@ import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.config.FeatureFlag;
 import com.openllmorchestrator.worker.engine.config.pipeline.NodeConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
-import com.openllmorchestrator.worker.engine.config.pipeline.StageBlockConfig;
+import com.openllmorchestrator.worker.engine.config.pipeline.CapabilityBlockConfig;
 import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
 import com.openllmorchestrator.worker.engine.capability.CapabilityPlanBuilder;
 
@@ -96,14 +96,14 @@ CapabilityPlanFactory {
             throw new IllegalArgumentException("fileConfig and section must be non-null");
         }
         CapabilityPlanBuilder builder = CapabilityPlan.builder();
-        List<StageBlockConfig> stages = section.getStages();
-        if (stages != null && !stages.isEmpty()) {
+        List<CapabilityBlockConfig> capabilities = section.getCapabilities();
+        if (capabilities != null && !capabilities.isEmpty()) {
             CapabilitiesBasedPlanBuilder.build(fileConfig, section, builder, allowedPluginNames);
             return builder.build();
         }
-        Map<String, NodeConfig> rootByStage = section.getRootByStage();
-        if (rootByStage != null && !rootByStage.isEmpty()) {
-            buildFromRootByStage(fileConfig, section, rootByStage, builder, allowedPluginNames);
+        Map<String, NodeConfig> rootByCapability = section.getRootByCapability();
+        if (rootByCapability != null && !rootByCapability.isEmpty()) {
+            buildFromRootByCapability(fileConfig, section, rootByCapability, builder, allowedPluginNames);
             return builder.build();
         }
         NodeConfig root = section.getRoot();
@@ -126,15 +126,15 @@ CapabilityPlanFactory {
     }
 
     /**
-     * Build plan from rootByStage: only capabilities present in the map are included,
-     * in the order defined by config capabilityOrder/stageOrder (or predefined order in code).
+     * Build plan from rootByCapability: only capabilities present in the map are included,
+     * in the order defined by config capabilityOrder (or predefined order in code).
      */
-    private static void buildFromRootByStage(EngineFileConfig fileConfig, PipelineSection section,
-                                             Map<String, NodeConfig> rootByStage, CapabilityPlanBuilder builder,
+    private static void buildFromRootByCapability(EngineFileConfig fileConfig, PipelineSection section,
+                                             Map<String, NodeConfig> rootByCapability, CapabilityPlanBuilder builder,
                                              Set<String> allowedPluginNames) {
-        List<String> stageOrder = fileConfig.getFeatureFlagsEffective().isEnabled(FeatureFlag.EXECUTION_GRAPH)
+        List<String> capabilityOrder = fileConfig.getFeatureFlagsEffective().isEnabled(FeatureFlag.EXECUTION_GRAPH)
                 ? fileConfig.getExecutionGraphEffective().topologicalOrder()
-                : fileConfig.getStageOrderEffective();
+                : fileConfig.getCapabilityOrderEffective();
         int defaultMaxDepth = section.getDefaultMaxGroupDepth() > 0 ? section.getDefaultMaxGroupDepth() : 5;
         PlanBuildContext ctx = new PlanBuildContext(
                 section.getDefaultTimeoutSeconds(),
@@ -146,16 +146,16 @@ CapabilityPlanFactory {
                 allowedPluginNames
         );
         DefaultPipelineWalker walker = new DefaultPipelineWalker();
-        for (String stageName : stageOrder) {
-            NodeConfig groupNode = rootByStage.get(stageName);
+        for (String capabilityName : capabilityOrder) {
+            NodeConfig groupNode = rootByCapability.get(capabilityName);
             if (groupNode == null) {
                 continue; // not defined → skip
             }
             if (!groupNode.isGroup()) {
-                throw new IllegalStateException("Pipeline rootByStage['" + stageName + "'] must be a GROUP, got: " + groupNode.getType());
+                throw new IllegalStateException("Pipeline rootByCapability['" + capabilityName + "'] must be a GROUP, got: " + groupNode.getType());
             }
-            PlanBuildContext ctxForStage = ctx.withCurrentStageBucketName(stageName);
-            walker.processNode(groupNode, ctxForStage, builder, 0);
+            PlanBuildContext ctxForCapability = ctx.withCurrentCapabilityBucketName(capabilityName);
+            walker.processNode(groupNode, ctxForCapability, builder, 0);
         }
     }
 

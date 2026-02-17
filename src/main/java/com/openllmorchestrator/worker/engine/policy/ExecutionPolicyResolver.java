@@ -33,7 +33,7 @@ public interface ExecutionPolicyResolver {
     interface ExecutionPolicy {
         /** Allowed model id(s) for this tenant/user tier; empty = no restriction. */
         List<String> getAllowedModels();
-        /** Tool/stage names allowed for this user; empty = no restriction. */
+        /** Tool/capability names allowed for this user; empty = no restriction. */
         List<String> getToolWhitelist();
         /** Max cost (e.g. USD) for this run; null = no cap. */
         Double getBudgetCap();

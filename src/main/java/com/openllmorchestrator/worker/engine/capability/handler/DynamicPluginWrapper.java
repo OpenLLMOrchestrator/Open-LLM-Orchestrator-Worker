@@ -46,7 +46,7 @@ public final class DynamicPluginWrapper implements CapabilityHandler {
     @Override
     public CapabilityResult execute(PluginContext context) {
         if (delegate == null) {
-            log.warn("Dynamic plugin '{}' is not available (JAR was missing or failed to load); skipping stage and continuing.", pluginName);
+            log.warn("Dynamic plugin '{}' is not available (JAR was missing or failed to load); skipping capability and continuing.", pluginName);
             return CapabilityResult.builder()
                     .capabilityName(pluginName)
                     .data(Collections.emptyMap())

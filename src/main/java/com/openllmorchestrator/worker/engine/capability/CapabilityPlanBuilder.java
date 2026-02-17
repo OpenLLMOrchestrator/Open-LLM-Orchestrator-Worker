@@ -27,20 +27,20 @@ public final class CapabilityPlanBuilder {
 
     CapabilityPlanBuilder() {}
 
-    public CapabilityPlanBuilder addSyncWithCustomConfig(String stageName, CapabilityExecutionMode mode,
+    public CapabilityPlanBuilder addSyncWithCustomConfig(String capabilityName, CapabilityExecutionMode mode,
                                                     Duration timeout, String taskQueue,
                                                     Duration scheduleToStart, Duration scheduleToClose,
                                                     CapabilityRetryOptions retryOptions) {
-        return addSyncWithCustomConfig(stageName, mode, timeout, taskQueue, scheduleToStart, scheduleToClose, retryOptions, null);
+        return addSyncWithCustomConfig(capabilityName, mode, timeout, taskQueue, scheduleToStart, scheduleToClose, retryOptions, null);
     }
 
-    public CapabilityPlanBuilder addSyncWithCustomConfig(String stageName, CapabilityExecutionMode mode,
+    public CapabilityPlanBuilder addSyncWithCustomConfig(String capabilityName, CapabilityExecutionMode mode,
                                                     Duration timeout, String taskQueue,
                                                     Duration scheduleToStart, Duration scheduleToClose,
                                                     CapabilityRetryOptions retryOptions,
-                                                    String stageBucketName) {
+                                                    String capabilityBucketName) {
         CapabilityDefinition def = CapabilityDefinition.builder()
-                .name(stageName)
+                .name(capabilityName)
                 .executionMode(mode)
                 .group(groupCounter++)
                 .taskQueue(taskQueue)
@@ -48,36 +48,36 @@ public final class CapabilityPlanBuilder {
                 .scheduleToStartTimeout(scheduleToStart)
                 .scheduleToCloseTimeout(scheduleToClose)
                 .retryOptions(retryOptions)
-                .stageBucketName(stageBucketName)
+                .capabilityBucketName(capabilityBucketName)
                 .build();
         groups.add(new CapabilityGroupSpec(Collections.singletonList(def), null));
         return this;
     }
 
-    public CapabilityPlanBuilder addAsyncGroup(List<String> stageNames, Duration timeout, String taskQueue,
+    public CapabilityPlanBuilder addAsyncGroup(List<String> capabilityNames, Duration timeout, String taskQueue,
                                           Duration scheduleToStart, Duration scheduleToClose,
                                           CapabilityRetryOptions retryOptions,
                                           AsyncCompletionPolicy asyncPolicy) {
-        return addAsyncGroup(stageNames, timeout, taskQueue, scheduleToStart, scheduleToClose, retryOptions,
+        return addAsyncGroup(capabilityNames, timeout, taskQueue, scheduleToStart, scheduleToClose, retryOptions,
                 asyncPolicy, "LAST_WINS");
     }
 
-    public CapabilityPlanBuilder addAsyncGroup(List<String> stageNames, Duration timeout, String taskQueue,
+    public CapabilityPlanBuilder addAsyncGroup(List<String> capabilityNames, Duration timeout, String taskQueue,
                                           Duration scheduleToStart, Duration scheduleToClose,
                                           CapabilityRetryOptions retryOptions,
                                           AsyncCompletionPolicy asyncPolicy,
                                           String asyncOutputMergePolicyName) {
-        return addAsyncGroup(stageNames, timeout, taskQueue, scheduleToStart, scheduleToClose, retryOptions, asyncPolicy, asyncOutputMergePolicyName, null);
+        return addAsyncGroup(capabilityNames, timeout, taskQueue, scheduleToStart, scheduleToClose, retryOptions, asyncPolicy, asyncOutputMergePolicyName, null);
     }
 
-    public CapabilityPlanBuilder addAsyncGroup(List<String> stageNames, Duration timeout, String taskQueue,
+    public CapabilityPlanBuilder addAsyncGroup(List<String> capabilityNames, Duration timeout, String taskQueue,
                                           Duration scheduleToStart, Duration scheduleToClose,
                                           CapabilityRetryOptions retryOptions,
                                           AsyncCompletionPolicy asyncPolicy,
                                           String asyncOutputMergePolicyName,
-                                          String stageBucketName) {
+                                          String capabilityBucketName) {
         List<CapabilityDefinition> definitions = new ArrayList<>();
-        for (String name : stageNames) {
+        for (String name : capabilityNames) {
             definitions.add(CapabilityDefinition.builder()
                     .name(name)
                     .executionMode(CapabilityExecutionMode.ASYNC)
@@ -87,7 +87,7 @@ public final class CapabilityPlanBuilder {
                     .scheduleToStartTimeout(scheduleToStart)
                     .scheduleToCloseTimeout(scheduleToClose)
                     .retryOptions(retryOptions)
-                    .stageBucketName(stageBucketName)
+                    .capabilityBucketName(capabilityBucketName)
                     .build());
         }
         groupCounter++;

@@ -61,8 +61,8 @@ public final class PlanExecutorGroupExecutor implements GroupExecutor {
     @Override
     public void execute(CapabilityGroupSpec spec, CapabilityInvoker invoker, ExecutionContext context,
                         int groupIndex, ExecutionInterceptorChain interceptorChain) {
-        CapabilityContext stageCtx = CapabilityContext.from(groupIndex, spec.getDefinitions().get(0), context.getVersionedState(), context);
-        interceptorChain.beforeCapability(stageCtx);
+        CapabilityContext capabilityCtx = CapabilityContext.from(groupIndex, spec.getDefinitions().get(0), context.getVersionedState(), context);
+        interceptorChain.beforeCapability(capabilityCtx);
         try {
             Map<String, Object> accumulated = context.getAccumulatedOutput();
             Object raw = accumulated != null ? accumulated.get(PlannerContextKeys.KEY_DYNAMIC_PLAN) : null;
@@ -70,7 +70,7 @@ public final class PlanExecutorGroupExecutor implements GroupExecutor {
             if (subPlan == null) {
                 log.debug("PLAN_EXECUTOR: no dynamic plan in context (key={}); skipping", PlannerContextKeys.KEY_DYNAMIC_PLAN);
                 CapabilityResult empty = CapabilityResult.builder().capabilityName(PredefinedCapabilities.PLAN_EXECUTOR).build();
-                interceptorChain.afterCapability(stageCtx, empty);
+                interceptorChain.afterCapability(capabilityCtx, empty);
                 return;
             }
             FeatureFlags flags = EngineRuntime.getFeatureFlags();
@@ -99,9 +99,9 @@ public final class PlanExecutorGroupExecutor implements GroupExecutor {
                         .capabilityBucketName(PredefinedCapabilities.PLAN_EXECUTOR)
                         .build());
             }
-            interceptorChain.afterCapability(stageCtx, resultBuilder.build());
+            interceptorChain.afterCapability(capabilityCtx, resultBuilder.build());
         } catch (Exception e) {
-            interceptorChain.onError(stageCtx, e);
+            interceptorChain.onError(capabilityCtx, e);
             throw e;
         }
     }

@@ -29,6 +29,6 @@ public interface KernelStageActivity {
      * accumulated output from previous stages; returns its output in result.data.
      */
     @ActivityMethod
-    CapabilityResult execute(String stageName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput);
+    CapabilityResult execute(String capabilityName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput);
 }
 

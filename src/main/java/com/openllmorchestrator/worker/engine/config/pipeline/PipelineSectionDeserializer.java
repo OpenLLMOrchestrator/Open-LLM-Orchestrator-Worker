@@ -29,8 +29,7 @@ import java.util.Map;
 /**
  * Deserializes pipeline section. The "root" key is polymorphic:
  * - If root is an object with "type" (e.g. GROUP), it is a single root tree (legacy) → set root.
- * - Otherwise root is an object with capability names as keys and GROUP configs as values → set rootByStage.
- * "rootByCapability" is an alias for the same map shape (capability name → GROUP); when present it sets rootByStage.
+ * - Otherwise root is an object with capability names as keys and GROUP configs as values → set rootByCapability.
  */
 public final class PipelineSectionDeserializer extends JsonDeserializer<PipelineSection> {
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -52,24 +51,33 @@ public final class PipelineSectionDeserializer extends JsonDeserializer<Pipeline
         if (node.has("mergePolicy")) {
             section.setMergePolicy(MAPPER.treeToValue(node.get("mergePolicy"), MergePolicyConfig.class));
         }
-        if (node.has("stagePlugins")) {
-            section.setStagePlugins(MAPPER.convertValue(node.get("stagePlugins"), new TypeReference<Map<String, String>>() {}));
+        if (node.has("capabilityPlugins")) {
+            section.setCapabilityPlugins(MAPPER.convertValue(node.get("capabilityPlugins"), new TypeReference<Map<String, String>>() {}));
+        } else if (node.has("stagePlugins")) {
+            section.setCapabilityPlugins(MAPPER.convertValue(node.get("stagePlugins"), new TypeReference<Map<String, String>>() {}));
         }
-        if (node.has("stages")) {
-            section.setStages(MAPPER.convertValue(node.get("stages"), new TypeReference<List<StageBlockConfig>>() {}));
+        if (node.has("capabilities")) {
+            section.setCapabilities(MAPPER.convertValue(node.get("capabilities"), new TypeReference<List<CapabilityBlockConfig>>() {}));
+        } else if (node.has("stages")) {
+            section.setCapabilities(MAPPER.convertValue(node.get("stages"), new TypeReference<List<CapabilityBlockConfig>>() {}));
         }
         if (node.has("root")) {
             JsonNode rootNode = node.get("root");
             if (rootNode.isObject() && rootNode.has("type")) {
                 section.setRoot(MAPPER.treeToValue(rootNode, NodeConfig.class));
             } else if (rootNode.isObject()) {
-                section.setRootByStage(MAPPER.convertValue(rootNode, new TypeReference<Map<String, NodeConfig>>() {}));
+                section.setRootByCapability(MAPPER.convertValue(rootNode, new TypeReference<Map<String, NodeConfig>>() {}));
             }
         }
         if (node.has("rootByCapability")) {
             JsonNode rootNode = node.get("rootByCapability");
             if (rootNode.isObject()) {
-                section.setRootByStage(MAPPER.convertValue(rootNode, new TypeReference<Map<String, NodeConfig>>() {}));
+                section.setRootByCapability(MAPPER.convertValue(rootNode, new TypeReference<Map<String, NodeConfig>>() {}));
+            }
+        } else if (node.has("rootByStage")) {
+            JsonNode rootNode = node.get("rootByStage");
+            if (rootNode.isObject()) {
+                section.setRootByCapability(MAPPER.convertValue(rootNode, new TypeReference<Map<String, NodeConfig>>() {}));
             }
         }
 

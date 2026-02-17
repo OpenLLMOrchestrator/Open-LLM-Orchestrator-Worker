@@ -15,7 +15,6 @@
  */
 package com.openllmorchestrator.worker.contract;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,12 +34,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class CapabilityResult {
 
-    /** Serialized as capabilityName; accepts legacy "stageName" when deserializing (Temporal history). */
-    @JsonAlias("stageName")
     private String capabilityName;
-    /** @deprecated Use {@link #getCapabilityName()}. Kept for compatibility. */
-    @Deprecated
-    public String getStageName() { return capabilityName; }
     @Deprecated
     private Map<String, Object> data;
     private Map<String, Object> output;

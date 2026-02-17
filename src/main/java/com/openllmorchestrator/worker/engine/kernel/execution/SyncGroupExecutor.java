@@ -67,7 +67,7 @@ public final class SyncGroupExecutor implements GroupExecutor {
                             .capabilityName(def.getName())
                             .stepId(current.getStepId())
                             .executionId(current.getExecutionId())
-                            .capabilityBucketName(def.getStageBucketName())
+                            .capabilityBucketName(def.getCapabilityBucketName())
                             .build());
                 }
                 state = new HashMap<>(current.getState());

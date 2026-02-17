@@ -40,17 +40,17 @@ import java.util.Map;
 public class KernelStageActivityImpl implements KernelStageActivity {
 
     @Override
-    public CapabilityResult execute(String stageName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput) {
-        log.debug(">>> [START] Stage: {} | Thread: {}", stageName, Thread.currentThread().getName());
+    public CapabilityResult execute(String capabilityName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput) {
+        log.debug(">>> [START] Capability: {} | Thread: {}", capabilityName, Thread.currentThread().getName());
 
         CapabilityResolver resolver = EngineRuntime.getCapabilityResolver();
-        CapabilityHandler handler = resolver.resolve(stageName);
+        CapabilityHandler handler = resolver.resolve(capabilityName);
         if (handler == null) {
-            if (PredefinedCapabilities.isPredefined(stageName)) {
-                throw new IllegalStateException("Predefined stage '" + stageName
-                        + "' has no plugin registered. Register a handler for this stage.");
+            if (PredefinedCapabilities.isPredefined(capabilityName)) {
+                throw new IllegalStateException("Predefined capability '" + capabilityName
+                        + "' has no plugin registered. Register a handler for this capability.");
             }
-            throw new IllegalStateException("Stage or activity '" + stageName
+            throw new IllegalStateException("Capability or activity '" + capabilityName
                     + "' could not be resolved. Register it in the activity registry (plugin name) or custom bucket.");
         }
         ContractVersion.requireCompatible(handler);
@@ -58,20 +58,20 @@ public class KernelStageActivityImpl implements KernelStageActivity {
                 originalInput != null ? originalInput : Map.of(),
                 accumulatedOutput != null ? accumulatedOutput : Map.of());
         CapabilityResult handlerResult = handler.execute(context);
-        validateOutputContract(handler, context.getCurrentPluginOutput(), stageName);
-        log.debug("<<< [END] Stage: {} | Thread: {}", stageName, Thread.currentThread().getName());
+        validateOutputContract(handler, context.getCurrentPluginOutput(), capabilityName);
+        log.debug("<<< [END] Capability: {} | Thread: {}", capabilityName, Thread.currentThread().getName());
         Map<String, Object> output = context.getCurrentPluginOutput() != null && !context.getCurrentPluginOutput().isEmpty()
                 ? new HashMap<>(context.getCurrentPluginOutput())
                 : (handlerResult != null && handlerResult.getOutput() != null ? new HashMap<>(handlerResult.getOutput()) : new HashMap<>());
         boolean requestBreak = context.isPipelineBreakRequested() || (handlerResult != null && handlerResult.isRequestPipelineBreak());
         return CapabilityResult.builder()
-                .capabilityName(stageName)
+                .capabilityName(capabilityName)
                 .output(output)
                 .requestPipelineBreak(requestBreak)
                 .build();
     }
 
-    static void validateOutputContract(CapabilityHandler handler, Map<String, Object> output, String stageName) {
+    static void validateOutputContract(CapabilityHandler handler, Map<String, Object> output, String capabilityName) {
         if (EngineRuntime.getFeatureFlags() != null && !EngineRuntime.getFeatureFlags().isEnabled(FeatureFlag.OUTPUT_CONTRACT)) {
             return;
         }
@@ -92,9 +92,9 @@ public class KernelStageActivityImpl implements KernelStageActivity {
         }
         if (contract.enforceStrict()) {
             throw new OutputContractViolationException(
-                    "Stage '" + stageName + "' output did not satisfy OutputContract schema (enforceStrict=true).");
+                    "Capability '" + capabilityName + "' output did not satisfy OutputContract schema (enforceStrict=true).");
         }
-        log.warn("Stage '{}' output did not satisfy OutputContract schema (enforceStrict=false).", stageName);
+        log.warn("Capability '{}' output did not satisfy OutputContract schema (enforceStrict=false).", capabilityName);
     }
 }
 

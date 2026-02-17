@@ -35,7 +35,7 @@ public class PlanValidatorImpl implements PlanValidator {
             for (CapabilityGroupSpec g : groups) {
                 if (g != null && g.getDefinitions() != null) {
                     for (var def : g.getDefinitions()) {
-                        String name = def != null ? def.getStageBucketName() : null;
+                        String name = def != null ? def.getCapabilityBucketName() : null;
                         if (name != null && !allowed.contains(name)) {
                             throw new PlanValidationException("Unauthorized capability in plan: " + name);
                         }

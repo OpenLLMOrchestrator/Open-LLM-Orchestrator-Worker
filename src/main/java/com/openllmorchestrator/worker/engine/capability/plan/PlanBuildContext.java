@@ -31,7 +31,7 @@ public class PlanBuildContext {
     /** Max depth for GROUP recursion (default 5). */
     private final int defaultMaxGroupDepth;
     /** Current capability bucket name (e.g. RETRIEVAL, MODEL) when building from rootByStage; used for activity summary in UI. */
-    private final String currentStageBucketName;
+    private final String currentCapabilityBucketName;
     /** When non-null, only these plugin names may appear in the plan (compatible plugins from bootstrap). */
     private final Set<String> allowedPluginNames;
 
@@ -52,31 +52,31 @@ public class PlanBuildContext {
                             ActivityDefaultsConfig activityDefaults,
                             String defaultAsyncCompletionPolicy,
                             int defaultMaxGroupDepth,
-                            String currentStageBucketName) {
-        this(defaultTimeoutSeconds, taskQueue, activityDefaults, defaultAsyncCompletionPolicy, defaultMaxGroupDepth, currentStageBucketName, null);
+                            String currentCapabilityBucketName) {
+        this(defaultTimeoutSeconds, taskQueue, activityDefaults, defaultAsyncCompletionPolicy, defaultMaxGroupDepth, currentCapabilityBucketName, null);
     }
 
     public PlanBuildContext(int defaultTimeoutSeconds, String taskQueue,
                             ActivityDefaultsConfig activityDefaults,
                             String defaultAsyncCompletionPolicy,
                             int defaultMaxGroupDepth,
-                            String currentStageBucketName,
+                            String currentCapabilityBucketName,
                             Set<String> allowedPluginNames) {
         this.defaultTimeoutSeconds = defaultTimeoutSeconds;
         this.taskQueue = taskQueue;
         this.activityDefaults = activityDefaults != null ? activityDefaults : new com.openllmorchestrator.worker.engine.config.activity.ActivityDefaultsConfig();
         this.defaultAsyncPolicy = AsyncCompletionPolicy.fromConfig(defaultAsyncCompletionPolicy);
         this.defaultMaxGroupDepth = defaultMaxGroupDepth > 0 ? defaultMaxGroupDepth : 5;
-        this.currentStageBucketName = currentStageBucketName != null && !currentStageBucketName.isBlank() ? currentStageBucketName : null;
+        this.currentCapabilityBucketName = currentCapabilityBucketName != null && !currentCapabilityBucketName.isBlank() ? currentCapabilityBucketName : null;
         this.allowedPluginNames = allowedPluginNames;
     }
 
-    /** Returns a new context with the given stage bucket name (for activity summary in Temporal UI). */
-    public PlanBuildContext withCurrentStageBucketName(String stageBucketName) {
+    /** Returns a new context with the given capability bucket name (for activity summary in Temporal UI). */
+    public PlanBuildContext withCurrentCapabilityBucketName(String capabilityBucketName) {
         return new PlanBuildContext(
                 defaultTimeoutSeconds, taskQueue, activityDefaults,
                 defaultAsyncPolicy.name(), defaultMaxGroupDepth,
-                stageBucketName, allowedPluginNames);
+                capabilityBucketName, allowedPluginNames);
     }
 
     /** Returns a new context with the given allowed plugin names (for compatibility check during plan build). */
@@ -84,7 +84,7 @@ public class PlanBuildContext {
         return new PlanBuildContext(
                 defaultTimeoutSeconds, taskQueue, activityDefaults,
                 defaultAsyncPolicy.name(), defaultMaxGroupDepth,
-                currentStageBucketName, allowedPluginNames);
+                currentCapabilityBucketName, allowedPluginNames);
     }
 }
 

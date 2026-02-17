@@ -34,9 +34,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Handles stage activities invoked with a custom activity type (e.g. "RETRIEVAL::VectorStoreRetrievalPlugin")
- * so the Temporal UI shows Stage::Plugin instead of "Execute". Dispatches to the same logic as
- * {@link KernelStageActivityImpl} using the stage name from the first argument.
+ * Handles capability activities invoked with a custom activity type (e.g. "RETRIEVAL::VectorStoreRetrievalPlugin")
+ * so the Temporal UI shows Capability::Plugin instead of "Execute". Dispatches to the same logic as
+ * {@link KernelStageActivityImpl} using the capability name from the first argument.
  */
 @Slf4j
 public class KernelStageDynamicActivity implements DynamicActivity {
@@ -46,20 +46,20 @@ public class KernelStageDynamicActivity implements DynamicActivity {
         String activityType = Activity.getExecutionContext().getInfo().getActivityType();
         log.debug(">>> [START] Activity type: {} | Thread: {}", activityType, Thread.currentThread().getName());
 
-        String stageName = args.get(0, String.class);
+        String capabilityName = args.get(0, String.class);
         @SuppressWarnings("unchecked")
         Map<String, Object> originalInput = args.get(1, Map.class);
         @SuppressWarnings("unchecked")
         Map<String, Object> accumulatedOutput = args.get(2, Map.class);
 
         CapabilityResolver resolver = EngineRuntime.getCapabilityResolver();
-        CapabilityHandler handler = resolver.resolve(stageName);
+        CapabilityHandler handler = resolver.resolve(capabilityName);
         if (handler == null) {
-            if (PredefinedCapabilities.isPredefined(stageName)) {
-                throw new IllegalStateException("Predefined stage '" + stageName
-                        + "' has no plugin registered. Register a handler for this stage.");
+            if (PredefinedCapabilities.isPredefined(capabilityName)) {
+                throw new IllegalStateException("Predefined capability '" + capabilityName
+                        + "' has no plugin registered. Register a handler for this capability.");
             }
-            throw new IllegalStateException("Stage or activity '" + stageName
+            throw new IllegalStateException("Capability or activity '" + capabilityName
                     + "' could not be resolved. Register it in the activity registry (plugin name) or custom bucket.");
         }
         ContractVersion.requireCompatible(handler);
@@ -67,10 +67,10 @@ public class KernelStageDynamicActivity implements DynamicActivity {
                 originalInput != null ? originalInput : Map.of(),
                 accumulatedOutput != null ? accumulatedOutput : Map.of());
         handler.execute(context);
-        KernelStageActivityImpl.validateOutputContract(handler, context.getCurrentPluginOutput(), stageName);
+        KernelStageActivityImpl.validateOutputContract(handler, context.getCurrentPluginOutput(), capabilityName);
         log.debug("<<< [END] Activity type: {} | Thread: {}", activityType, Thread.currentThread().getName());
         return CapabilityResult.builder()
-                .capabilityName(stageName)
+                .capabilityName(capabilityName)
                 .output(new HashMap<>(context.getCurrentPluginOutput()))
                 .data(context.getCurrentPluginOutput())
                 .requestPipelineBreak(context.isPipelineBreakRequested())

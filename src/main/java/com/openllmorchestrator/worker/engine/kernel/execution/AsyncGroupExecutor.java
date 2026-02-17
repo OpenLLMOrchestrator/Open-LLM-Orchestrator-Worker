@@ -95,7 +95,7 @@ public final class AsyncGroupExecutor implements GroupExecutor {
                         .capabilityName(def.getName())
                         .stepId(next.getStepId())
                         .executionId(next.getExecutionId())
-                        .capabilityBucketName(def.getStageBucketName())
+                        .capabilityBucketName(def.getCapabilityBucketName())
                         .build());
             }
             log.info("Completed ASYNC capability: {} (stepId after async={})", r.getCapabilityName(), next.getStepId());

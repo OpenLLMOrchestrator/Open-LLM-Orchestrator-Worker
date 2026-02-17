@@ -62,7 +62,7 @@ public final class GroupNodeProcessor implements NodeProcessor {
                     ActivityOptionsFromConfig.retryOptions(node, ctx),
                     policy,
                     mergePolicyName,
-                    ctx.getCurrentStageBucketName()
+                    ctx.getCurrentCapabilityBucketName()
             );
         } else {
             for (NodeConfig child : node.getChildren()) {
@@ -113,7 +113,7 @@ public final class GroupNodeProcessor implements NodeProcessor {
                 .scheduleToStartTimeout(ActivityOptionsFromConfig.scheduleToStart(node, ctx))
                 .scheduleToCloseTimeout(ActivityOptionsFromConfig.scheduleToClose(node, ctx))
                 .retryOptions(ActivityOptionsFromConfig.retryOptions(node, ctx))
-                .stageBucketName("CONDITION")
+                .capabilityBucketName("CONDITION")
                 .build();
         List<List<CapabilityGroupSpec>> branches = new ArrayList<>();
         branches.add(node.hasThenGroup()

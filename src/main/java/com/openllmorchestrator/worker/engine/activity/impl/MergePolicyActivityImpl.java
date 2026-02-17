@@ -51,7 +51,7 @@ public class MergePolicyActivityImpl implements MergePolicyActivity {
         if (handler == null) {
             if (PredefinedCapabilities.isPredefined(mergePolicyName)) {
                 throw new IllegalStateException("Merge policy '" + mergePolicyName
-                        + "' is a stage name, not a merge plugin. Use a merge policy activity name (e.g. LAST_WINS, LastWinsMergePlugin).");
+                        + "' is a capability name, not a merge plugin. Use a merge policy activity name (e.g. LAST_WINS, LastWinsMergePlugin).");
             }
             throw new IllegalStateException("Merge policy '" + mergePolicyName
                     + "' could not be resolved. Register it in the activity registry (e.g. LastWinsMergePlugin, FIRST_WINS).");

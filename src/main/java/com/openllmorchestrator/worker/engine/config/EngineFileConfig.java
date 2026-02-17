@@ -59,10 +59,11 @@ public class EngineFileConfig {
      */
     private Map<String, CapabilityDef> capabilities;
     /**
-     * Stage name → plugin id for predefined stages (e.g. ACCESS → "default").
-     * Used when resolving handlers. Pipeline-level stagePlugins override when set.
+     * Capability name → plugin id for predefined capabilities (e.g. ACCESS → "default").
+     * Used when resolving handlers. Pipeline-level capabilityPlugins override when set.
      */
-    private Map<String, String> stagePlugins;
+    @JsonAlias("stagePlugins")
+    private Map<String, String> capabilityPlugins;
     /**
      * Async merge policy name → implementation. Value is either a built-in name (FIRST_WINS, LAST_WINS, PREFIX_BY_ACTIVITY)
      * or a fully qualified class name implementing AsyncMergePolicy. Registered at bootstrap; referenced in pipeline/group asyncOutputMergePolicy.
@@ -109,7 +110,7 @@ public class EngineFileConfig {
         merged.pipelines = fromStorage != null ? fromStorage.pipelines : null;
         merged.capabilityOrder = fromStorage != null ? fromStorage.capabilityOrder : null;
         merged.capabilities = fromStorage != null ? fromStorage.capabilities : null;
-        merged.stagePlugins = fromStorage != null ? fromStorage.stagePlugins : null;
+        merged.capabilityPlugins = fromStorage != null ? fromStorage.capabilityPlugins : null;
         merged.mergePolicies = fromStorage != null ? fromStorage.mergePolicies : null;
         merged.dynamicPlugins = fromStorage != null ? fromStorage.dynamicPlugins : null;
         merged.dynamicPluginJars = fromStorage != null ? fromStorage.dynamicPluginJars : null;
@@ -131,7 +132,7 @@ public class EngineFileConfig {
     }
 
     /** Effective capability order: config capabilityOrder (or stageOrder in JSON) if set, else predefined order in code. */
-    public List<String> getStageOrderEffective() {
+    public List<String> getCapabilityOrderEffective() {
         if (capabilityOrder != null && !capabilityOrder.isEmpty()) {
             return capabilityOrder;
         }
@@ -143,12 +144,12 @@ public class EngineFileConfig {
      * For future DAG support, config can provide an explicit graph; until then, graph is derived from capabilityOrder.
      */
     public ExecutionGraph getExecutionGraphEffective() {
-        return ExecutionGraph.fromLinearOrder(getStageOrderEffective());
+        return ExecutionGraph.fromLinearOrder(getCapabilityOrderEffective());
     }
 
-    /** Effective stage plugins: engine-level if set. */
-    public Map<String, String> getStagePluginsEffective() {
-        return stagePlugins != null && !stagePlugins.isEmpty() ? stagePlugins : Collections.emptyMap();
+    /** Effective capability plugins: engine-level if set. */
+    public Map<String, String> getCapabilityPluginsEffective() {
+        return capabilityPlugins != null && !capabilityPlugins.isEmpty() ? capabilityPlugins : Collections.emptyMap();
     }
 
     /** User-defined capabilities (name → definition). Empty if not set. Used to resolve custom capability names anywhere in the flow. */

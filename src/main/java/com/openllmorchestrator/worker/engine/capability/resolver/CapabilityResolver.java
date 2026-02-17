@@ -25,7 +25,7 @@ import com.openllmorchestrator.worker.engine.capability.predefined.PredefinedCap
 
 import java.util.Map;
 
-/** Resolves capability/stage/activity name to handler: predefined capability → config-defined capability → activity (plugin) name → custom. */
+/** Resolves capability/activity name to handler: predefined capability → config-defined capability → activity (plugin) name → custom. */
 public final class CapabilityResolver {
     private static final String DEFAULT_PLUGIN_ID = "default";
 
@@ -51,42 +51,42 @@ public final class CapabilityResolver {
     }
 
     /**
-     * Resolve a name to a handler. Order: predefined capability (by stagePlugins) → config-defined capability → activity/plugin name → custom bucket.
+     * Resolve a name to a handler. Order: predefined capability (by capabilityPlugins) → config-defined capability → activity/plugin name → custom bucket.
      */
-    public CapabilityHandler resolve(String stageName) {
-        if (stageName == null || stageName.isBlank()) {
+    public CapabilityHandler resolve(String capabilityName) {
+        if (capabilityName == null || capabilityName.isBlank()) {
             return null;
         }
-        if (PredefinedCapabilities.isPredefined(stageName)) {
-            String pluginId = getPluginIdForPredefined(stageName);
-            CapabilityHandler h = predefinedBucket.get(stageName, pluginId);
+        if (PredefinedCapabilities.isPredefined(capabilityName)) {
+            String pluginId = getPluginIdForPredefined(capabilityName);
+            CapabilityHandler h = predefinedBucket.get(capabilityName, pluginId);
             if (h != null) return h;
         }
-        CapabilityDef customCap = config != null ? config.getCapabilitiesEffective().get(stageName) : null;
+        CapabilityDef customCap = config != null ? config.getCapabilitiesEffective().get(capabilityName) : null;
         if (customCap != null && customCap.getName() != null && !customCap.getName().isBlank() && activityRegistry != null) {
             CapabilityHandler h = activityRegistry.get(customCap.getName());
             if (h != null) return h;
         }
         if (activityRegistry != null) {
-            CapabilityHandler h = activityRegistry.get(stageName);
+            CapabilityHandler h = activityRegistry.get(capabilityName);
             if (h != null) return h;
         }
-        return customBucket.get(stageName);
+        return customBucket.get(capabilityName);
     }
 
-    public boolean canResolve(String stageName) {
-        return resolve(stageName) != null;
+    public boolean canResolve(String capabilityName) {
+        return resolve(capabilityName) != null;
     }
 
-    private String getPluginIdForPredefined(String stageName) {
+    private String getPluginIdForPredefined(String capabilityName) {
         if (config == null) {
             return DEFAULT_PLUGIN_ID;
         }
-        Map<String, String> stagePlugins = config.getStagePluginsEffective();
-        if (stagePlugins == null || stagePlugins.isEmpty()) {
+        Map<String, String> capabilityPlugins = config.getCapabilityPluginsEffective();
+        if (capabilityPlugins == null || capabilityPlugins.isEmpty()) {
             return DEFAULT_PLUGIN_ID;
         }
-        String pluginId = stagePlugins.get(stageName);
+        String pluginId = capabilityPlugins.get(capabilityName);
         return pluginId == null || pluginId.isBlank() ? DEFAULT_PLUGIN_ID : pluginId;
     }
 }

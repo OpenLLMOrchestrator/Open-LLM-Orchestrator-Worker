@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Validates a dynamic plan before execution. When {@link com.openllmorchestrator.worker.engine.config.FeatureFlag#PLAN_SAFETY_VALIDATION}
  * is enabled, PLAN_EXECUTOR runs the validator before executing the plan.
- * Ensures: allowed stages only, max depth, no recursive infinite loops, no unauthorized stage injection.
+ * Ensures: allowed capabilities only, max depth, no recursive infinite loops, no unauthorized capability injection.
  */
 public interface PlanValidator {
 
@@ -35,9 +35,9 @@ public interface PlanValidator {
      */
     void validate(CapabilityPlan plan, ExecutionContext context) throws PlanValidationException;
 
-    /** Result of validation: allowed stage names, max depth. */
+    /** Result of validation: allowed capability names, max depth. */
     interface ValidationRules {
-        List<String> getAllowedStageNames();
+        List<String> getAllowedCapabilityNames();
         int getMaxDepth();
     }
 

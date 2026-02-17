@@ -37,11 +37,6 @@ public class CapabilityDefinition {
     /** Optional retry policy; null = use default from config. */
     private final CapabilityRetryOptions retryOptions;
     /** Capability bucket name (e.g. RETRIEVAL, MODEL) for Temporal UI activity summary; null = use plugin name only. */
-    private final String stageBucketName;
-
-    /** Alias for {@link #getStageBucketName()}. */
-    public String getCapabilityBucketName() {
-        return stageBucketName;
-    }
+    private final String capabilityBucketName;
 }
 

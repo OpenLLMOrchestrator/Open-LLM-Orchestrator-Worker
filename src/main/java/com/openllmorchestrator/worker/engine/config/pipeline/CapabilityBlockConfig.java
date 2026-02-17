@@ -15,6 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.config.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,19 +23,19 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Top-level stage in the pipeline flow. Each stage has one or more groups (sync/async, recursive).
+ * Top-level capability in the pipeline flow. Each capability has one or more groups (sync/async, recursive).
  * Group children are activity names (plugin ids), each implemented by one CapabilityHandler.
  */
 @Getter
 @Setter
-public class StageBlockConfig {
-    /** Stage name (e.g. ACCESS, MEMORY, MODEL). */
-    private String stage;
-    /** Groups within this stage; order preserved. */
+public class CapabilityBlockConfig {
+    /** Capability name (e.g. ACCESS, MEMORY, MODEL). Accepts JSON key "capability" or "stage". */
+    @JsonAlias("stage")
+    private String capability;
+    /** Groups within this capability; order preserved. */
     private List<GroupConfig> groups;
 
     public List<GroupConfig> getGroupsSafe() {
         return groups != null ? groups : Collections.emptyList();
     }
 }
-

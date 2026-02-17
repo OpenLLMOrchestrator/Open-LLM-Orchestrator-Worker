@@ -35,7 +35,7 @@ public enum FeatureFlag {
     CHECKPOINTABLE_STAGE,
     /** Output contract: schema validation, enforceStrict. */
     OUTPUT_CONTRACT,
-    /** Execution graph (DAG): topological order; when off, linear stageOrder only. */
+    /** Execution graph (DAG): topological order; when off, linear capabilityOrder only. */
     EXECUTION_GRAPH,
     /** Stage result envelope: CapabilityMetadata, DependencyRef, deterministic flag on result. */
     STAGE_RESULT_ENVELOPE,

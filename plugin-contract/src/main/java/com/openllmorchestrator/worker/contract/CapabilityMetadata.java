@@ -15,7 +15,6 @@
  */
 package com.openllmorchestrator.worker.contract;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,17 +24,8 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class CapabilityMetadata {
-    @JsonAlias("stageName")
     private final String capabilityName;
     private final long stepId;
     private final String executionId;
-    @JsonAlias("stageBucketName")
     private final String capabilityBucketName;
-
-    /** @deprecated Use {@link #getCapabilityName()}. */
-    @Deprecated
-    public String getStageName() { return capabilityName; }
-    /** @deprecated Use {@link #getCapabilityBucketName()}. */
-    @Deprecated
-    public String getStageBucketName() { return capabilityBucketName; }
 }

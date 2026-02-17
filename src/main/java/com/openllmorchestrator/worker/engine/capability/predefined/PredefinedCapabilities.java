@@ -69,7 +69,7 @@ public final class PredefinedCapabilities {
             EVALUATION, EVALUATE, FEEDBACK, FEEDBACK_CAPTURE, LEARNING, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY,
             OBSERVABILITY, CUSTOM);
 
-    /** Canonical order for execution when config does not set stageOrder. Learning/training stages (EVALUATE, FEEDBACK_CAPTURE, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY) are before OBSERVABILITY. */
+    /** Canonical order for execution when config does not set capabilityOrder. Learning/training capabilities (EVALUATE, FEEDBACK_CAPTURE, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY) are before OBSERVABILITY. */
     private static final List<String> ORDERED_NAMES = List.of(
             ACCESS, PRE_CONTEXT_SETUP, PLANNER, PLAN_EXECUTOR, EXECUTION_CONTROLLER, ITERATIVE_BLOCK,
             MODEL, RETRIEVAL, RETRIEVE, TOOL, MCP, MEMORY, REFLECTION, SUB_OBSERVABILITY,
@@ -79,15 +79,15 @@ public final class PredefinedCapabilities {
 
     private PredefinedCapabilities() {}
 
-    public static boolean isPredefined(String stageName) {
-        return stageName != null && NAMES.contains(stageName);
+    public static boolean isPredefined(String capabilityName) {
+        return capabilityName != null && NAMES.contains(capabilityName);
     }
 
     public static Set<String> all() {
         return NAMES;
     }
 
-    /** Ordered list of predefined stage names for plan building when stageOrder is not in config. */
+    /** Ordered list of predefined capability names for plan building when capabilityOrder is not in config. */
     public static List<String> orderedNames() {
         return ORDERED_NAMES;
     }

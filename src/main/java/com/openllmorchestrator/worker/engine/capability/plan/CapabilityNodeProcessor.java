@@ -45,7 +45,7 @@ public final class CapabilityNodeProcessor implements NodeProcessor {
                 ActivityOptionsFromConfig.scheduleToStart(node, ctx),
                 ActivityOptionsFromConfig.scheduleToClose(node, ctx),
                 ActivityOptionsFromConfig.retryOptions(node, ctx),
-                ctx.getCurrentStageBucketName()
+                ctx.getCurrentCapabilityBucketName()
         );
     }
 }

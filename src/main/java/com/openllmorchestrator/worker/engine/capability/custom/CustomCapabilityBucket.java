@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/** Custom stage name → handler. Used for non-predefined stages. */
+/** Custom capability name → handler. Used for non-predefined capabilities. */
 public final class CustomCapabilityBucket {
     private final Map<String, CapabilityHandler> handlers;
 
@@ -33,15 +33,15 @@ public final class CustomCapabilityBucket {
                 : new HashMap<>(handlers);
     }
 
-    public CapabilityHandler get(String stageName) {
-        return handlers.get(stageName);
+    public CapabilityHandler get(String capabilityName) {
+        return handlers.get(capabilityName);
     }
 
-    public boolean has(String stageName) {
-        return handlers.containsKey(stageName);
+    public boolean has(String capabilityName) {
+        return handlers.containsKey(capabilityName);
     }
 
-    public Set<String> stageNames() {
+    public Set<String> capabilityNames() {
         return Collections.unmodifiableSet(handlers.keySet());
     }
 
@@ -57,10 +57,10 @@ public final class CustomCapabilityBucket {
                 throw new IllegalArgumentException("CapabilityHandler and name must be non-null");
             }
             if (PredefinedCapabilities.isPredefined(handler.name())) {
-                throw new IllegalArgumentException("Use PredefinedPluginBucket for predefined stage: " + handler.name());
+                throw new IllegalArgumentException("Use PredefinedPluginBucket for predefined capability: " + handler.name());
             }
             if (map.containsKey(handler.name())) {
-                throw new IllegalArgumentException("Duplicate custom stage name: " + handler.name());
+                throw new IllegalArgumentException("Duplicate custom capability name: " + handler.name());
             }
             map.put(handler.name(), handler);
             return this;

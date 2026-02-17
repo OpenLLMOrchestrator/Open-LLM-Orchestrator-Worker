@@ -90,7 +90,7 @@ public class CapabilityInvoker {
     private static String activityTypeFor(CapabilityDefinition d) {
         String summary = buildActivitySummary(d);
         if (summary != null && !summary.isEmpty()) return summary;
-        String bucket = d.getStageBucketName();
+        String bucket = d.getCapabilityBucketName();
         if (bucket != null && !bucket.isBlank()) return bucket + "::Unknown";
         return "Capability::Unknown";
     }
@@ -99,7 +99,7 @@ public class CapabilityInvoker {
         String pluginName = d.getName();
         if (pluginName == null || pluginName.isBlank()) return null;
         String shortName = pluginName.contains(".") ? pluginName.substring(pluginName.lastIndexOf('.') + 1) : pluginName;
-        String bucket = d.getStageBucketName();
+        String bucket = d.getCapabilityBucketName();
         if (bucket != null && !bucket.isBlank()) {
             return bucket + "::" + shortName;
         }
