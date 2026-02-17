@@ -24,6 +24,7 @@ import java.util.List;
 /**
  * A group within a stage: sync or async execution, with recursive nesting.
  * Children are activity names (plugin ids) or nested GroupConfigs.
+ * Optional if/elseif/else: set {@link #condition} to a plugin name; then use {@link #thenChildren}, {@link #elseifBranches}, {@link #elseChildren}.
  */
 @Getter
 @Setter
@@ -42,11 +43,50 @@ public class GroupConfig {
     /**
      * Children: each element is either a String (activity/plugin name) or a Map (nested group).
      * Use {@link #getChildrenAsList()} and interpret per element.
+     * When {@link #condition} is set, this is the "then" branch if {@link #thenChildren} is null.
      */
     private List<Object> children;
+    /** If set, this group is conditional: run condition plugin first, then one of then/elseif/else. Plugin must write output key "branch" (0=then, 1=first elseif, ..., n-1=else). */
+    private String condition;
+    /** "Then" branch children when condition is set. If null, {@link #children} is used as then. */
+    private List<Object> thenChildren;
+    /** "Then" branch as a single GROUP (preferred when set). Deserialized as Map → GroupConfig. */
+    private Object thenGroup;
+    /** Elseif branches: each has condition plugin name and then children or thenGroup. Evaluated in order; first truthy branch runs. */
+    private List<ElseIfBranchConfig> elseifBranches;
+    /** "Else" branch children when condition is set. */
+    private List<Object> elseChildren;
+    /** "Else" branch as a single GROUP (preferred when set). Deserialized as Map → GroupConfig. */
+    private Object elseGroup;
 
     public List<Object> getChildrenAsList() {
         return children != null ? children : Collections.emptyList();
+    }
+
+    public List<Object> getThenChildrenSafe() {
+        return thenChildren != null ? thenChildren : getChildrenAsList();
+    }
+
+    public List<ElseIfBranchConfig> getElseifBranchesSafe() {
+        return elseifBranches != null ? elseifBranches : Collections.emptyList();
+    }
+
+    public List<Object> getElseChildrenSafe() {
+        return elseChildren != null ? elseChildren : Collections.emptyList();
+    }
+
+    /** When condition is set: prefer thenGroup (one GROUP) as then branch; else use thenChildren. */
+    public boolean hasThenGroup() {
+        return thenGroup != null;
+    }
+
+    /** When condition is set: prefer elseGroup (one GROUP) as else branch; else use elseChildren. */
+    public boolean hasElseGroup() {
+        return elseGroup != null;
+    }
+
+    public boolean isConditional() {
+        return condition != null && !condition.isBlank();
     }
 
     public boolean isAsync() {

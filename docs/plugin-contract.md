@@ -228,6 +228,7 @@ The config field `pluginType` must be one of the following (semantic only; resol
 | DatasetBuildPlugin | Build/curate dataset from feedback and evaluations |
 | TrainTriggerPlugin | Trigger training job when conditions are met |
 | ModelRegistryPlugin | Register or promote trained model for serving |
+| ConditionPlugin | Group if/elseif/else: reads context, returns output key `branch` (0=then, 1=elseif, …, n-1=else). |
 | PromptBuilderPlugin | Prompt building |
 | ObservabilityPlugin | Observability |
 | TracingPlugin | Tracing |

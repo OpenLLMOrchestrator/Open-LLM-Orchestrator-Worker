@@ -287,6 +287,10 @@ Used inside `root` (tree or rootByStage) and inside `stages` → `groups` → ch
 | `asyncCompletionPolicy` | string | `ALL` \| `FIRST_SUCCESS` \| `FIRST_FAILURE` \| `ALL_SETTLED`. |
 | `asyncOutputMergePolicy` | string | Name from merge policy registry (e.g. `LAST_WINS`). |
 | `mergePolicy` | object | Merge policy hook (type, pluginType, name). |
+| `condition` | string | **If/elseif/else:** Plugin name (activity id) that runs first and must write output key `branch` (Integer: 0=then, 1=first elseif, …, n-1=else). When set, use `thenGroup`/`thenChildren`, `elseifBranches`, `elseGroup`/`elseChildren`. Prefer `thenGroup` and `elseGroup` (one GROUP each); condition has group as children. |
+| `thenChildren` | array | When `condition` is set: GROUP/STAGE nodes for the “then” branch. If omitted, `children` is used as then. |
+| `elseifBranches` | array | When `condition` is set: list of `{ "condition": "<plugin>", "then": [ GROUP/STAGE nodes ] }`. Evaluated in order; first branch whose condition plugin returns that index runs. |
+| `elseChildren` | array | When `condition` is set: GROUP/STAGE nodes for the “else” branch. |
 
 **STAGE-only:**
 
@@ -299,8 +303,9 @@ Used inside `root` (tree or rootByStage) and inside `stages` → `groups` → ch
 | `retryPolicy` | object | Same shape as `activity.retryPolicy`. |
 
 **Allowed plugin types (`pluginType`):**  
-`AccessControlPlugin`, `TenantPolicyPlugin`, `RateLimitPlugin`, `MemoryPlugin`, `VectorStorePlugin`, `ModelPlugin`, `MCPPlugin`, `ToolPlugin`, `FilterPlugin`, `GuardrailPlugin`, `RefinementPlugin`, `EvaluationPlugin`, `FeedbackPlugin`, `LearningPlugin`, `DatasetBuildPlugin`, `TrainTriggerPlugin`, `ModelRegistryPlugin`, `PromptBuilderPlugin`, `ObservabilityPlugin`, `TracingPlugin`, `BillingPlugin`, `FeatureFlagPlugin`, `AuditPlugin`, `SecurityScannerPlugin`, `CachingPlugin`, `SearchPlugin`, `LangChainAdapterPlugin`, `AgentOrchestratorPlugin`, `WorkflowExtensionPlugin`, `CustomStagePlugin`.  
-Full table with typical stages: [ui-reference.md §2](ui-reference.md#2-plugin-types-for-stage-node-plugintype).
+`AccessControlPlugin`, `TenantPolicyPlugin`, `RateLimitPlugin`, `MemoryPlugin`, `VectorStorePlugin`, `ModelPlugin`, `MCPPlugin`, `ToolPlugin`, `FilterPlugin`, `GuardrailPlugin`, `RefinementPlugin`, `EvaluationPlugin`, `FeedbackPlugin`, `LearningPlugin`, `DatasetBuildPlugin`, `TrainTriggerPlugin`, `ModelRegistryPlugin`, `PromptBuilderPlugin`, `ObservabilityPlugin`, `TracingPlugin`, `BillingPlugin`, `FeatureFlagPlugin`, `AuditPlugin`, `SecurityScannerPlugin`, `CachingPlugin`, `SearchPlugin`, `LangChainAdapterPlugin`, `AgentOrchestratorPlugin`, `WorkflowExtensionPlugin`, `CustomStagePlugin`, `ConditionPlugin`.  
+Full table with typical stages: [ui-reference.md §2](ui-reference.md#2-plugin-types-for-stage-node-plugintype).  
+**ConditionPlugin:** Used in GROUP when `condition` is set. Must return output key `branch` (Integer): 0 = then, 1 = first elseif, …, n−1 = else.
 
 ### 9.6 Pipeline `stages` (alternative to root)
 
@@ -321,9 +326,13 @@ Full table with typical stages: [ui-reference.md §2](ui-reference.md#2-plugin-t
 | `mergePolicy` | object | Merge policy hook. |
 | `maxDepth` | number | Max nested depth. |
 | `timeoutSeconds` | number | Override. |
-| `children` | array | Each element: **string** (activity/plugin name) or **object** (nested group with same shape). |
+| `children` | array | Each element: **string** (activity/plugin name) or **object** (nested group with same shape). When `condition` is set, this is the “then” branch if `thenChildren` is omitted. |
+| `condition` | string | **If/elseif/else:** Condition plugin name. Plugin must write output key `branch` (0=then, 1=first elseif, …, n-1=else). |
+| `thenChildren` | array | “Then” branch: strings (plugin names) or nested group objects. |
+| `elseifBranches` | array | List of `{ "condition": "<plugin>", "then": [ strings or group objects ] }`. |
+| `elseChildren` | array | “Else” branch. |
 
-**UI hint:** For “stages” mode, list of stages; each stage has a list of groups; each group has a list of children (strings = plugin names, objects = nested groups).
+**UI hint:** For “stages” mode, list of stages; each stage has a list of groups; each group has a list of children (strings = plugin names, objects = nested groups). For conditional groups, prefer **group as children**: use `thenGroup`, `elseGroup`, and `elseifBranches[].thenGroup` (one GROUP per branch), or then/elseif/else branch editors with list of nodes.
 
 ---
 

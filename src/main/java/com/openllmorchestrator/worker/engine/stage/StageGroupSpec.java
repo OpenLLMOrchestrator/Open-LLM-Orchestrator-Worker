@@ -24,6 +24,9 @@ import java.util.List;
 /**
  * One group in the plan: definitions + optional async completion policy and merge policy plugin name.
  * Graph-capable: optional dependencies (group indices that must complete before this group). Immutable.
+ * Conditional: when {@link #getConditionDefinition()} is non-null, this is an if/elseif/else group;
+ * the condition plugin runs first and must write output key {@code branch} (0=then, 1=first elseif, ..., n-1=else);
+ * then the selected branch (list of StageGroupSpec) runs as a sub-plan.
  */
 @Getter
 public class StageGroupSpec {
@@ -33,18 +36,33 @@ public class StageGroupSpec {
     private final String asyncOutputMergePolicyName;
     /** DAG: group indices that must complete before this group. Empty = linear order (no deps). */
     private final int[] dependsOnGroupIndices;
+    /** When non-null, this group is conditional: run this activity first, then run one of {@link #branches}. */
+    private final StageDefinition conditionDefinition;
+    /** When conditional: branch 0 = then, 1..n-2 = elseif, n-1 = else. Each branch is a list of StageGroupSpec to run in order. */
+    private final List<List<StageGroupSpec>> branches;
 
     public StageGroupSpec(List<StageDefinition> definitions, AsyncCompletionPolicy asyncPolicy) {
-        this(definitions, asyncPolicy, "LAST_WINS", null);
+        this(definitions, asyncPolicy, "LAST_WINS", null, null, null);
     }
 
     public StageGroupSpec(List<StageDefinition> definitions, AsyncCompletionPolicy asyncPolicy,
                           String asyncOutputMergePolicyName) {
-        this(definitions, asyncPolicy, asyncOutputMergePolicyName, null);
+        this(definitions, asyncPolicy, asyncOutputMergePolicyName, null, null, null);
     }
 
     public StageGroupSpec(List<StageDefinition> definitions, AsyncCompletionPolicy asyncPolicy,
                           String asyncOutputMergePolicyName, int[] dependsOnGroupIndices) {
+        this(definitions, asyncPolicy, asyncOutputMergePolicyName, dependsOnGroupIndices, null, null);
+    }
+
+    /** Conditional group: run conditionDefinition, then run branches.get(selectedIndex). */
+    public StageGroupSpec(StageDefinition conditionDefinition, List<List<StageGroupSpec>> branches) {
+        this(Collections.emptyList(), AsyncCompletionPolicy.ALL, "LAST_WINS", null, conditionDefinition, branches);
+    }
+
+    private StageGroupSpec(List<StageDefinition> definitions, AsyncCompletionPolicy asyncPolicy,
+                           String asyncOutputMergePolicyName, int[] dependsOnGroupIndices,
+                           StageDefinition conditionDefinition, List<List<StageGroupSpec>> branches) {
         this.definitions = Collections.unmodifiableList(new ArrayList<>(definitions));
         this.asyncPolicy = asyncPolicy != null ? asyncPolicy : AsyncCompletionPolicy.ALL;
         this.asyncOutputMergePolicyName = asyncOutputMergePolicyName != null && !asyncOutputMergePolicyName.isBlank()
@@ -52,6 +70,8 @@ public class StageGroupSpec {
         this.dependsOnGroupIndices = dependsOnGroupIndices != null && dependsOnGroupIndices.length > 0
                 ? dependsOnGroupIndices.clone()
                 : new int[0];
+        this.conditionDefinition = conditionDefinition;
+        this.branches = branches != null ? Collections.unmodifiableList(new ArrayList<>(branches)) : null;
     }
 }
 

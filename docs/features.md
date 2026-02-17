@@ -8,7 +8,7 @@ This document describes the **feature set** and **use cases** enabled by the Ope
 
 | Area | Features |
 |------|----------|
-| **Pipeline & stages** | Stage-based pipelines; sync/async groups; DAG-capable execution graph; predefined stages (ACCESS, PLANNER, PLAN_EXECUTOR, MODEL, RETRIEVAL, TOOL, MCP, MEMORY, etc.); custom and dynamic (JAR) plugins; iterative blocks and plan executor. |
+| **Pipeline & stages** | Stage-based pipelines; sync/async groups; **group-level if/elseif/else** (condition plugin + thenGroup/elseGroup/elseif.thenGroup); DAG-capable execution graph; predefined stages (ACCESS, PLANNER, PLAN_EXECUTOR, MODEL, RETRIEVAL, RETRIEVE, TOOL, MCP, MEMORY, EVALUATE, FEEDBACK_CAPTURE, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY, etc.); custom and dynamic (JAR) plugins; iterative blocks and plan executor. |
 | **Execution & kernel** | Execution-state driven kernel; deterministic ready set; versioned state (stepId, executionId); execution snapshots; interceptor layer (before/after/onError); execution modes (LIVE, REPLAY, DRY_RUN, EVALUATION, BRANCH). |
 | **Stage result & contract** | Deterministic StageResult envelope (output, metadata, deterministic, dependencies); StageMetadata & DependencyRef; ExecutionGraph (linear list → graph, topological order); CheckpointableStage (resumeFrom, branchFrom); OutputContract (schema validation, enforceStrict). |
 | **Human & signals** | Async pause: stage calls `requestSuspendForSignal()`; workflow awaits; `receiveSignal(ExecutionSignal)` (HUMAN_APPROVAL, MANUAL_OVERRIDE, COMPLIANCE_ACK); resume with payload. |
@@ -26,6 +26,9 @@ This document describes the **feature set** and **use cases** enabled by the Ope
 | **Security hardening** | **SecurityHardeningGate**: prompt injection defense, tool allowlist, output scanning pre-persist, context poisoning detection (SECURITY_HARDENING). |
 | **Plan safety validation** | **PlanValidator**: allowed stages only, max depth, no recursive infinite loops, no unauthorized injection before running dynamic plan (PLAN_SAFETY_VALIDATION). |
 | **Graph export** | **ExecutionGraph** exports: toDot(), toMermaid(), toJsonForUi() for DOT, Mermaid, JSON (EXECUTION_GRAPH_EXPORT). |
+| **Learning & training stages** | EVALUATE, FEEDBACK_CAPTURE, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY; future-ready for incremental learning and model lifecycle; stub plugins provided. |
+| **Conditional groups** | At group level: **condition** plugin runs first (writes output key `branch`); then one of **then** / **elseif** / **else** runs; prefer **thenGroup**, **elseGroup**, **elseifBranches[].thenGroup** (group as children). |
+| **Config & debugging UI** | **ui-reference.md**: single reference for Configuration UI and Stage Debugging UI (predefined stages table, plugin types, config schema, pipeline structure, activity naming, context keys). |
 
 ---
 
@@ -38,6 +41,16 @@ All optional features are gated by a **FeatureFlag** enum. In the configuration 
 **Available flags:** `HUMAN_SIGNAL`, `STREAMING`, `AGENT_CONTEXT`, `DETERMINISM_POLICY`, `CHECKPOINTABLE_STAGE`, `OUTPUT_CONTRACT`, `EXECUTION_GRAPH`, `STAGE_RESULT_ENVELOPE`, `VERSIONED_STATE`, `INTERCEPTORS`, `PLANNER_PLAN_EXECUTOR`, `EXECUTION_SNAPSHOT`, `POLICY_ENGINE`, `BUDGET_GUARDRAIL`, `CONCURRENCY_ISOLATION`, `SECURITY_HARDENING`, `PLAN_SAFETY_VALIDATION`, `EXECUTION_GRAPH_EXPORT`.
 
 When **enabledFeatures** is missing or empty, no optional features are enabled (core pipeline still runs). Add only the flags you need.
+
+### Feature-flag design: bootstrap elimination and minimal runtime check
+
+**Intended design:**
+
+1. **Eliminate execution hierarchy during bootstrap** — For each feature flag, the execution hierarchy (plan shape, registered executors, interceptors, resolvers) should be built **only when the feature is enabled**. Disabled features must not register or build that code path at bootstrap, so they run no code and add no branches in the hot path. Example: if `EXECUTION_GRAPH` is off, the plan is built with linear `stageOrder` only (no graph topology); if `HUMAN_SIGNAL` is off, the workflow/kernel need not register suspend/signal handling in the built hierarchy.
+
+2. **Minimal enum check at root when runtime is required** — If a feature genuinely requires a **runtime** decision (e.g. “after this group, should we suspend for signal?”), the check must be a **single, minimal enum check at root level** (e.g. at workflow entry or kernel loop head), not scattered `isEnabled(FeatureFlag.X)` calls in many executors or activities. That way the feature is eliminated in one place: one branch at the root, and the rest of the pipeline stays feature-agnostic.
+
+**Current practice:** Flags are loaded from config at bootstrap and set on `EngineRuntime` in **SetRuntimeStep**. Plan building uses the flag **EXECUTION_GRAPH** at bootstrap to choose stage order (topological from graph vs linear from `stageOrder`), so that part of the hierarchy is already eliminated at bootstrap. Some features still use runtime checks in executors or workflow; the target state is to move those to bootstrap-time elimination or to a single root-level check where runtime is unavoidable.
 
 ### Minimal activity state (Temporal history)
 
@@ -62,7 +75,9 @@ Temporal records workflow and activity input/output in its store (DB/Elastic). T
 - **Replay & audit** — Versioned state, determinism policy, checkpoint/resume; enterprise audit and replay.  
 - **Document ingest** — FILTER → RETRIEVAL; tokenize, chunk, index; wikis, contracts, searchable knowledge.  
 - **Guardrails & safety** — Guardrail plugins; PII, toxicity, policy; compliance and brand safety.  
-- **Observability & cost** — Interceptors, metrics, tracing, billing; SLOs, cost attribution.
+- **Observability & cost** — Interceptors, metrics, tracing, billing; SLOs, cost attribution.  
+- **Incremental learning & model lifecycle** — EVALUATE → FEEDBACK_CAPTURE → DATASET_BUILD → TRAIN_TRIGGER → MODEL_REGISTRY; quality gates, feedback collection, dataset curation, training triggers, model promotion.  
+- **Conditional branching** — Group-level if/elseif/else: condition plugin selects branch; thenGroup/elseGroup/elseif.thenGroup (group as children) for then/else/elseif.
 
 **Possible use cases by capability:**
 
@@ -71,7 +86,9 @@ Temporal records workflow and activity input/output in its store (DB/Elastic). T
 - **Agent identity** — Personalized assistants, persistent bot personas, cross-session memory.  
 - **Determinism** — Reproducible evaluation runs, compliance replay, locked tool/retrieval outputs.  
 - **Checkpoint/resume** — Long runs, branch-from-step experimentation, replay from a step.  
-- **Output contract** — Structured LLM output, API-safe responses, schema-validated results.
+- **Output contract** — Structured LLM output, API-safe responses, schema-validated results.  
+- **Conditional groups** — If/elseif/else at group level; condition plugin selects branch; thenGroup/elseGroup (group as children).  
+- **Learning stages** — EVALUATE, FEEDBACK_CAPTURE, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY for incremental learning and model lifecycle.
 
 Details for each area are in the sections below.
 
@@ -295,6 +312,15 @@ A **kernel-level interceptor** layer runs around every stage (not as a stage its
 - **EXECUTION_CONTROLLER**: central place for conditional branching, backoff, or policy (e.g. when to use cache vs live model).
 - **Enterprise**: cost/latency policies, failover, fallbacks.
 
+### 4.7 Conditional Groups (if/elseif/else)
+- At **group level**: set **condition** to a plugin name (ConditionPlugin). That plugin runs first and must write output key **`branch`** (Integer: 0 = then, 1 = first elseif, …, n−1 = else). Only the selected branch runs.
+- **Group as children**: prefer **thenGroup**, **elseGroup**, and **elseifBranches[].thenGroup** (one GROUP per branch); alternatively use thenChildren/elseChildren/elseif.then (lists of nodes).
+- Use cases: model selection by context, tenant-specific branches, fallback paths, A/B by condition.
+- **Enterprise**: conditional pipelines, cost routing, compliance branches. See [configuration-reference.md](configuration-reference.md) and [ui-reference.md](ui-reference.md).
+
+### 4.8 Configuration UI & Stage Debugging UI
+- **[ui-reference.md](ui-reference.md)** is the single reference for building Configuration UI and Stage Debugging UI: predefined stages table (with order and descriptions), plugin types table, config schema at a glance, pipeline structure, activity naming (`stageBucketName::activityName`), context keys (originalInput, accumulatedOutput), and execution flow for run inspection.
+
 ---
 
 ## 5. Other Possible Plugins (Iterator, Planner, and Business-Domain)
@@ -407,6 +433,7 @@ Beyond the plugin types already in config, the following **possible plugins** ma
 | DatasetBuildPlugin        | Build/curate dataset from feedback        |
 | TrainTriggerPlugin        | Trigger training job (fine-tune, LoRA)   |
 | ModelRegistryPlugin       | Register/promote trained model for serving |
+| ConditionPlugin           | Group if/elseif/else: return output key `branch` (0=then, 1=elseif, …, n-1=else) |
 | PromptBuilderPlugin       | Dynamic prompt assembly                   |
 | ObservabilityPlugin       | Metrics, monitoring                        |
 | TracingPlugin             | Distributed tracing                       |

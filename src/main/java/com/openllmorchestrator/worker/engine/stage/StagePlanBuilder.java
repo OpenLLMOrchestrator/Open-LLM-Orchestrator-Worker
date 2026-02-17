@@ -96,6 +96,18 @@ public final class StagePlanBuilder {
         return this;
     }
 
+    /**
+     * Add a conditional group (if/elseif/else): run condition activity first, then run one of the branches.
+     * Condition plugin must write output key {@code branch} (Integer: 0=then, 1=first elseif, ..., n-1=else).
+     */
+    public StagePlanBuilder addConditionalGroup(StageDefinition conditionDefinition, List<List<StageGroupSpec>> branches) {
+        if (conditionDefinition == null || branches == null || branches.isEmpty()) {
+            throw new IllegalArgumentException("conditionDefinition and non-empty branches required");
+        }
+        groups.add(new StageGroupSpec(conditionDefinition, branches));
+        return this;
+    }
+
     public StagePlan build() {
         return new StagePlan(groups);
     }

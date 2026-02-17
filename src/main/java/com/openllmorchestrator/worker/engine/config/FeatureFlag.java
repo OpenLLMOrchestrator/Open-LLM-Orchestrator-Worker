@@ -18,6 +18,8 @@ package com.openllmorchestrator.worker.engine.config;
 /**
  * Feature flags. Only enabled features execute; disabled features run no code paths to achieve performance.
  * Configure in config file (enabledFeatures list) and load at bootstrap.
+ * Design: (1) Eliminate execution hierarchy for disabled features during bootstrap where possible.
+ * (2) If a runtime decision is needed, use a minimal enum check at root level to eliminate the feature.
  */
 public enum FeatureFlag {
 

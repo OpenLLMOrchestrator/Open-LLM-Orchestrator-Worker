@@ -15,16 +15,21 @@
  */
 package com.openllmorchestrator.worker.engine.stage.plan;
 
+import com.openllmorchestrator.worker.engine.config.pipeline.ElseIfBranchNodeConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.MergePolicyConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.NodeConfig;
 import com.openllmorchestrator.worker.engine.stage.AsyncCompletionPolicy;
+import com.openllmorchestrator.worker.engine.stage.StageDefinition;
+import com.openllmorchestrator.worker.engine.stage.StageExecutionMode;
+import com.openllmorchestrator.worker.engine.stage.StageGroupSpec;
+import com.openllmorchestrator.worker.engine.stage.StagePlan;
 import com.openllmorchestrator.worker.engine.stage.StagePlanBuilder;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Processes GROUP nodes: SYNC = recurse children; ASYNC = one parallel group. Options from config. */
+/** Processes GROUP nodes: SYNC = recurse children; ASYNC = one parallel group; conditional = if/elseif/else. Options from config. */
 public final class GroupNodeProcessor implements NodeProcessor {
     @Override
     public boolean supports(NodeConfig node) {
@@ -36,6 +41,10 @@ public final class GroupNodeProcessor implements NodeProcessor {
         int effectiveMax = node.getMaxDepth() != null ? node.getMaxDepth() : ctx.getDefaultMaxGroupDepth();
         if (depth >= effectiveMax) {
             throw new IllegalStateException("Group recursion depth " + depth + " exceeds max " + effectiveMax);
+        }
+        if (node.isConditional()) {
+            processConditional(node, ctx, builder, walker, depth);
+            return;
         }
         if ("ASYNC".equalsIgnoreCase(node.getExecutionMode())) {
             List<String> names = collectStageNames(node, ctx);
@@ -85,6 +94,49 @@ public final class GroupNodeProcessor implements NodeProcessor {
             }
         }
         return names;
+    }
+
+    private void processConditional(NodeConfig node, PlanBuildContext ctx, StagePlanBuilder builder, PipelineWalker walker, int depth) {
+        String conditionName = node.getCondition().trim();
+        if (ctx.getAllowedPluginNames() != null && !ctx.getAllowedPluginNames().contains(conditionName)) {
+            throw new IllegalStateException(
+                    "Condition plugin not allowed or incompatible: " + conditionName
+                            + ". Add it to config.plugins and ensure contract compatibility.");
+        }
+        int timeout = node.getTimeoutSeconds() != null ? node.getTimeoutSeconds() : ctx.getDefaultTimeoutSeconds();
+        StageDefinition conditionDef = StageDefinition.builder()
+                .name(conditionName)
+                .executionMode(StageExecutionMode.SYNC)
+                .group(0)
+                .taskQueue(ctx.getTaskQueue())
+                .timeout(Duration.ofSeconds(timeout))
+                .scheduleToStartTimeout(ActivityOptionsFromConfig.scheduleToStart(node, ctx))
+                .scheduleToCloseTimeout(ActivityOptionsFromConfig.scheduleToClose(node, ctx))
+                .retryOptions(ActivityOptionsFromConfig.retryOptions(node, ctx))
+                .stageBucketName("CONDITION")
+                .build();
+        List<List<StageGroupSpec>> branches = new ArrayList<>();
+        branches.add(node.hasThenGroup()
+                ? buildBranchSpecs(List.of(node.getThenGroup()), ctx, walker, depth)
+                : buildBranchSpecs(node.getThenChildrenSafe(), ctx, walker, depth));
+        for (ElseIfBranchNodeConfig elseif : node.getElseifBranchesSafe()) {
+            branches.add(elseif.hasThenGroup()
+                    ? buildBranchSpecs(List.of(elseif.getThenGroup()), ctx, walker, depth)
+                    : buildBranchSpecs(elseif.getThenSafe(), ctx, walker, depth));
+        }
+        branches.add(node.hasElseGroup()
+                ? buildBranchSpecs(List.of(node.getElseGroup()), ctx, walker, depth)
+                : buildBranchSpecs(node.getElseChildrenSafe(), ctx, walker, depth));
+        builder.addConditionalGroup(conditionDef, branches);
+    }
+
+    private static List<StageGroupSpec> buildBranchSpecs(List<NodeConfig> nodes, PlanBuildContext ctx,
+                                                         PipelineWalker walker, int depth) {
+        StagePlanBuilder branchBuilder = StagePlan.builder();
+        for (NodeConfig n : nodes) {
+            walker.processNode(n, ctx, branchBuilder, depth + 1);
+        }
+        return branchBuilder.build().getGroups();
     }
 }
 

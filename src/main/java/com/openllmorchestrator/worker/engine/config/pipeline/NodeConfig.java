@@ -47,9 +47,47 @@ public class NodeConfig {
     /** For STAGE: optional retry override. */
     private RetryPolicyConfig retryPolicy;
     private List<NodeConfig> children;
+    /** If set, this GROUP is conditional: run condition plugin, then one of then/elseif/else. Plugin must write output key "branch" (0=then, 1=elseif, ..., n-1=else). */
+    private String condition;
+    /** "Then" branch (GROUP only, when condition is set). If null, {@link #children} is used as then. */
+    private List<NodeConfig> thenChildren;
+    /** "Then" branch as a single GROUP node (preferred when set). Condition has group as children. */
+    private NodeConfig thenGroup;
+    /** Elseif branches (GROUP only). Each has condition plugin name and then children or thenGroup. */
+    private List<ElseIfBranchNodeConfig> elseifBranches;
+    /** "Else" branch (GROUP only). */
+    private List<NodeConfig> elseChildren;
+    /** "Else" branch as a single GROUP node (preferred when set). */
+    private NodeConfig elseGroup;
 
     public List<NodeConfig> getChildren() {
         return children != null ? children : Collections.emptyList();
+    }
+
+    public List<NodeConfig> getThenChildrenSafe() {
+        return thenChildren != null ? thenChildren : getChildren();
+    }
+
+    public List<ElseIfBranchNodeConfig> getElseifBranchesSafe() {
+        return elseifBranches != null ? elseifBranches : Collections.emptyList();
+    }
+
+    public List<NodeConfig> getElseChildrenSafe() {
+        return elseChildren != null ? elseChildren : Collections.emptyList();
+    }
+
+    /** When condition is set: prefer thenGroup (one GROUP) as then branch; else use thenChildren. */
+    public boolean hasThenGroup() {
+        return thenGroup != null;
+    }
+
+    /** When condition is set: prefer elseGroup (one GROUP) as else branch; else use elseChildren. */
+    public boolean hasElseGroup() {
+        return elseGroup != null;
+    }
+
+    public boolean isConditional() {
+        return condition != null && !condition.isBlank();
     }
 
     public boolean isGroup() {

@@ -59,6 +59,8 @@ public final class PluginTypes {
     public static final String TRAIN_TRIGGER = "TrainTriggerPlugin";
     /** Register or promote a trained model for serving. */
     public static final String MODEL_REGISTRY = "ModelRegistryPlugin";
+    /** Condition plugin for group-level if/elseif/else: reads context, returns output key {@code branch} (0=then, 1=elseif, ..., n-1=else). */
+    public static final String CONDITION = "ConditionPlugin";
 
     private PluginTypes() {}
 }

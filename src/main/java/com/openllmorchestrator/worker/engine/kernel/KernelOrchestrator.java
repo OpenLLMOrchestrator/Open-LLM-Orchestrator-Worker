@@ -20,8 +20,9 @@ import com.openllmorchestrator.worker.engine.config.FeatureFlags;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.engine.contract.KernelExecutionOutcome;
 import com.openllmorchestrator.worker.engine.kernel.execution.AsyncGroupExecutor;
-import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
+import com.openllmorchestrator.worker.engine.kernel.execution.ConditionalGroupExecutor;
 import com.openllmorchestrator.worker.engine.kernel.execution.GroupExecutor;
+import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
 import com.openllmorchestrator.worker.engine.kernel.execution.PlanExecutorGroupExecutor;
 import com.openllmorchestrator.worker.engine.kernel.execution.SyncGroupExecutor;
 import com.openllmorchestrator.worker.engine.kernel.interceptor.ExecutionInterceptorChain;
@@ -61,6 +62,7 @@ public class KernelOrchestrator {
                 : ExecutionInterceptorChain.noOp();
         this.executors = List.of(
                 new PlanExecutorGroupExecutor(this::execute),
+                new ConditionalGroupExecutor(this::execute),
                 new SyncGroupExecutor(),
                 new AsyncGroupExecutor()
         );

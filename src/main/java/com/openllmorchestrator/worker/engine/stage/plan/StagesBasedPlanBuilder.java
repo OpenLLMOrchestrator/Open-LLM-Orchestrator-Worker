@@ -17,12 +17,16 @@ package com.openllmorchestrator.worker.engine.stage.plan;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
+import com.openllmorchestrator.worker.engine.config.pipeline.ElseIfBranchConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.GroupConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.MergePolicyConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
 import com.openllmorchestrator.worker.engine.config.pipeline.StageBlockConfig;
 import com.openllmorchestrator.worker.engine.stage.AsyncCompletionPolicy;
+import com.openllmorchestrator.worker.engine.stage.StageDefinition;
 import com.openllmorchestrator.worker.engine.stage.StageExecutionMode;
+import com.openllmorchestrator.worker.engine.stage.StageGroupSpec;
+import com.openllmorchestrator.worker.engine.stage.StagePlan;
 import com.openllmorchestrator.worker.engine.stage.StagePlanBuilder;
 import com.openllmorchestrator.worker.engine.stage.StageRetryOptions;
 
@@ -101,6 +105,10 @@ public final class StagesBasedPlanBuilder {
         Duration scheduleToClose = ActivityOptionsFromConfig.scheduleToClose(null, ctx);
         StageRetryOptions retryOptions = ActivityOptionsFromConfig.retryOptions(null, ctx);
 
+        if (group.isConditional()) {
+            processConditionalGroup(group, section, ctx, builder, depth, timeoutSeconds, timeout, scheduleToStart, scheduleToClose, retryOptions);
+            return;
+        }
         if (group.isAsync()) {
             List<String> activityNames = flattenActivityNames(group, ctx);
             AsyncCompletionPolicy policy = group.getAsyncCompletionPolicy() != null && !group.getAsyncCompletionPolicy().isBlank()
@@ -182,6 +190,84 @@ public final class StagesBasedPlanBuilder {
             }
         }
         return out;
+    }
+
+    private static void processConditionalGroup(GroupConfig group, PipelineSection section, PlanBuildContext ctx,
+                                               StagePlanBuilder builder, int depth,
+                                               int timeoutSeconds, Duration timeout,
+                                               Duration scheduleToStart, Duration scheduleToClose,
+                                               StageRetryOptions retryOptions) {
+        String conditionName = group.getCondition().trim();
+        if (ctx.getAllowedPluginNames() != null && !ctx.getAllowedPluginNames().contains(conditionName)) {
+            throw new IllegalStateException(
+                    "Condition plugin not allowed or incompatible: " + conditionName
+                            + ". Add it to config.plugins and ensure contract compatibility.");
+        }
+        StageDefinition conditionDef = StageDefinition.builder()
+                .name(conditionName)
+                .executionMode(StageExecutionMode.SYNC)
+                .group(0)
+                .taskQueue(ctx.getTaskQueue())
+                .timeout(timeout)
+                .scheduleToStartTimeout(scheduleToStart)
+                .scheduleToCloseTimeout(scheduleToClose)
+                .retryOptions(retryOptions)
+                .stageBucketName("CONDITION")
+                .build();
+        List<List<StageGroupSpec>> branches = new ArrayList<>();
+        branches.add(group.hasThenGroup()
+                ? buildBranchSpecsFromGroup(MAPPER.convertValue(group.getThenGroup(), GroupConfig.class), section, ctx, depth)
+                : buildBranchSpecsFromChildren(group.getThenChildrenSafe(), section, ctx, depth));
+        for (ElseIfBranchConfig elseif : group.getElseifBranchesSafe()) {
+            branches.add(elseif.hasThenGroup()
+                    ? buildBranchSpecsFromGroup(MAPPER.convertValue(elseif.getThenGroup(), GroupConfig.class), section, ctx, depth)
+                    : buildBranchSpecsFromChildren(elseif.getThenSafe(), section, ctx, depth));
+        }
+        branches.add(group.hasElseGroup()
+                ? buildBranchSpecsFromGroup(MAPPER.convertValue(group.getElseGroup(), GroupConfig.class), section, ctx, depth)
+                : buildBranchSpecsFromChildren(group.getElseChildrenSafe(), section, ctx, depth));
+        builder.addConditionalGroup(conditionDef, branches);
+    }
+
+    /** Build branch specs from a single GROUP (condition has group as children). */
+    private static List<StageGroupSpec> buildBranchSpecsFromGroup(GroupConfig branchGroup, PipelineSection section,
+                                                                 PlanBuildContext ctx, int depth) {
+        StagePlanBuilder branchBuilder = StagePlan.builder();
+        processGroup(branchGroup, section, ctx, branchBuilder, depth);
+        return branchBuilder.build().getGroups();
+    }
+
+    private static List<StageGroupSpec> buildBranchSpecsFromChildren(List<Object> children, PipelineSection section,
+                                                                    PlanBuildContext ctx, int depth) {
+        StagePlanBuilder branchBuilder = StagePlan.builder();
+        for (Object child : children != null ? children : List.of()) {
+            if (child instanceof String) {
+                String name = ((String) child).trim();
+                if (!name.isEmpty()) {
+                    if (ctx.getAllowedPluginNames() != null && !ctx.getAllowedPluginNames().contains(name)) {
+                        throw new IllegalStateException(
+                                "Plugin not allowed or incompatible: " + name
+                                        + ". Add it to config.plugins and ensure contract compatibility.");
+                    }
+                    int timeoutSeconds = ctx.getDefaultTimeoutSeconds();
+                    Duration timeout = Duration.ofSeconds(timeoutSeconds);
+                    branchBuilder.addSyncWithCustomConfig(
+                            name,
+                            StageExecutionMode.SYNC,
+                            timeout,
+                            ctx.getTaskQueue(),
+                            ActivityOptionsFromConfig.scheduleToStart(null, ctx),
+                            ActivityOptionsFromConfig.scheduleToClose(null, ctx),
+                            ActivityOptionsFromConfig.retryOptions(null, ctx),
+                            ctx.getCurrentStageBucketName()
+                    );
+                }
+            } else if (child instanceof Map) {
+                GroupConfig nested = MAPPER.convertValue(child, GroupConfig.class);
+                processGroup(nested, section, ctx, branchBuilder, depth + 1);
+            }
+        }
+        return branchBuilder.build().getGroups();
     }
 }
 

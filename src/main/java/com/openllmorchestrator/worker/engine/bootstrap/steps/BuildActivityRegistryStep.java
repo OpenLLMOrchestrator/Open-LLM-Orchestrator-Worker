@@ -42,6 +42,7 @@ import com.openllmorchestrator.worker.plugin.prompt.SimplePromptBuilderPlugin;
 import com.openllmorchestrator.worker.plugin.caching.InMemoryCachingPlugin;
 import com.openllmorchestrator.worker.plugin.observability.PassThroughObservabilityPlugin;
 import com.openllmorchestrator.worker.sample.SampleEchoPlugin;
+import com.openllmorchestrator.worker.sample.StubConditionPlugin;
 import com.openllmorchestrator.worker.sample.StubDatasetBuildPlugin;
 import com.openllmorchestrator.worker.sample.StubEvaluationPlugin;
 import com.openllmorchestrator.worker.sample.StubFeedbackPlugin;
@@ -90,6 +91,7 @@ public final class BuildActivityRegistryStep implements BootstrapStep {
         StageHandler stubDatasetBuild = new StubDatasetBuildPlugin();
         StageHandler stubTrainTrigger = new StubTrainTriggerPlugin();
         StageHandler stubModelRegistry = new StubModelRegistryPlugin();
+        StageHandler stubCondition = new StubConditionPlugin();
         StageHandler lastWins = new LastWinsMergeHandler();
         StageHandler firstWins = new FirstWinsMergeHandler();
         StageHandler prefixByActivity = new PrefixByActivityMergeHandler();
@@ -120,6 +122,7 @@ public final class BuildActivityRegistryStep implements BootstrapStep {
                 .register(StubDatasetBuildPlugin.NAME, stubDatasetBuild)
                 .register(StubTrainTriggerPlugin.NAME, stubTrainTrigger)
                 .register(StubModelRegistryPlugin.NAME, stubModelRegistry)
+                .register(StubConditionPlugin.NAME, stubCondition)
                 .register(LastWinsMergeHandler.NAME, lastWins)
                 .register(FirstWinsMergeHandler.NAME, firstWins)
                 .register(PrefixByActivityMergeHandler.NAME, prefixByActivity)

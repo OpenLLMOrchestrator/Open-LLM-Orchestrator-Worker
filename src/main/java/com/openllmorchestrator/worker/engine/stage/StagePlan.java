@@ -38,5 +38,10 @@ public class StagePlan {
     public static StagePlanBuilder builder() {
         return new StagePlanBuilder();
     }
+
+    /** Build a plan from a list of group specs (e.g. for conditional branch sub-plans). */
+    public static StagePlan fromGroups(List<StageGroupSpec> groups) {
+        return new StagePlan(groups != null ? groups : List.of());
+    }
 }
 

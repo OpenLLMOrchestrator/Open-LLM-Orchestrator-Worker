@@ -79,6 +79,7 @@ Use for **plugin type dropdown** in pipeline editor and for **filtering plugins 
 | DatasetBuildPlugin | Build dataset from feedback | DATASET_BUILD |
 | TrainTriggerPlugin | Trigger training job | TRAIN_TRIGGER |
 | ModelRegistryPlugin | Register/promote model | MODEL_REGISTRY |
+| ConditionPlugin | Group if/elseif/else: return output key `branch` (0=then, 1=elseif, …, n-1=else) | (GROUP with `condition` set) |
 | PromptBuilderPlugin | Prompt building | (often used inside MODEL) |
 | ObservabilityPlugin | Observability | OBSERVABILITY, SUB_OBSERVABILITY |
 | TracingPlugin | Tracing | OBSERVABILITY |
@@ -146,6 +147,8 @@ Use for **plugin type dropdown** in pipeline editor and for **filtering plugins 
 - **Async group options:** `asyncCompletionPolicy`: ALL | FIRST_SUCCESS | FIRST_FAILURE | ALL_SETTLED. `asyncOutputMergePolicy`: name from mergePolicies or built-in (LAST_WINS, FIRST_WINS, PREFIX_BY_ACTIVITY).
 
 Validation: Every STAGE must have `name` and `pluginType`; `pluginType` must be from §2; stage names in `root` and `stageOrder` should be from §1 (or custom if supported).
+
+**Conditional groups (if/elseif/else):** On a GROUP node set `condition` to a plugin name (activity id). That plugin runs first and must write output key **`branch`** (Integer): 0 = then, 1 = first elseif, …, n−1 = else. **Within condition, use group as children:** prefer **`thenGroup`** (one GROUP), **`elseGroup`** (one GROUP), and **`elseifBranches[].thenGroup`** (one GROUP per branch). Alternatively use `thenChildren`, `elseChildren`, or `elseifBranches[].then` (lists). Only the selected branch runs. Use **ConditionPlugin** as `pluginType` for the condition plugin; stub: `StubConditionPlugin` (always returns branch 0).
 
 ---
 
