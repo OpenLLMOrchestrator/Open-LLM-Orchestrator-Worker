@@ -28,7 +28,11 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 
-/** Mutable context passed through bootstrap steps. */
+/**
+ * Mutable context passed through bootstrap steps. All products (config, resolver, plans) are
+ * stateless: no transactional or request-scoped data. Execution hierarchy is built once and
+ * reused for the container lifecycle.
+ */
 @Getter
 @Setter
 public class BootstrapContext {

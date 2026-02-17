@@ -28,7 +28,7 @@ import java.util.Map;
  * Register in {@link MergePolicyRegistry} and reference by name in config (asyncOutputMergePolicy).
  */
 public enum AsyncOutputMergePolicy implements AsyncMergePolicy {
-    /** First finished job's output written first; later outputs do not overwrite keys (putIfAbsent). */
+    /** First finished plugin's output written first; later outputs do not overwrite keys (putIfAbsent). */
     FIRST_WINS(FirstWriterWinsMergePolicy.INSTANCE),
     /** Last finished overwrites; merge in completion order (putAll each). */
     LAST_WINS(LastWriterWinsMergePolicy.INSTANCE),

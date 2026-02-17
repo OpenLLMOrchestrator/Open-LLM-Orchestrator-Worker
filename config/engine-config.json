@@ -115,7 +115,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "FilterPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.tokenizer.DocumentTokenizerPlugin"
                         }
@@ -126,7 +126,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "VectorStorePlugin",
                             "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
                         }
@@ -143,7 +143,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "FilterPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.folder.FolderIngestionPlugin"
                         }
@@ -154,7 +154,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "VectorStorePlugin",
                             "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
                         }
@@ -171,7 +171,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "VectorStorePlugin",
                             "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
                         }
@@ -182,7 +182,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
                             "timeoutSeconds": 120
@@ -194,7 +194,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -211,7 +211,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
                             "timeoutSeconds": 120
@@ -223,7 +223,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -240,7 +240,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
                             "timeoutSeconds": 120
@@ -252,7 +252,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -272,7 +272,7 @@
                     "timeoutSeconds": 180,
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
                             "timeoutSeconds": 120
@@ -284,7 +284,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -301,7 +301,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "VectorStorePlugin",
                             "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
                         }
@@ -312,7 +312,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
                             "timeoutSeconds": 120
@@ -324,7 +324,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -341,7 +341,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "VectorStorePlugin",
                             "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
                         }
@@ -352,7 +352,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
                             "timeoutSeconds": 120
@@ -364,7 +364,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -381,7 +381,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "VectorStorePlugin",
                             "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
                         }
@@ -392,7 +392,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
                             "timeoutSeconds": 120
@@ -404,7 +404,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -421,7 +421,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "VectorStorePlugin",
                             "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
                         }
@@ -432,7 +432,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
                             "timeoutSeconds": 120
@@ -444,7 +444,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -461,7 +461,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "VectorStorePlugin",
                             "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
                         }
@@ -472,7 +472,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
                             "timeoutSeconds": 120
@@ -484,7 +484,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -501,7 +501,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "VectorStorePlugin",
                             "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
                         }
@@ -512,7 +512,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
                             "timeoutSeconds": 120
@@ -524,7 +524,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -541,7 +541,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "VectorStorePlugin",
                             "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
                         }
@@ -552,7 +552,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
                             "timeoutSeconds": 120
@@ -564,7 +564,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -581,7 +581,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "VectorStorePlugin",
                             "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
                         }
@@ -592,7 +592,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
                             "timeoutSeconds": 120
@@ -604,7 +604,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -621,7 +621,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.MistralChatPlugin",
                             "timeoutSeconds": 120
@@ -633,7 +633,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -650,7 +650,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32FixedChatPlugin",
                             "timeoutSeconds": 120
@@ -662,7 +662,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -679,7 +679,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Phi3ChatPlugin",
                             "timeoutSeconds": 120
@@ -691,7 +691,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -708,7 +708,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Gemma2_2bChatPlugin",
                             "timeoutSeconds": 120
@@ -720,7 +720,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -737,7 +737,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Qwen2_1_5bChatPlugin",
                             "timeoutSeconds": 120
@@ -749,7 +749,7 @@
                     "executionMode": "SYNC",
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "RefinementPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"
                         }
@@ -769,37 +769,37 @@
                     "timeoutSeconds": 360,
                     "children": [
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
                             "timeoutSeconds": 360
                         },
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.MistralChatPlugin",
                             "timeoutSeconds": 360
                         },
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Llama32FixedChatPlugin",
                             "timeoutSeconds": 360
                         },
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Phi3ChatPlugin",
                             "timeoutSeconds": 360
                         },
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Gemma2_2bChatPlugin",
                             "timeoutSeconds": 360
                         },
                         {
-                            "type": "STAGE",
+                            "type": "PLUGIN",
                             "pluginType": "ModelPlugin",
                             "name": "com.openllmorchestrator.worker.plugin.llm.Qwen2_1_5bChatPlugin",
                             "timeoutSeconds": 360

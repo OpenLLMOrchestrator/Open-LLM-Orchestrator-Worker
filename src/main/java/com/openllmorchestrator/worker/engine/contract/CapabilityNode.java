@@ -13,8 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.openllmorchestrator.worker.engine.kernel;
+package com.openllmorchestrator.worker.engine.contract;
 
-public class KernelStageActivity {
+import lombok.Builder;
+import lombok.Getter;
+
+/**
+ * Node in an execution graph (future DAG support). Identified by id; capabilityBucketName is the capability/bucket to run.
+ */
+@Getter
+@Builder
+public class CapabilityNode {
+    private final String id;
+    private final String capabilityBucketName;
+
+    public static CapabilityNode of(String capabilityBucketName) {
+        return CapabilityNode.builder().id(capabilityBucketName).capabilityBucketName(capabilityBucketName).build();
+    }
 }
-

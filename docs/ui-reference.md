@@ -58,9 +58,9 @@ Use this table to:
 
 ---
 
-## 2. Plugin types (for STAGE node `pluginType`)
+## 2. Plugin types (for PLUGIN node `pluginType`)
 
-Use for **plugin type dropdown** in pipeline editor and for **filtering plugins by capability**. Each STAGE node must have `pluginType` from this list and `name` = activity/plugin id (FQCN or short name).
+Use for **plugin type dropdown** in pipeline editor and for **filtering plugins by capability**. Each PLUGIN (leaf) node must have `pluginType` from this list and `name` = activity/plugin id (FQCN or short name). Legacy: `type` `"PLUGIN"` is accepted as alias for `"PLUGIN"`.
 
 | Plugin type (value) | Description | Typical capabilities |
 |---------------------|-------------|----------------|
@@ -145,10 +145,10 @@ Use for **plugin type dropdown** in pipeline editor and for **filtering plugins 
 
 - **Root by capability (recommended):** `pipelines.<id>.root` is an object whose **keys are capability names** (from §1) and values are **GROUP** nodes. Order of execution = order of capabilities in **capabilityOrder** (or **stageOrder**) (only capabilities present in root are run).
 - **One capability = one card/column:** Each key in `root` is one capability; value must be `{ "type": "GROUP", "executionMode": "SYNC"|"ASYNC", "children": [ ... ] }`.
-- **Children:** Array of **STAGE** nodes or nested **GROUP**. Each STAGE: `{ "type": "STAGE", "name": "<activity id>", "pluginType": "<from §2>" }`. Optional: `timeoutSeconds`, `retryPolicy`, etc.
+- **Children:** Array of **PLUGIN** nodes or nested **GROUP**. Each PLUGIN: `{ "PLUGIN", "name": "<activity id>", "pluginType": "<from §2>" }`. Optional: `timeoutSeconds`, `retryPolicy`, etc. Legacy: `"type": "PLUGIN"` accepted.
 - **Async group options:** `asyncCompletionPolicy`: ALL | FIRST_SUCCESS | FIRST_FAILURE | ALL_SETTLED. `asyncOutputMergePolicy`: name from mergePolicies or built-in (LAST_WINS, FIRST_WINS, PREFIX_BY_ACTIVITY).
 
-Validation: Every STAGE must have `name` and `pluginType`; `pluginType` must be from §2; capability names in `root` and `capabilityOrder`/`stageOrder` should be from §1 (or custom if supported).
+Validation: Every PLUGIN node must have `name` and `pluginType`; `pluginType` must be from §2; capability names in `root` and `capabilityOrder`/`stageOrder` should be from §1 (or custom if supported).
 
 **Conditional groups (if/elseif/else):** On a GROUP node set `condition` to a plugin name (activity id). That plugin runs first and must write output key **`branch`** (Integer): 0 = then, 1 = first elseif, …, n−1 = else. **Within condition, use group as children:** prefer **`thenGroup`** (one GROUP), **`elseGroup`** (one GROUP), and **`elseifBranches[].thenGroup`** (one GROUP per branch). Alternatively use `thenChildren`, `elseChildren`, or `elseifBranches[].then` (lists). Only the selected branch runs. Use **ConditionPlugin** as `pluginType` for the condition plugin; stub: `StubConditionPlugin` (always returns branch 0).
 

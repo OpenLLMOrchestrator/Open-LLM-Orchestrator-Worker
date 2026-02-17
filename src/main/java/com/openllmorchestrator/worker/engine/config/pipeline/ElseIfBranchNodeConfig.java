@@ -22,14 +22,14 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * One elseif branch for root-by-stage (NodeConfig) conditional group: condition plugin + then children (GROUP/STAGE nodes).
+ * One elseif branch for root-by-capability (NodeConfig) conditional group: condition plugin + then children (GROUP/PLUGIN nodes).
  */
 @Getter
 @Setter
 public class ElseIfBranchNodeConfig {
     /** Plugin name (activity id) that evaluates this branch; must write output key {@code branch}. */
     private String condition;
-    /** Child nodes (GROUP or STAGE) to run when this branch is selected. */
+    /** Child nodes (GROUP or PLUGIN) to run when this branch is selected. */
     private List<NodeConfig> then;
     /** "Then" branch as a single GROUP node (preferred when set). Condition has group as children. */
     private NodeConfig thenGroup;

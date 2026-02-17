@@ -27,8 +27,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Step: build execution hierarchy (capability plans) once from config.
- * When config has named pipelines, builds one plan per name; otherwise builds single "default" plan.
+ * Step: build execution hierarchy (capability plans) once from config. Plans are immutable
+ * and hold no transactional or request-scoped data. When config has named pipelines, builds
+ * one plan per name; otherwise builds single "default" plan.
  */
 public final class BuildPlanStep implements BootstrapStep {
     @Override

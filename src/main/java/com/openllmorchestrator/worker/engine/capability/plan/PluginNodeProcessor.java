@@ -22,11 +22,11 @@ import com.openllmorchestrator.worker.engine.capability.CapabilityRetryOptions;
 
 import java.time.Duration;
 
-/** Processes STAGE nodes: adds one sync group. All options from config. */
-public final class CapabilityNodeProcessor implements NodeProcessor {
+/** Processes PLUGIN nodes (leaf): adds one sync group. All options from config. */
+public final class PluginNodeProcessor implements NodeProcessor {
     @Override
     public boolean supports(NodeConfig node) {
-        return node != null && node.isStage();
+        return node != null && node.isPlugin();
     }
 
     @Override
@@ -49,4 +49,3 @@ public final class CapabilityNodeProcessor implements NodeProcessor {
         );
     }
 }
-

@@ -27,7 +27,7 @@ import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
 
 import java.util.Map;
 
-/** Validates pipeline tree (when using root): types, cycles, and that every STAGE is resolvable. */
+/** Validates pipeline tree (when using root): types, cycles, and that every PLUGIN node is resolvable. */
 public final class PipelineNodeValidator implements ConfigValidator {
     @Override
     public void validate(EngineFileConfig config, CapabilityResolver resolver) {
@@ -36,7 +36,7 @@ public final class PipelineNodeValidator implements ConfigValidator {
             PipelineSection section = e.getValue();
             if (section == null) continue;
             if (section.getCapabilities() != null && !section.getCapabilities().isEmpty()) {
-                continue; // capabilities-based config validated by PipelineStagesValidator
+                continue; // capabilities-based config validated by PipelineCapabilitiesValidator
             }
             if (section.getRoot() != null) {
                 validateNode(section.getRoot(), section.getDefaultTimeoutSeconds(), new HashSet<>(), resolver);
@@ -66,30 +66,30 @@ public final class PipelineNodeValidator implements ConfigValidator {
         if (!visited.add(node)) {
             throw new IllegalStateException("Pipeline contains a cycle");
         }
-        if (node.isStage()) {
-            validateStageNode(node, resolver);
+        if (node.isPlugin()) {
+            validatePluginNode(node, resolver);
             return;
         }
         if (node.isGroup()) {
             validateGroupNode(node, defaultTimeoutSeconds, visited, resolver);
             return;
         }
-        throw new IllegalStateException("Pipeline node type must be GROUP or STAGE, got: " + node.getType());
+        throw new IllegalStateException("Pipeline node type must be GROUP or PLUGIN (STAGE accepted for backward compatibility), got: " + node.getType());
     }
 
-    private static void validateStageNode(NodeConfig node, CapabilityResolver resolver) {
+    private static void validatePluginNode(NodeConfig node, CapabilityResolver resolver) {
         if (node.getName() == null || node.getName().isBlank()) {
-            throw new IllegalStateException("STAGE node must have a non-blank 'name' (class name to call, e.g. FQCN)");
+            throw new IllegalStateException("PLUGIN node must have a non-blank 'name' (class name to call, e.g. FQCN)");
         }
         String pluginType = node.getPluginType();
         if (pluginType == null || pluginType.isBlank()) {
-            throw new IllegalStateException("STAGE node must have 'pluginType' (one of: " + AllowedPluginTypes.all() + "). Node name: " + node.getName());
+            throw new IllegalStateException("PLUGIN node must have 'pluginType' (one of: " + AllowedPluginTypes.all() + "). Node name: " + node.getName());
         }
         if (!AllowedPluginTypes.isAllowed(pluginType)) {
-            throw new IllegalStateException("STAGE pluginType '" + pluginType + "' is not allowed. Must be one of: " + AllowedPluginTypes.all() + ". Node name: " + node.getName());
+            throw new IllegalStateException("PLUGIN pluginType '" + pluginType + "' is not allowed. Must be one of: " + AllowedPluginTypes.all() + ". Node name: " + node.getName());
         }
         if (node.getTimeoutSeconds() != null && node.getTimeoutSeconds() <= 0) {
-            throw new IllegalStateException("STAGE/capability timeoutSeconds must be positive: " + node.getName());
+            throw new IllegalStateException("PLUGIN timeoutSeconds must be positive: " + node.getName());
         }
         if (resolver != null && !resolver.canResolve(node.getName())) {
             throw new IllegalStateException("Pipeline references unresolvable capability '" + node.getName()

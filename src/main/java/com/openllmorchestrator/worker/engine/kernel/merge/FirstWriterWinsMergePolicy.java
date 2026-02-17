@@ -18,7 +18,7 @@ package com.openllmorchestrator.worker.engine.kernel.merge;
 import java.util.Map;
 
 /**
- * ASYNC: first finished job's output is written first; keys from later completers do not overwrite.
+ * ASYNC: first finished plugin's output is written first; keys from later completers do not overwrite.
  */
 public final class FirstWriterWinsMergePolicy implements OutputMergePolicy {
 

@@ -36,8 +36,11 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Map;
 
 /**
- * Executes the dynamic plan stored by the PLANNER stage (under {@link PlannerContextKeys#KEY_DYNAMIC_PLAN}).
+ * Executes the dynamic plan stored by the PLANNER capability (under {@link PlannerContextKeys#KEY_DYNAMIC_PLAN}).
  * PLAN_EXECUTOR is not a plugin: when the kernel hits this group, it runs the stored sub-plan in place.
+ * <p><b>Dynamic tree scope:</b> The execution tree for the dynamic plan is created and run only here—within
+ * the scope of this capability. Same kernel, same context (accumulatedOutput, versionedState), same
+ * interceptors and feature flags. No bootstrap-built hierarchy for dynamic content.
  * When called inside an iterator, this acts as an iterative plan executor (plan runs with current context each time).
  */
 @Slf4j

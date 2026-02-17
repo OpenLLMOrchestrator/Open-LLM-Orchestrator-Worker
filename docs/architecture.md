@@ -18,7 +18,7 @@ flowchart LR
     subgraph Worker["Worker Process"]
         App[WorkerApplication]
         WF[CoreWorkflow]
-        Act[KernelStageActivity]
+        Act[KernelCapabilityActivity]
     end
 
     ConfigFile -->|"1. Load once at startup"| App
@@ -74,7 +74,7 @@ flowchart TB
 
     subgraph TemporalBoundary["Temporal Boundary"]
         Workflow[CoreWorkflow]
-        Activity[KernelStageActivity]
+        Activity[KernelCapabilityActivity]
     end
 
     WorkerApp --> WB
@@ -145,7 +145,7 @@ flowchart LR
         PlanBuilder[StagePlanBuilder]
         subgraph plan["stage.plan"]
             PlanFactory[StagePlanFactory]
-            NodeProcs[NodeProcessor, StageNode, GroupNode]
+            NodeProcs[NodeProcessor, CapabilityNode, GroupNode]
         end
         subgraph predefined["stage.predefined"]
             PredefStages[PredefinedStages]
@@ -188,7 +188,40 @@ flowchart LR
 
 ---
 
-## 4. Bootstrap Flow (One-Time)
+## 4. Execution model (ACID, stateless bootstrap, runtime fairness, dynamic tree)
+
+The engine is designed so that (1) execution hierarchy is **stateless** and built once at bootstrap, (2) **no transactional or request-scoped data** lives in that hierarchy, (3) **every enabled feature** gets a **fair chance** during runtime traversal, and (4) **dynamic execution trees** are created and run **only within the scope** of the PLAN_EXECUTOR capability.
+
+### 4.1 ACID alignment (workflow execution)
+
+| Property | How the engine aligns |
+|----------|------------------------|
+| **Atomicity** | Each capability/group runs as a unit; Temporal activities are the unit of work. Workflow either completes or fails; replay is deterministic. |
+| **Consistency** | Execution state is explicit (`ExecutionState`, `VersionedState`). Plan is immutable; no mid-run mutation of the execution tree. |
+| **Isolation** | Each run has its own `ExecutionContext` (originalInput, accumulatedOutput, versionedState). No shared mutable state between runs; bootstrap-built plan/resolver are read-only. |
+| **Durability** | Temporal provides durability: workflow and activity history are persisted. Config can be persisted to Redis/DB after load. |
+
+### 4.2 Bootstrap hierarchy: stateless execution tree
+
+- **Bootstrap** builds the execution hierarchy **once** and never stores transactional or request-scoped data in it.
+- **Order:** LoadConfig → BuildActivityRegistry → LoadDynamicPlugins → BuildCompatiblePlugins → BuildResolver → ValidateConfig → BuildPlan → SetRuntime.
+- **Output:** Config, resolver (predefined + custom buckets, activity registry), and **capability plans** (one per pipeline name). All are **immutable** or **effectively immutable** (unmodifiable collections, no references to per-run data).
+- **EngineRuntime** holds only these bootstrap results. Per-run state is passed as `ExecutionContext` at execution time and is **never** retained by the runtime or by capability handlers.
+
+### 4.3 Runtime: fair chance for every feature
+
+- **Interceptors:** The kernel invokes `ExecutionInterceptorChain` **before** and **after** each capability (and **onError**). Every registered interceptor is called for every capability, so observability, audit, and other cross-cutting features get a **fair chance** during traversal.
+- **Feature-flagged behaviour:** Flags (e.g. HUMAN_SIGNAL, OUTPUT_CONTRACT, PLAN_SAFETY_VALIDATION, STAGE_RESULT_ENVELOPE) are read from EngineRuntime and applied consistently in the kernel and activity layer. Policy, budget, and security gates are registered on EngineRuntime and should be invoked from a single place during traversal (e.g. before/after capability or in an interceptor) so they get a fair chance when enabled.
+
+### 4.4 Dynamic execution tree only within PLAN_EXECUTOR scope
+
+- **Static plan:** The main execution tree (CapabilityPlan) is built at **bootstrap** from config and is fixed for the container lifecycle.
+- **Dynamic plan:** A **dynamic** plan is produced at **runtime** by the PLANNER capability (e.g. an LLM) and stored in context under `PlannerContextKeys.KEY_DYNAMIC_PLAN`.
+- **Scope:** Only when the kernel reaches the **PLAN_EXECUTOR** capability does it run the dynamic plan. That run is **within the scope** of the PLAN_EXECUTOR node: same kernel, same context (accumulatedOutput, versionedState), same interceptors and feature flags. No separate execution hierarchy is built at bootstrap for dynamic content; the dynamic plan is a **runtime value** consumed only by PLAN_EXECUTOR.
+
+---
+
+## 5. Bootstrap Flow (One-Time)
 
 ```mermaid
 sequenceDiagram
@@ -228,7 +261,7 @@ sequenceDiagram
 
 ---
 
-## 5. Workflow Execution Flow (Per Run)
+## 6. Workflow Execution Flow (Per Run)
 
 ```mermaid
 sequenceDiagram
@@ -238,7 +271,7 @@ sequenceDiagram
     participant Orch as KernelOrchestrator
     participant Exec as Sync/AsyncGroupExecutor
     participant Invoker as StageInvoker
-    participant Activity as KernelStageActivityImpl
+    participant Activity as KernelCapabilityActivityImpl
     participant Resolver as StageResolver
     participant Handler as StageHandler
 
@@ -272,7 +305,7 @@ sequenceDiagram
 
 ---
 
-## 6. Stage Resolution (Predefined vs Custom)
+## 7. Stage Resolution (Predefined vs Custom)
 
 ```mermaid
 flowchart LR
@@ -310,7 +343,7 @@ flowchart LR
 
 ---
 
-## 7. Pipeline Config Shape (Recursive)
+## 8. Pipeline Config Shape (Recursive)
 
 ```mermaid
 flowchart TD
@@ -334,7 +367,7 @@ flowchart TD
 
 ---
 
-## 8. Design Principles
+## 9. Design Principles
 
 | Principle | How it’s applied |
 |-----------|-------------------|
@@ -346,7 +379,7 @@ flowchart TD
 
 ---
 
-## 9. Key Files Quick Reference
+## 10. Key Files Quick Reference
 
 | Concern | Location |
 |--------|----------|
@@ -360,4 +393,4 @@ flowchart TD
 | Bootstrap entry | `engine.bootstrap.WorkerBootstrap` |
 | Runtime state | `engine.runtime.EngineRuntime` |
 | Workflow entry | `workflow.impl.CoreWorkflowImpl` |
-| Activity entry | `engine.activity.impl.KernelStageActivityImpl` |
+| Activity entry | `engine.activity.impl.KernelCapabilityActivityImpl` |

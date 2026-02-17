@@ -65,7 +65,7 @@ public final class
 
 CapabilityPlanFactory {
     private static final List<NodeProcessor> PROCESSORS = List.of(
-            new CapabilityNodeProcessor(),
+            new PluginNodeProcessor(),
             new GroupNodeProcessor()
     );
 

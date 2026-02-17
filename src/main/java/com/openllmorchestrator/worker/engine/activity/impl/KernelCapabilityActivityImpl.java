@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.activity.impl;
 
-import com.openllmorchestrator.worker.engine.activity.KernelStageActivity;
+import com.openllmorchestrator.worker.engine.activity.KernelCapabilityActivity;
 import com.openllmorchestrator.worker.engine.config.FeatureFlag;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.contract.CapabilityResult;
@@ -33,11 +33,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Resolves stage by name; runs handler with original input and accumulated output;
+ * Resolves capability by name; runs handler with original input and accumulated output;
  * returns result with current plugin output in data.
  */
 @Slf4j
-public class KernelStageActivityImpl implements KernelStageActivity {
+public class KernelCapabilityActivityImpl implements KernelCapabilityActivity {
 
     @Override
     public CapabilityResult execute(String capabilityName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput) {
@@ -97,4 +97,3 @@ public class KernelStageActivityImpl implements KernelStageActivity {
         log.warn("Capability '{}' output did not satisfy OutputContract schema (enforceStrict=false).", capabilityName);
     }
 }
-

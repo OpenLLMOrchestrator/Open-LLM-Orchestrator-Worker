@@ -483,7 +483,7 @@ The kernel enriches results with metadata when not set by the handler.
 
 Execution order is represented by an **ExecutionGraph**:
 
-- **nodes**: `Map<String, StageNode>` (id → node; node has id and stageBucketName).
+- **nodes**: `Map<String, CapabilityNode>` (id → node; node has id and capabilityBucketName).
 - **edges**: `Map<String, List<String>>` (node id → successor ids).
 
 **Backward compatibility**: when only `stageOrder` is set in config, a linear graph is built automatically (nodes in order, edges A→B→C). Plan building uses `getExecutionGraphEffective().topologicalOrder()` so a future DAG config will work without code change.

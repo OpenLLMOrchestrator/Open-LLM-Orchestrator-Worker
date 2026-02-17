@@ -18,14 +18,14 @@
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "FilterPlugin", "name": "com.openllmorchestrator.worker.plugin.tokenizer.DocumentTokenizerPlugin" }
+            { "type": "PLUGIN", "pluginType": "FilterPlugin", "name": "com.openllmorchestrator.worker.plugin.tokenizer.DocumentTokenizerPlugin" }
           ]
         },
         "RETRIEVAL": {
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "VectorStorePlugin", "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin" }
+            { "type": "PLUGIN", "pluginType": "VectorStorePlugin", "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin" }
           ]
         }
       }

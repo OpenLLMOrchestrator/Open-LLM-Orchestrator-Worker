@@ -27,7 +27,7 @@ public final class EngineConfigValidator {
             new WorkerConfigValidator(),
             new PipelineRootValidator(),
             new PipelineNodeValidator(),
-            new PipelineStagesValidator()
+            new PipelineCapabilitiesValidator()
     );
 
     private EngineConfigValidator() {}

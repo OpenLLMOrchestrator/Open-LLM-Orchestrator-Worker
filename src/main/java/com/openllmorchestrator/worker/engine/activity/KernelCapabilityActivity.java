@@ -22,13 +22,12 @@ import io.temporal.activity.ActivityMethod;
 import java.util.Map;
 
 @ActivityInterface
-public interface KernelStageActivity {
+public interface KernelCapabilityActivity {
 
     /**
-     * Execute a stage with pipeline data context. Every plugin receives original input and
-     * accumulated output from previous stages; returns its output in result.data.
+     * Execute a capability with pipeline data context. Every plugin receives original input and
+     * accumulated output from previous capabilities; returns its output in result.data.
      */
     @ActivityMethod
     CapabilityResult execute(String capabilityName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput);
 }
-

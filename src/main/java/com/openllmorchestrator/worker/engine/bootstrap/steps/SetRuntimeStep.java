@@ -19,7 +19,7 @@ import com.openllmorchestrator.worker.engine.bootstrap.BootstrapContext;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapStep;
 import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
 
-/** Step: set resolver, config, and execution hierarchy (plan) on runtime for container lifecycle. */
+/** Step: set resolver, config, and execution hierarchy (plans) on EngineRuntime for container lifecycle. No per-run state is stored. */
 public final class SetRuntimeStep implements BootstrapStep {
     @Override
     public void run(BootstrapContext ctx) {

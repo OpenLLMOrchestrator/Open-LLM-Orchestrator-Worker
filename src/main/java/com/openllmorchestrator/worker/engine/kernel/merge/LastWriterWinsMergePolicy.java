@@ -18,7 +18,7 @@ package com.openllmorchestrator.worker.engine.kernel.merge;
 import java.util.Map;
 
 /**
- * ASYNC: last finished job's output overwrites; same as putAll.
+ * ASYNC: last finished plugin's output overwrites; same as putAll.
  */
 public final class LastWriterWinsMergePolicy implements OutputMergePolicy {
 

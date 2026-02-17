@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 /** Validates pipeline.capabilities: capability names, group executionMode, and that every activity name is resolvable. */
-public final class PipelineStagesValidator implements ConfigValidator {
+public final class PipelineCapabilitiesValidator implements ConfigValidator {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
@@ -78,4 +78,3 @@ public final class PipelineStagesValidator implements ConfigValidator {
         }
     }
 }
-

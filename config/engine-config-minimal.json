@@ -13,21 +13,21 @@
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "AccessControlPlugin", "name": "com.example.plugin.AccessControlPluginImpl", "timeoutSeconds": 10 }
+            { "type": "PLUGIN", "pluginType": "AccessControlPlugin", "name": "com.example.plugin.AccessControlPluginImpl", "timeoutSeconds": 10 }
           ]
         },
         "MEMORY": {
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "MemoryPlugin", "name": "com.example.plugin.MemoryPluginImpl" }
+            { "type": "PLUGIN", "pluginType": "MemoryPlugin", "name": "com.example.plugin.MemoryPluginImpl" }
           ]
         },
         "MODEL": {
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl", "timeoutSeconds": 120 }
+            { "type": "PLUGIN", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl", "timeoutSeconds": 120 }
           ]
         }
       }

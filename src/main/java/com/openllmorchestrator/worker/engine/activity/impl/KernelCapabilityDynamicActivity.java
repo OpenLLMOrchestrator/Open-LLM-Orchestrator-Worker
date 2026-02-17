@@ -36,10 +36,10 @@ import java.util.Map;
 /**
  * Handles capability activities invoked with a custom activity type (e.g. "RETRIEVAL::VectorStoreRetrievalPlugin")
  * so the Temporal UI shows Capability::Plugin instead of "Execute". Dispatches to the same logic as
- * {@link KernelStageActivityImpl} using the capability name from the first argument.
+ * {@link KernelCapabilityActivityImpl} using the capability name from the first argument.
  */
 @Slf4j
-public class KernelStageDynamicActivity implements DynamicActivity {
+public class KernelCapabilityDynamicActivity implements DynamicActivity {
 
     @Override
     public Object execute(EncodedValues args) {
@@ -67,7 +67,7 @@ public class KernelStageDynamicActivity implements DynamicActivity {
                 originalInput != null ? originalInput : Map.of(),
                 accumulatedOutput != null ? accumulatedOutput : Map.of());
         handler.execute(context);
-        KernelStageActivityImpl.validateOutputContract(handler, context.getCurrentPluginOutput(), capabilityName);
+        KernelCapabilityActivityImpl.validateOutputContract(handler, context.getCurrentPluginOutput(), capabilityName);
         log.debug("<<< [END] Activity type: {} | Thread: {}", activityType, Thread.currentThread().getName());
         return CapabilityResult.builder()
                 .capabilityName(capabilityName)
@@ -77,4 +77,3 @@ public class KernelStageDynamicActivity implements DynamicActivity {
                 .build();
     }
 }
-

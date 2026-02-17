@@ -81,7 +81,7 @@ public final class GroupNodeProcessor implements NodeProcessor {
     private static List<String> collectStageNames(NodeConfig node, PlanBuildContext ctx) {
         List<String> names = new ArrayList<>();
         for (NodeConfig child : node.getChildren()) {
-            if (child.isStage()) {
+            if (child.isPlugin()) {
                 String name = child.getName();
                 if (ctx.getAllowedPluginNames() != null && !ctx.getAllowedPluginNames().contains(name)) {
                     throw new IllegalStateException(

@@ -42,7 +42,7 @@
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "AccessControlPlugin", "name": "com.example.plugin.AccessControlPluginImpl", "timeoutSeconds": 10 }
+            { "type": "PLUGIN", "pluginType": "AccessControlPlugin", "name": "com.example.plugin.AccessControlPluginImpl", "timeoutSeconds": 10 }
           ]
         },
         "MEMORY": {
@@ -50,15 +50,15 @@
           "executionMode": "ASYNC",
           "asyncCompletionPolicy": "ALL",
           "children": [
-            { "type": "STAGE", "pluginType": "MemoryPlugin", "name": "com.example.plugin.MemoryPluginImpl" },
-            { "type": "STAGE", "pluginType": "VectorStorePlugin", "name": "com.example.plugin.VectorStorePluginImpl" }
+            { "type": "PLUGIN", "pluginType": "MemoryPlugin", "name": "com.example.plugin.MemoryPluginImpl" },
+            { "type": "PLUGIN", "pluginType": "VectorStorePlugin", "name": "com.example.plugin.VectorStorePluginImpl" }
           ]
         },
         "MODEL": {
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl", "timeoutSeconds": 120 }
+            { "type": "PLUGIN", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl", "timeoutSeconds": 120 }
           ]
         }
       }

@@ -8,11 +8,17 @@ This document is the **authoritative contract** for building plugins for the Ope
 
 ## 1. What is a plugin?
 
-A **plugin** is a unit of work that runs at a specific **capability** in a pipeline. The engine executes capabilities in order; each capability can run one or more plugins (in SYNC or ASYNC groups). The engine resolves the plugin by **name** (the same name you use in pipeline config), invokes it with an **execution context**, and merges its **result** into the pipeline state.
+A **plugin** is a **leaf** unit of work that runs at a specific **capability** in a pipeline. The engine executes capabilities in order; each capability can run one or more plugins (in SYNC or ASYNC groups). The engine resolves the plugin by **name** (the same name you use in pipeline config), invokes it with an **execution context**, and merges its **result** into the pipeline state.
 
-- **Capability** = pipeline phase (e.g. `ACCESS`, `RETRIEVAL`, `MODEL`, `POST_PROCESS`). Order is defined by `capabilityOrder` (or legacy `stageOrder`) or pipeline structure.
-- **Activity name** = the identifier used in config and registry. It is usually a **fully qualified class name (FQCN)** or a short name (e.g. `LAST_WINS` for a merge handler).
-- **Plugin** = an implementation of `StageHandler` registered under that activity name. The engine looks up the handler by name and calls `execute(context)`.
+**Terminology (plugin vs capability):**
+
+- **Plugin** = **leaf** node. It has no children; it is the concrete execution unit (one handler run). Implementations register under an **activity name** (e.g. FQCN or `LAST_WINS`). The engine invokes a single plugin per activity.
+- **Capability** = **inner** node that can contain **groups** (SYNC/ASYNC), nested in nature. It defines a pipeline phase (e.g. `ACCESS`, `RETRIEVAL`, `MODEL`, `POST_PROCESS`). Order is defined by `capabilityOrder` (or legacy `stageOrder`) or pipeline structure. A capability does not execute by itself; it runs the plugins inside its groups.
+
+So: **plugin** = leaf (the thing that runs); **capability** = container with nested groups of plugins.
+
+- **Activity name** = the identifier used in config and registry for a plugin. It is usually a **fully qualified class name (FQCN)** or a short name (e.g. `LAST_WINS` for a merge handler).
+- **Plugin** (implementation) = an implementation of `StageHandler` (or `CapabilityHandler`) registered under that activity name. The engine looks up the handler by name and calls `execute(context)`.
 
 No reflection is used at runtime: resolution is a **map lookup** by name. Plugins must be **registered at bootstrap** (built-in or from dynamic JARs).
 
@@ -135,13 +141,13 @@ So for pipeline config like:
 
 ```json
 {
-  "type": "STAGE",
+  "PLUGIN",
   "pluginType": "VectorStorePlugin",
   "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
 }
 ```
 
-the engine will call the activity with **stage name** = `"com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"`. The resolver looks up that string in the **activity registry**. Your plugin must be registered under exactly that name.
+(Legacy: `"type": "PLUGIN"` is accepted as an alias for `"PLUGIN"`.) The engine will call the activity with **activity name** = `"com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"`. The resolver looks up that string in the **activity registry**. Your plugin must be registered under exactly that name.
 
 ### 5.1 Built-in registration
 
@@ -184,9 +190,9 @@ If the file is missing or the JAR fails to load, the engine registers a **no-op 
 
 ## 6. Pipeline config: how to reference your plugin
 
-In the engine config (e.g. `config/default.json` or `config/<CONFIG_KEY>.json`), pipelines define stages and groups. Each STAGE node has:
+In the engine config (e.g. `config/default.json` or `config/<CONFIG_KEY>.json`), pipelines define stages and groups. Each **PLUGIN** (leaf) node has:
 
-- **`type`:** `"STAGE"`
+- **`type`:** `"PLUGIN"` (legacy: `"PLUGIN"` accepted)
 - **`name`:** The activity name (FQCN or short name) that the registry uses. **Must match** the name you used when registering.
 - **`pluginType`:** One of the allowed plugin type constants (see §7). Used for validation and UI; resolution is by `name`.
 
@@ -194,14 +200,14 @@ Example:
 
 ```json
 {
-  "type": "STAGE",
+  "PLUGIN",
   "pluginType": "VectorStorePlugin",
   "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin",
   "timeoutSeconds": 60
 }
 ```
 
-So: **name** = resolution key = your `StageHandler`’s registration name; **pluginType** = semantic type for the stage (must be from the allowed list).
+So: **name** = resolution key = your `StageHandler`’s registration name; **pluginType** = semantic type for the plugin (must be from the allowed list).
 
 ---
 
@@ -506,7 +512,7 @@ builder.register(MyPlugin.NAME, new MyPlugin());
 
 ```json
 {
-  "type": "STAGE",
+  "PLUGIN",
   "pluginType": "CustomStagePlugin",
   "name": "com.example.myplugin.MyPlugin"
 }

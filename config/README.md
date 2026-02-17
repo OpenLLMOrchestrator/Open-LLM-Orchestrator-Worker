@@ -28,7 +28,7 @@ For **designing a config or pipeline UI in another project**, use the sections b
     "root": {
       "ACCESS": { "type": "GROUP", "executionMode": "SYNC", "children": [ ... ] },
       "MODEL": { ... },
-      "MY_SUMMARY": { "type": "GROUP", "executionMode": "SYNC", "children": [ { "type": "STAGE", "name": "MY_SUMMARY", "pluginType": "ModelPlugin" } ] },
+      "MY_SUMMARY": { "type": "GROUP", "executionMode": "SYNC", "children": [ { "type": "PLUGIN", "name": "MY_SUMMARY", "pluginType": "ModelPlugin" } ] },
       "POST_PROCESS": { ... }
     }
   }
@@ -63,7 +63,7 @@ The following is a concise reference for building a **configuration UI** or **pi
 
 - **`pipelines.<id>.root`** or **`pipelines.<id>.rootByCapability`** — Object whose **keys are capability names** (e.g. `ACCESS`, `MODEL`, `RETRIEVAL`, or custom names from **`capabilities`**). Value per key = **one GROUP**.
 - **Group node:** `type: "GROUP"`, `executionMode: "SYNC"` or `"ASYNC"`, `children: [ ... ]`.
-- **Child:** Either a **STAGE** node `{ "type": "STAGE", "name": "<activity id or capability name>", "pluginType": "<plugin type>" }` or a nested **GROUP**. Use capability names in `name` to invoke predefined or config-defined capabilities anywhere.
+- **Child:** Either a **STAGE** node `{ "type": "PLUGIN", "name": "<activity id or capability name>", "pluginType": "<plugin type>" }` or a nested **GROUP**. Use capability names in `name` to invoke predefined or config-defined capabilities anywhere.
 - **Execution order** = order of capability names in **`capabilityOrder`** (or **`stageOrder`**); only capabilities present in the root map are run.
 - **Async group options:** `asyncCompletionPolicy`: `ALL` \| `FIRST_SUCCESS` \| `FIRST_FAILURE` \| `ALL_SETTLED`; `asyncOutputMergePolicy`: name from `mergePolicies` or built-in (`LAST_WINS`, `FIRST_WINS`, `PREFIX_BY_ACTIVITY`).
 
@@ -94,7 +94,7 @@ At **group level** you can make a group **conditional**: run a **condition plugi
     "type": "GROUP",
     "executionMode": "SYNC",
     "children": [
-      { "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.example.LlamaPlugin" }
+      { "type": "PLUGIN", "pluginType": "ModelPlugin", "name": "com.example.LlamaPlugin" }
     ]
   },
   "elseifBranches": [
@@ -104,7 +104,7 @@ At **group level** you can make a group **conditional**: run a **condition plugi
     "type": "GROUP",
     "executionMode": "SYNC",
     "children": [
-      { "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.example.FallbackPlugin" }
+      { "type": "PLUGIN", "pluginType": "ModelPlugin", "name": "com.example.FallbackPlugin" }
     ]
   }
 }

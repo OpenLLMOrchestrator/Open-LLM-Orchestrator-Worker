@@ -18,14 +18,14 @@
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin", "timeoutSeconds": 120 }
+            { "type": "PLUGIN", "pluginType": "ModelPlugin", "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin", "timeoutSeconds": 120 }
           ]
         },
         "POST_PROCESS": {
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "RefinementPlugin", "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin" }
+            { "type": "PLUGIN", "pluginType": "RefinementPlugin", "name": "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin" }
           ]
         }
       }

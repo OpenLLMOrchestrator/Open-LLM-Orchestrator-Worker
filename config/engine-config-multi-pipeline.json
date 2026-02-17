@@ -18,7 +18,7 @@
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "AccessControlPlugin", "name": "com.example.plugin.AccessControlPluginImpl", "timeoutSeconds": 10 }
+            { "type": "PLUGIN", "pluginType": "AccessControlPlugin", "name": "com.example.plugin.AccessControlPluginImpl", "timeoutSeconds": 10 }
           ]
         },
         "MEMORY": {
@@ -27,14 +27,14 @@
           "asyncCompletionPolicy": "ALL",
           "mergePolicy": { "type": "MERGE_POLICY", "pluginType": "MergePolicy", "name": "com.example.plugin.RankedMerge" },
           "children": [
-            { "type": "STAGE", "pluginType": "MemoryPlugin", "name": "com.example.plugin.MemoryPluginImpl" }
+            { "type": "PLUGIN", "pluginType": "MemoryPlugin", "name": "com.example.plugin.MemoryPluginImpl" }
           ]
         },
         "MODEL": {
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl", "timeoutSeconds": 120 }
+            { "type": "PLUGIN", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl", "timeoutSeconds": 120 }
           ]
         }
       }
@@ -48,17 +48,17 @@
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "AccessControlPlugin", "name": "com.example.plugin.AccessControlPluginImpl" },
-            { "type": "STAGE", "pluginType": "TenantPolicyPlugin", "name": "com.example.plugin.TenantPolicyPluginImpl", "timeoutSeconds": 45 },
-            { "type": "STAGE", "pluginType": "RateLimitPlugin", "name": "com.example.plugin.RateLimitPluginImpl" }
+            { "type": "PLUGIN", "pluginType": "AccessControlPlugin", "name": "com.example.plugin.AccessControlPluginImpl" },
+            { "type": "PLUGIN", "pluginType": "TenantPolicyPlugin", "name": "com.example.plugin.TenantPolicyPluginImpl", "timeoutSeconds": 45 },
+            { "type": "PLUGIN", "pluginType": "RateLimitPlugin", "name": "com.example.plugin.RateLimitPluginImpl" }
           ]
         },
         "MEMORY": {
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "MemoryPlugin", "name": "com.example.plugin.MemoryPluginImpl" },
-            { "type": "STAGE", "pluginType": "VectorStorePlugin", "name": "com.example.plugin.VectorStorePluginImpl", "timeoutSeconds": 45 }
+            { "type": "PLUGIN", "pluginType": "MemoryPlugin", "name": "com.example.plugin.MemoryPluginImpl" },
+            { "type": "PLUGIN", "pluginType": "VectorStorePlugin", "name": "com.example.plugin.VectorStorePluginImpl", "timeoutSeconds": 45 }
           ]
         },
         "RETRIEVAL": {
@@ -67,18 +67,18 @@
           "asyncCompletionPolicy": "ALL",
           "mergePolicy": { "type": "MERGE_POLICY", "pluginType": "MergePolicy", "name": "PREFIX_BY_ACTIVITY" },
           "children": [
-            { "type": "STAGE", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl1" },
-            { "type": "STAGE", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl2", "timeoutSeconds": 45 },
-            { "type": "STAGE", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl3" },
-            { "type": "STAGE", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl4", "timeoutSeconds": 90 }
+            { "type": "PLUGIN", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl1" },
+            { "type": "PLUGIN", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl2", "timeoutSeconds": 45 },
+            { "type": "PLUGIN", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl3" },
+            { "type": "PLUGIN", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl4", "timeoutSeconds": 90 }
           ]
         },
         "MODEL": {
           "type": "GROUP",
           "executionMode": "SYNC",
           "children": [
-            { "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl" },
-            { "type": "STAGE", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl", "timeoutSeconds": 90 }
+            { "type": "PLUGIN", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl" },
+            { "type": "PLUGIN", "pluginType": "MCPPlugin", "name": "com.example.plugin.MCPPluginImpl", "timeoutSeconds": 90 }
           ]
         }
       }

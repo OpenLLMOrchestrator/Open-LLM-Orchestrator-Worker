@@ -33,13 +33,13 @@ import java.util.Map;
 public class ExecutionGraph {
 
     /** Node id → node. */
-    private final Map<String, StageNode> nodes;
+    private final Map<String, CapabilityNode> nodes;
     /** Node id → list of successor node ids (edges). */
     private final Map<String, List<String>> edges;
 
     /**
      * Build a linear graph from an ordered list (backward compatibility).
-     * Each stage is a node; edges are stage[i] → stage[i+1].
+     * Each capability is a node; edges are capability[i] → capability[i+1].
      */
     public static ExecutionGraph fromLinearOrder(List<String> capabilityOrder) {
         if (capabilityOrder == null || capabilityOrder.isEmpty()) {
@@ -48,10 +48,10 @@ public class ExecutionGraph {
                     .edges(Collections.emptyMap())
                     .build();
         }
-        Map<String, StageNode> nodes = new LinkedHashMap<>();
+        Map<String, CapabilityNode> nodes = new LinkedHashMap<>();
         Map<String, List<String>> edges = new LinkedHashMap<>();
         for (String name : capabilityOrder) {
-            nodes.put(name, StageNode.of(name));
+            nodes.put(name, CapabilityNode.of(name));
         }
         for (int i = 0; i < capabilityOrder.size() - 1; i++) {
             String from = capabilityOrder.get(i);
@@ -115,7 +115,7 @@ public class ExecutionGraph {
         StringBuilder sb = new StringBuilder("digraph G {\n");
         if (nodes != null) {
             for (String id : nodes.keySet()) {
-                StageNode n = nodes.get(id);
+                CapabilityNode n = nodes.get(id);
                 String label = n != null && n.getCapabilityBucketName() != null ? n.getCapabilityBucketName() : id;
                 sb.append("  \"").append(escapeDot(id)).append("\" [label=\"").append(escapeDot(label)).append("\"];\n");
             }
@@ -151,7 +151,7 @@ public class ExecutionGraph {
         Map<String, Object> out = new LinkedHashMap<>();
         List<Map<String, String>> nodeList = new ArrayList<>();
         if (nodes != null) {
-            for (Map.Entry<String, StageNode> e : nodes.entrySet()) {
+            for (Map.Entry<String, CapabilityNode> e : nodes.entrySet()) {
                 Map<String, String> n = new LinkedHashMap<>();
                 n.put("id", e.getKey());
                 n.put("capabilityBucketName", e.getValue() != null ? e.getValue().getCapabilityBucketName() : e.getKey());

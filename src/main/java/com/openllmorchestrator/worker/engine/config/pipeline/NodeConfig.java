@@ -22,14 +22,15 @@ import lombok.Setter;
 import java.util.Collections;
 import java.util.List;
 
-/** A node in the pipeline tree: GROUP or STAGE. */
+/** A node in the pipeline tree: GROUP or PLUGIN (leaf). STAGE is accepted as legacy alias for PLUGIN. */
 @Getter
 @Setter
 public class NodeConfig {
+    /** One of: GROUP, PLUGIN. Legacy: STAGE (treated as PLUGIN). */
     private String type;
-    /** For STAGE: class name to call (fully qualified class name, e.g. com.example.plugin.AccessControlPluginImpl). Required. */
+    /** For PLUGIN: class name to call (fully qualified class name, e.g. com.example.plugin.AccessControlPluginImpl). Required. */
     private String name;
-    /** For STAGE: one of the allowed plugin types (e.g. AccessControlPlugin, MemoryPlugin). Required. */
+    /** For PLUGIN: one of the allowed plugin types (e.g. AccessControlPlugin, MemoryPlugin). Required. */
     private String pluginType;
     private String executionMode;
     private Integer timeoutSeconds;
@@ -41,10 +42,10 @@ public class NodeConfig {
     private MergePolicyConfig mergePolicy;
     /** For GROUP: max recursion depth for nested groups (overrides pipeline defaultMaxGroupDepth). */
     private Integer maxDepth;
-    /** For STAGE: optional activity timeout overrides (seconds). */
+    /** For PLUGIN: optional activity timeout overrides (seconds). */
     private Integer scheduleToStartSeconds;
     private Integer scheduleToCloseSeconds;
-    /** For STAGE: optional retry override. */
+    /** For PLUGIN: optional retry override. */
     private RetryPolicyConfig retryPolicy;
     private List<NodeConfig> children;
     /** If set, this GROUP is conditional: run condition plugin, then one of then/elseif/else. Plugin must write output key "branch" (0=then, 1=elseif, ..., n-1=else). */
@@ -94,8 +95,15 @@ public class NodeConfig {
         return "GROUP".equalsIgnoreCase(type);
     }
 
+    /** True if this node is a leaf plugin (type PLUGIN or legacy STAGE). */
+    public boolean isPlugin() {
+        return "PLUGIN".equalsIgnoreCase(type) || "PLUGIN".equalsIgnoreCase(type);
+    }
+
+    /** @deprecated Use {@link #isPlugin()} instead. Returns true for PLUGIN or STAGE. */
+    @Deprecated
     public boolean isStage() {
-        return "STAGE".equalsIgnoreCase(type);
+        return isPlugin();
     }
 }
 

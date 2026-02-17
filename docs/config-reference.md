@@ -140,7 +140,7 @@ Each pipeline has **one root**. Root is **one or more stages**; each stage has *
 **Root** is polymorphic (same key `root` in JSON):
 
 - **Stages map** — Object whose keys are stage names (e.g. `ACCESS`, `RETRIEVAL`) and values are **one GROUP** each. Execution order follows `stageOrder` (or predefined order). This is the recommended shape.
-- **Legacy single tree** — Single GROUP node with `type`, `executionMode`, `children` (nested GROUP/STAGE nodes). Supported for backward compatibility.
+- **Legacy single tree** — Single GROUP node with `type`, `executionMode`, `children` (nested GROUP/PLUGIN nodes). Supported for backward compatibility.
 
 | Key                         | Type   | Description |
 |-----------------------------|--------|-------------|
@@ -187,7 +187,7 @@ Before the group completes, this plugin is invoked as a Temporal activity with a
 | Value | Behaviour |
 |-------|-----------|
 | `LAST_WINS` (default) | Last writer overwrites; merge in definition order (putAll each). |
-| `FIRST_WINS` | First finished job's output written first; later outputs do not overwrite keys (putIfAbsent). |
+| `FIRST_WINS` | First finished plugin's output written first; later outputs do not overwrite keys (putIfAbsent). |
 | `PREFIX_BY_ACTIVITY` | Each plugin's keys are prefixed by activity name (e.g. `MemoryPlugin.result`) so no overwrite. |
 
 Custom merge strategies: implement a `StageHandler` that reads `context.getAccumulatedOutput()` and `context.get("asyncStageResults")`, merges them, and writes the merged map via `context.putOutput(key, value)`. Register it in the activity registry under a name (e.g. at bootstrap) and set `asyncOutputMergePolicy` to that name in the group config.
@@ -285,16 +285,16 @@ Group `children` entries can be **strings** (activity name) or **nested group ob
 
 When using `pipeline.root` or `pipeline.rootByStage`, the tree is made of GROUP and STAGE nodes:
 
-### STAGE node
+### PLUGIN node (leaf)
 
-Every STAGE must have **`pluginType`** (one of the allowed plugin types below) and **`name`** (the **class name to call** — fully qualified class name of the implementation).
+Every leaf node that invokes a plugin must have **`type`: `"PLUGIN"`**, **`pluginType`** (one of the allowed plugin types below), and **`name`** (the **class name to call** — fully qualified class name of the implementation). **`"PLUGIN"`** is accepted as a backward-compatible alias for `"PLUGIN"`.
 
 | Key                     | Type    | Description |
 |-------------------------|---------|-------------|
-| `type`                  | string  | `"STAGE"`. **Required.** |
+| `type`                  | string  | `"PLUGIN"`. **Required.** (Legacy: `"PLUGIN"` accepted.) |
 | `pluginType`            | string  | **Required.** One of the allowed plugin types (see list below). |
 | `name`                  | string  | **Required.** Class name to call (fully qualified class name, e.g. `com.example.plugin.AccessControlPluginImpl`). |
-| `timeoutSeconds`        | int?    | Override start-to-close for this stage. |
+| `timeoutSeconds`        | int?    | Override start-to-close for this plugin. |
 | `scheduleToStartSeconds`| int?    | Override schedule-to-start. |
 | `scheduleToCloseSeconds`| int?    | Override schedule-to-close. |
 | `retryPolicy`           | object? | Override retry policy (same shape as `activity.retryPolicy`). |
@@ -327,8 +327,8 @@ Every STAGE must have **`pluginType`** (one of the allowed plugin types below) a
       "defaultTimeoutSeconds": 30,
       "defaultAsyncCompletionPolicy": "ALL",
       "root": {
-        "ACCESS": { "type": "GROUP", "executionMode": "SYNC", "children": [{ "type": "STAGE", "pluginType": "AccessControlPlugin", "name": "com.example.plugin.AccessControlPluginImpl", "timeoutSeconds": 10 }] },
-        "MODEL": { "type": "GROUP", "executionMode": "SYNC", "children": [{ "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl", "timeoutSeconds": 120 }] }
+        "ACCESS": { "type": "GROUP", "executionMode": "SYNC", "children": [{ "PLUGIN", "pluginType": "AccessControlPlugin", "name": "com.example.plugin.AccessControlPluginImpl", "timeoutSeconds": 10 }] },
+        "MODEL": { "type": "GROUP", "executionMode": "SYNC", "children": [{ "PLUGIN", "pluginType": "ModelPlugin", "name": "com.example.plugin.ModelPluginImpl", "timeoutSeconds": 120 }] }
       }
     }
   }

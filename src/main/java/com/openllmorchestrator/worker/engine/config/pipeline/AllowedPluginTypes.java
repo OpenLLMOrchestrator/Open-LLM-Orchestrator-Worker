@@ -18,7 +18,7 @@ package com.openllmorchestrator.worker.engine.config.pipeline;
 import java.util.Set;
 
 /**
- * Allowed values for STAGE node {@code pluginType}. Every STAGE must have one of these;
+ * Allowed values for PLUGIN node {@code pluginType}. Every PLUGIN (leaf) node must have one of these;
  * {@code name} is the class name to invoke (fully qualified class name).
  */
 public final class AllowedPluginTypes {

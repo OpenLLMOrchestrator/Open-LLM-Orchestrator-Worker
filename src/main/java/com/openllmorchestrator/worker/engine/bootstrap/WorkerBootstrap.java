@@ -29,8 +29,14 @@ import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 
 import java.util.List;
 
-/** Runs bootstrap steps. Single responsibility: orchestrate startup. */
+/**
+ * Runs bootstrap steps in a fixed hierarchy. Builds the execution tree (plans, resolver)
+ * once; all outputs are stateless (no transactional or request-scoped data). Features
+ * are added to the hierarchy at bootstrap time; at runtime they get a fair chance via
+ * interceptors and feature flags during traversal.
+ */
 public final class WorkerBootstrap {
+    /** Order: load config, build registries and resolver, validate, build plans, set runtime. */
     private static final List<BootstrapStep> DEFAULT_STEPS = List.of(
             new LoadConfigStep(),
             new BuildActivityRegistryStep(),

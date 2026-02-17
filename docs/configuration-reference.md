@@ -249,7 +249,7 @@ Each pipeline can be defined in three ways (mutually exclusive in practice):
 ### 9.4 Root (two shapes)
 
 **Shape A – Single root tree (legacy):**  
-`root` is an object **with** a `"type"` field (e.g. `"GROUP"`). It is one node (GROUP or STAGE) with nested `children`. Used for a single tree.
+`root` is an object **with** a `"type"` field (e.g. `"GROUP"`). It is one node (GROUP or PLUGIN) with nested `children`. Used for a single tree.
 
 **Shape B – Root by stage (recommended for drag-and-drop):**  
 `root` is an object **without** a `"type"` field. Each key is a **stage name** (e.g. `FILTER`, `MODEL`), each value is a **GROUP** node (must have `"type": "GROUP"`). Execution order follows `stageOrder`; only stages present as keys are included.
@@ -262,7 +262,7 @@ Each pipeline can be defined in three ways (mutually exclusive in practice):
     "executionMode": "SYNC",
     "children": [
       {
-        "type": "STAGE",
+        "PLUGIN",
         "pluginType": "VectorStorePlugin",
         "name": "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"
       }
@@ -273,7 +273,7 @@ Each pipeline can be defined in three ways (mutually exclusive in practice):
     "executionMode": "SYNC",
     "children": [
       {
-        "type": "STAGE",
+        "PLUGIN",
         "pluginType": "ModelPlugin",
         "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",
         "timeoutSeconds": 120
@@ -293,11 +293,11 @@ Used inside `root` (tree or rootByStage) and inside `stages` → `groups` → ch
 
 | Key | Type | Applies to | Description |
 |-----|------|------------|-------------|
-| `type` | string | **Required** | `"GROUP"` or `"STAGE"`. |
+| `type` | string | **Required** | `"GROUP"` or `"PLUGIN"`. |
 | `executionMode` | string | GROUP | `"SYNC"` or `"ASYNC"`. |
-| `timeoutSeconds` | number | GROUP/STAGE | Override timeout (seconds). |
+| `timeoutSeconds` | number | GROUP/PLUGIN | Override timeout (seconds). |
 | `maxDepth` | number | GROUP | Max nested group depth. |
-| `children` | array | GROUP | List of STAGE nodes or nested GROUP (as object). |
+| `children` | array | GROUP | List of PLUGIN nodes or nested GROUP (as object). |
 
 **GROUP-only:**
 
@@ -307,11 +307,11 @@ Used inside `root` (tree or rootByStage) and inside `stages` → `groups` → ch
 | `asyncOutputMergePolicy` | string | Name from merge policy registry (e.g. `LAST_WINS`). |
 | `mergePolicy` | object | Merge policy hook (type, pluginType, name). |
 | `condition` | string | **If/elseif/else:** Plugin name (activity id) that runs first and must write output key `branch` (Integer: 0=then, 1=first elseif, …, n-1=else). When set, use `thenGroup`/`thenChildren`, `elseifBranches`, `elseGroup`/`elseChildren`. Prefer `thenGroup` and `elseGroup` (one GROUP each); condition has group as children. |
-| `thenChildren` | array | When `condition` is set: GROUP/STAGE nodes for the “then” branch. If omitted, `children` is used as then. |
-| `elseifBranches` | array | When `condition` is set: list of `{ "condition": "<plugin>", "then": [ GROUP/STAGE nodes ] }`. Evaluated in order; first branch whose condition plugin returns that index runs. |
-| `elseChildren` | array | When `condition` is set: GROUP/STAGE nodes for the “else” branch. |
+| `thenChildren` | array | When `condition` is set: GROUP/PLUGIN nodes for the “then” branch. If omitted, `children` is used as then. |
+| `elseifBranches` | array | When `condition` is set: list of `{ "condition": "<plugin>", "then": [ GROUP/PLUGIN nodes ] }`. Evaluated in order; first branch whose condition plugin returns that index runs. |
+| `elseChildren` | array | When `condition` is set: GROUP/PLUGIN nodes for the “else” branch. |
 
-**STAGE-only:**
+**PLUGIN-only (leaf):**
 
 | Key | Type | Description |
 |-----|------|-------------|
@@ -433,7 +433,7 @@ Used when feature flag `CONCURRENCY_ISOLATION` is enabled.
           "executionMode": "SYNC",
           "children": [
             {
-              "type": "STAGE",
+              "type": "PLUGIN",
               "pluginType": "AccessControlPlugin",
               "name": "com.example.AccessPlugin"
             }
@@ -444,7 +444,7 @@ Used when feature flag `CONCURRENCY_ISOLATION` is enabled.
           "executionMode": "SYNC",
           "children": [
             {
-              "type": "STAGE",
+              "type": "PLUGIN",
               "pluginType": "ModelPlugin",
               "name": "com.example.MyModelPlugin"
             }
