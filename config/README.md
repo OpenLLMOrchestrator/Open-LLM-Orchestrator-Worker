@@ -6,6 +6,143 @@ Config is loaded at startup in order **Redis → DB → file**. The file path is
 
 For **full schema, every field, allowed values, and UI/drag-and-drop guidance**, see **[Configuration Reference](../docs/configuration-reference.md)**. It covers the engine config JSON top-to-bottom (feature flags, pipelines, activity, queue topology, validation) so you can build config editors or pipeline builders from it.
 
+For **designing a config or pipeline UI in another project**, use the sections below: **Condition flow**, **Configurable features at a glance**, and the **UI design reference** links. Together they give you stages, plugin types, condition (if/elseif/else) shape, merge policies, feature flags, and pipeline structure without reading the full schema.
+
+---
+
+## Configurable features for UI design
+
+The following is a concise reference for building a **configuration UI** or **pipeline editor** in a separate project. Use it for form fields, dropdowns, and validation.
+
+### Top-level config sections
+
+| Section | Type | Required | UI control |
+|--------|------|----------|------------|
+| `configVersion` | string | No | Text or readonly. |
+| `enabledFeatures` | string[] | No | Multi-select; values = feature flags (see **Feature flags** below). |
+| `worker` | object | Yes | Form: `queueName` (text), `strictBoot` (checkbox). |
+| `temporal` | object | No | Form: `target`, `namespace`. |
+| `activity` | object | No | Nested: `payload` (numbers), `defaultTimeouts` (seconds), `retryPolicy`. |
+| `stageOrder` | string[] | No | **Ordered list**; options = predefined stages (see [ui-reference §1](../docs/ui-reference.md#1-predefined-stages-for-config-and-debugging)). |
+| `mergePolicies` | object | No | Key-value; value = `LAST_WINS` \| `FIRST_WINS` \| `PREFIX_BY_ACTIVITY` \| FQCN. |
+| `pipelines` | object | **Yes** | Pipeline list; each pipeline = canvas or form (see **Pipeline structure** and **Condition flow**). |
+| `plugins` | string[] | No | Multi-select; allowed plugin names (FQCN or activity id). |
+| `dynamicPlugins` | object | No | Key = plugin name, value = JAR path. |
+| `queueTopology` | object | No | `strategy` dropdown + `stageToQueue`, `tenantToQueue` maps. |
+
+### Pipeline structure (root-by-stage, recommended)
+
+- **`pipelines.<id>.root`** — Object whose **keys are stage names** (e.g. `ACCESS`, `MODEL`, `RETRIEVAL`). Value per key = **one GROUP**.
+- **Group node:** `type: "GROUP"`, `executionMode: "SYNC"` or `"ASYNC"`, `children: [ ... ]`.
+- **Child:** Either a **STAGE** node `{ "type": "STAGE", "name": "<activity id>", "pluginType": "<plugin type>" }` or a nested **GROUP**.
+- **Execution order** = order of stage names in **`stageOrder`** (only stages present in `root` are run).
+- **Async group options:** `asyncCompletionPolicy`: `ALL` \| `FIRST_SUCCESS` \| `FIRST_FAILURE` \| `ALL_SETTLED`; `asyncOutputMergePolicy`: name from `mergePolicies` or built-in (`LAST_WINS`, `FIRST_WINS`, `PREFIX_BY_ACTIVITY`).
+
+### Condition flow (if / elseif / else)
+
+At **group level** you can make a group **conditional**: run a **condition plugin** first; it returns which branch to run (then / elseif / else). Only that branch runs.
+
+**Contract:** The condition plugin must write output key **`branch`** (Integer): **0** = then, **1** = first elseif, …, **n−1** = else.
+
+**Preferred: group as children.** Use one GROUP per branch:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `condition` | string | **Required** when using condition flow. Plugin name (activity id) of the condition plugin (e.g. `StubConditionPlugin`). |
+| `thenGroup` | object | **One GROUP** for the “then” branch (preferred). Same shape as a group: `executionMode`, `children`, etc. |
+| `elseGroup` | object | **One GROUP** for the “else” branch (preferred). |
+| `elseifBranches` | array | List of **elseif** branches. Each item: `{ "condition": "<plugin>", "thenGroup": { GROUP } }` or `{ "condition": "<plugin>", "then": [ nodes ] }`. |
+
+**Alternative (list of nodes per branch):** `thenChildren`, `elseChildren`, and `elseifBranches[].then` — arrays of STAGE/GROUP nodes or activity names. Use when you don’t need a single GROUP per branch.
+
+**Example (root-by-stage, one stage with condition):**
+
+```json
+"MODEL": {
+  "type": "GROUP",
+  "condition": "com.openllmorchestrator.worker.sample.StubConditionPlugin",
+  "thenGroup": {
+    "type": "GROUP",
+    "executionMode": "SYNC",
+    "children": [
+      { "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.example.LlamaPlugin" }
+    ]
+  },
+  "elseifBranches": [
+    { "condition": "com.example.OtherCondition", "thenGroup": { "type": "GROUP", "executionMode": "SYNC", "children": [ ... ] } }
+  ],
+  "elseGroup": {
+    "type": "GROUP",
+    "executionMode": "SYNC",
+    "children": [
+      { "type": "STAGE", "pluginType": "ModelPlugin", "name": "com.example.FallbackPlugin" }
+    ]
+  }
+}
+```
+
+**Stages-array format (GroupConfig):** Same idea with `condition`, `thenGroup`, `elseifBranches` (each with `condition` and `thenGroup` or `then`), `elseGroup`. Children in groups can be strings (activity names) or nested group objects.
+
+**UI design:** Provide a “Conditional group” mode for a GROUP: condition plugin picker + “Then” (one group editor or list), “Elseif” (list of { condition, then group }), “Else” (one group editor or list). Use **ConditionPlugin** as plugin type for the condition plugin; stub FQCN: `com.openllmorchestrator.worker.sample.StubConditionPlugin`.
+
+### Merge policy built-ins (for dropdown)
+
+| Value | Description |
+|-------|-------------|
+| `LAST_WINS` | Last writer overwrites (default). |
+| `FIRST_WINS` | First finished; later outputs do not overwrite. |
+| `PREFIX_BY_ACTIVITY` | Keys prefixed by activity name. |
+| `ALL_MODELS_RESPONSE_FORMAT` | Special format for multi-model ASYNC. |
+
+Custom: add a key in `mergePolicies` with value = FQCN; reference that key in `asyncOutputMergePolicy`.
+
+### Async completion policy (for GROUP dropdown)
+
+| Value | Description |
+|-------|-------------|
+| `ALL` | Wait for all activities; fail if any fails. |
+| `FIRST_SUCCESS` | Complete when first activity succeeds. |
+| `FIRST_FAILURE` | Fail as soon as one fails. |
+| `ALL_SETTLED` | Wait for all; then fail if any failed. |
+
+### Feature flags (for `enabledFeatures` multi-select)
+
+| Flag | Description |
+|------|-------------|
+| `HUMAN_SIGNAL` | Human-in-the-loop: suspend, signal, resume. |
+| `STREAMING` | Streaming stage API. |
+| `AGENT_CONTEXT` | Durable agent identity. |
+| `DETERMINISM_POLICY` | Reproducible runs. |
+| `CHECKPOINTABLE_STAGE` | Checkpointable stages. |
+| `OUTPUT_CONTRACT` | Output schema validation. |
+| `EXECUTION_GRAPH` | DAG execution. |
+| `STAGE_RESULT_ENVELOPE` | StageMetadata, DependencyRef. |
+| `VERSIONED_STATE` | stepId, executionId. |
+| `INTERCEPTORS` | beforeStage, afterStage, onError. |
+| `PLANNER_PLAN_EXECUTOR` | Dynamic plan. |
+| `EXECUTION_SNAPSHOT` | snapshot(), ContextSnapshot. |
+| `POLICY_ENGINE` | ExecutionPolicyResolver. |
+| `BUDGET_GUARDRAIL` | Cost/token/iteration caps. |
+| `CONCURRENCY_ISOLATION` | Queue topology. |
+| `SECURITY_HARDENING` | Prompt injection, allowlist. |
+| `PLAN_SAFETY_VALIDATION` | Validate dynamic plan. |
+| `EXECUTION_GRAPH_EXPORT` | Export graph (DOT, Mermaid, JSON). |
+
+### Plugin types (for STAGE `pluginType` dropdown)
+
+Each STAGE node needs `pluginType` from the allowed list and `name` = activity/plugin id. Full table with typical stages: **[ui-reference §2](../docs/ui-reference.md#2-plugin-types-for-stage-node-plugintype)**. Examples: `AccessControlPlugin`, `ModelPlugin`, `VectorStorePlugin`, `ConditionPlugin`, `EvaluationPlugin`, `FeedbackPlugin`, `LearningPlugin`, `DatasetBuildPlugin`, `TrainTriggerPlugin`, `ModelRegistryPlugin`, `RefinementPlugin`, `ObservabilityPlugin`, …
+
+### Predefined stages (for stageOrder and pipeline root keys)
+
+Full table with order and descriptions: **[ui-reference §1](../docs/ui-reference.md#1-predefined-stages-for-config-and-debugging)**. Examples: `ACCESS`, `MEMORY`, `RETRIEVAL`, `RETRIEVE`, `MODEL`, `EVALUATE`, `FEEDBACK_CAPTURE`, `DATASET_BUILD`, `TRAIN_TRIGGER`, `MODEL_REGISTRY`, `POST_PROCESS`, `OBSERVABILITY`, `CUSTOM`. **Minimal learning flow preset:** `ACCESS`, `MEMORY`, `RETRIEVE`, `MODEL`, `EVALUATE`, `FEEDBACK_CAPTURE`, `DATASET_BUILD`, `TRAIN_TRIGGER`, `MODEL_REGISTRY`.
+
+### UI design reference (other project)
+
+- **[docs/ui-reference.md](../docs/ui-reference.md)** — Single reference for Configuration UI and Stage Debugging UI: predefined stages table, plugin types table, config schema at a glance, pipeline structure, **condition flow**, activity naming, context keys.
+- **[docs/configuration-reference.md](../docs/configuration-reference.md)** — Full schema, every field, validation, drag-and-drop mapping.
+
+---
+
 ## Workflow
 
 - **Workflow Type:** `CoreWorkflowImpl`
