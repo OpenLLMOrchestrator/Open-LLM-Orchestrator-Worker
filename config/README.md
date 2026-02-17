@@ -6,7 +6,34 @@ Config is loaded at startup in order **Redis → DB → file**. The file path is
 
 For **full schema, every field, allowed values, and UI/drag-and-drop guidance**, see **[Configuration Reference](../docs/configuration-reference.md)**. It covers the engine config JSON top-to-bottom (feature flags, pipelines, activity, queue topology, validation) so you can build config editors or pipeline builders from it.
 
-For **designing a config or pipeline UI in another project**, use the sections below: **Condition flow**, **Configurable features at a glance**, and the **UI design reference** links. Together they give you stages, plugin types, condition (if/elseif/else) shape, merge policies, feature flags, and pipeline structure without reading the full schema.
+For **designing a config or pipeline UI in another project**, use the sections below: **Capability flow**, **Condition flow**, **Configurable features at a glance**, and the **UI design reference** links. Together they give you capabilities (predefined + custom), plugin types, condition (if/elseif/else) shape, merge policies, feature flags, and pipeline structure without reading the full schema.
+
+---
+
+## Capability flow: predefined vs custom
+
+- **Predefined capabilities** (e.g. ACCESS, MEMORY, RETRIEVAL, MODEL, OBSERVABILITY) have a **fixed flow order** defined by **`capabilityOrder`** (or legacy **`stageOrder`**). Only capabilities that appear in the pipeline root are run, in that order.
+- **Custom capabilities** can be defined in config under **`capabilities`**: a map of capability name → `{ "pluginType": "...", "name": "<activity id>" }`. They can be **called anywhere in the capability flow**: in the pipeline root (add the name to `capabilityOrder` and to the root map) or inside any GROUP as a child STAGE with `name` = the capability name.
+- Resolution order: predefined capability → config-defined capability → activity/plugin by id → custom bucket.
+
+**Example (custom capability used in flow):**
+```json
+"capabilityOrder": ["ACCESS", "MODEL", "MY_SUMMARY", "POST_PROCESS"],
+"capabilities": {
+  "MY_SUMMARY": { "pluginType": "ModelPlugin", "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin" }
+},
+"pipelines": {
+  "default": {
+    "defaultTimeoutSeconds": 60,
+    "root": {
+      "ACCESS": { "type": "GROUP", "executionMode": "SYNC", "children": [ ... ] },
+      "MODEL": { ... },
+      "MY_SUMMARY": { "type": "GROUP", "executionMode": "SYNC", "children": [ { "type": "STAGE", "name": "MY_SUMMARY", "pluginType": "ModelPlugin" } ] },
+      "POST_PROCESS": { ... }
+    }
+  }
+}
+```
 
 ---
 
@@ -23,19 +50,21 @@ The following is a concise reference for building a **configuration UI** or **pi
 | `worker` | object | Yes | Form: `queueName` (text), `strictBoot` (checkbox). |
 | `temporal` | object | No | Form: `target`, `namespace`. |
 | `activity` | object | No | Nested: `payload` (numbers), `defaultTimeouts` (seconds), `retryPolicy`. |
-| `stageOrder` | string[] | No | **Ordered list**; options = predefined stages (see [ui-reference §1](../docs/ui-reference.md#1-predefined-stages-for-config-and-debugging)). |
+| `capabilityOrder` | string[] | No | **Ordered list** for the fixed capability flow; options = predefined capabilities (see [ui-reference §1](../docs/ui-reference.md#1-predefined-stages-for-config-and-debugging)). Prefer over `stageOrder`. |
+| `stageOrder` | string[] | No | Legacy alias for `capabilityOrder`. |
+| `capabilities` | object | No | **Custom capabilities**: name → `{ "pluginType": "...", "name": "<activity id>" }`. Can be referenced anywhere in the flow. |
 | `mergePolicies` | object | No | Key-value; value = `LAST_WINS` \| `FIRST_WINS` \| `PREFIX_BY_ACTIVITY` \| FQCN. |
 | `pipelines` | object | **Yes** | Pipeline list; each pipeline = canvas or form (see **Pipeline structure** and **Condition flow**). |
 | `plugins` | string[] | No | Multi-select; allowed plugin names (FQCN or activity id). |
 | `dynamicPlugins` | object | No | Key = plugin name, value = JAR path. |
 | `queueTopology` | object | No | `strategy` dropdown + `stageToQueue`, `tenantToQueue` maps. |
 
-### Pipeline structure (root-by-stage, recommended)
+### Pipeline structure (root-by-capability, recommended)
 
-- **`pipelines.<id>.root`** — Object whose **keys are stage names** (e.g. `ACCESS`, `MODEL`, `RETRIEVAL`). Value per key = **one GROUP**.
+- **`pipelines.<id>.root`** or **`pipelines.<id>.rootByCapability`** — Object whose **keys are capability names** (e.g. `ACCESS`, `MODEL`, `RETRIEVAL`, or custom names from **`capabilities`**). Value per key = **one GROUP**.
 - **Group node:** `type: "GROUP"`, `executionMode: "SYNC"` or `"ASYNC"`, `children: [ ... ]`.
-- **Child:** Either a **STAGE** node `{ "type": "STAGE", "name": "<activity id>", "pluginType": "<plugin type>" }` or a nested **GROUP**.
-- **Execution order** = order of stage names in **`stageOrder`** (only stages present in `root` are run).
+- **Child:** Either a **STAGE** node `{ "type": "STAGE", "name": "<activity id or capability name>", "pluginType": "<plugin type>" }` or a nested **GROUP**. Use capability names in `name` to invoke predefined or config-defined capabilities anywhere.
+- **Execution order** = order of capability names in **`capabilityOrder`** (or **`stageOrder`**); only capabilities present in the root map are run.
 - **Async group options:** `asyncCompletionPolicy`: `ALL` \| `FIRST_SUCCESS` \| `FIRST_FAILURE` \| `ALL_SETTLED`; `asyncOutputMergePolicy`: name from `mergePolicies` or built-in (`LAST_WINS`, `FIRST_WINS`, `PREFIX_BY_ACTIVITY`).
 
 ### Condition flow (if / elseif / else)
@@ -55,7 +84,7 @@ At **group level** you can make a group **conditional**: run a **condition plugi
 
 **Alternative (list of nodes per branch):** `thenChildren`, `elseChildren`, and `elseifBranches[].then` — arrays of STAGE/GROUP nodes or activity names. Use when you don’t need a single GROUP per branch.
 
-**Example (root-by-stage, one stage with condition):**
+**Example (root-by-capability, one capability with condition):**
 
 ```json
 "MODEL": {
@@ -132,13 +161,13 @@ Custom: add a key in `mergePolicies` with value = FQCN; reference that key in `a
 
 Each STAGE node needs `pluginType` from the allowed list and `name` = activity/plugin id. Full table with typical stages: **[ui-reference §2](../docs/ui-reference.md#2-plugin-types-for-stage-node-plugintype)**. Examples: `AccessControlPlugin`, `ModelPlugin`, `VectorStorePlugin`, `ConditionPlugin`, `EvaluationPlugin`, `FeedbackPlugin`, `LearningPlugin`, `DatasetBuildPlugin`, `TrainTriggerPlugin`, `ModelRegistryPlugin`, `RefinementPlugin`, `ObservabilityPlugin`, …
 
-### Predefined stages (for stageOrder and pipeline root keys)
+### Predefined capabilities (for capabilityOrder and pipeline root keys)
 
-Full table with order and descriptions: **[ui-reference §1](../docs/ui-reference.md#1-predefined-stages-for-config-and-debugging)**. Examples: `ACCESS`, `MEMORY`, `RETRIEVAL`, `RETRIEVE`, `MODEL`, `EVALUATE`, `FEEDBACK_CAPTURE`, `DATASET_BUILD`, `TRAIN_TRIGGER`, `MODEL_REGISTRY`, `POST_PROCESS`, `OBSERVABILITY`, `CUSTOM`. **Minimal learning flow preset:** `ACCESS`, `MEMORY`, `RETRIEVE`, `MODEL`, `EVALUATE`, `FEEDBACK_CAPTURE`, `DATASET_BUILD`, `TRAIN_TRIGGER`, `MODEL_REGISTRY`.
+Full table with order and descriptions: **[ui-reference §1](../docs/ui-reference.md#1-predefined-stages-for-config-and-debugging)**. Examples: `ACCESS`, `MEMORY`, `RETRIEVAL`, `RETRIEVE`, `MODEL`, `EVALUATE`, `FEEDBACK_CAPTURE`, `DATASET_BUILD`, `TRAIN_TRIGGER`, `MODEL_REGISTRY`, `POST_PROCESS`, `OBSERVABILITY`, `CUSTOM`. **Minimal learning flow preset:** `ACCESS`, `MEMORY`, `RETRIEVE`, `MODEL`, `EVALUATE`, `FEEDBACK_CAPTURE`, `DATASET_BUILD`, `TRAIN_TRIGGER`, `MODEL_REGISTRY`. Define additional capabilities in **`capabilities`** and reference them by name anywhere in the flow.
 
 ### UI design reference (other project)
 
-- **[docs/ui-reference.md](../docs/ui-reference.md)** — Single reference for Configuration UI and Stage Debugging UI: predefined stages table, plugin types table, config schema at a glance, pipeline structure, **condition flow**, activity naming, context keys.
+- **[docs/ui-reference.md](../docs/ui-reference.md)** — Single reference for Configuration UI and Stage Debugging UI: predefined capabilities table, plugin types table, config schema at a glance, pipeline structure, **capability flow**, **condition flow**, activity naming, context keys.
 - **[docs/configuration-reference.md](../docs/configuration-reference.md)** — Full schema, every field, validation, drag-and-drop mapping.
 
 ---
@@ -214,4 +243,55 @@ All pipelines are defined in the active config file (e.g. `config/default.json` 
 }
 ```
 
-Optional: you can pass `"modelId": "<model>"` in `input` to override the pipeline’s default model for chat/RAG pipelines where the plugin supports it.
+---
+
+## Debug: avoiding workflow and activity timeouts
+
+When debugging, "Workflow timed out" can come from two places. You cannot literally remove timeouts (Temporal requires durations), but you can set them very high so they don't fire during debug.
+
+### 1. Activity timeouts (config)
+
+Activities (each capability run) use timeouts from config. If an activity exceeds them, that activity fails and the workflow can fail or retry.
+
+**Where to set (all in your engine config, e.g. `config/default.json`):**
+
+| Where | Key | Suggestion for debug |
+|-------|-----|------------------------|
+| **Default for all activities** | `activity.defaultTimeouts.startToCloseSeconds` | Set to a large value (e.g. `86400` = 24 hours). |
+| | `activity.defaultTimeouts.scheduleToCloseSeconds` | Same (e.g. `86400`). |
+| **Per pipeline** | `pipelines.<id>.defaultTimeoutSeconds` | Set to a large value (e.g. `86400`) for pipelines you debug. |
+| **Per capability (root-by-capability)** | `pipelines.<id>.root.<capability>.children[].timeoutSeconds` or on the GROUP | Override with a large value for the capability that's slow (e.g. MODEL). |
+
+**Example (debug-friendly defaults in config):**
+
+```json
+"activity": {
+  "defaultTimeouts": {
+    "scheduleToStartSeconds": 300,
+    "startToCloseSeconds": 86400,
+    "scheduleToCloseSeconds": 86400
+  }
+}
+```
+
+And for the pipeline you're debugging, set `defaultTimeoutSeconds` to e.g. `86400`. For a single slow capability (e.g. MODEL), you can set `timeoutSeconds` on that STAGE or GROUP node.
+
+### 2. Workflow run timeout (set when starting the workflow)
+
+The **workflow run timeout** is set by whoever **starts** the workflow (Temporal Web UI or a client). It applies to the whole run. If it fires, the workflow is closed as timed out even if activities would still be within their limits.
+
+- **Temporal Web UI:** When you **Start Workflow**, check the form for **Workflow Run Timeout** (or similar). Set it to a very long value (e.g. 24 hours) or leave it empty if the UI treats that as "no timeout".
+- **Client code:** When calling `startWorkflow` (or equivalent), set workflow run timeout to a long duration, e.g. `WorkflowOptions.setWorkflowRunTimeout(Duration.ofHours(24))`. In some SDKs, a zero or "unset" value means no timeout; check your Temporal client docs.
+
+The worker does not start workflows; it only executes them. So workflow run timeout is always controlled at the **call site** (UI or client).
+
+### Summary
+
+| Timeout | Controlled by | How to relax for debug |
+|---------|----------------|------------------------|
+| **Activity** (per capability) | Engine config: `activity.defaultTimeouts`, pipeline `defaultTimeoutSeconds`, per-node `timeoutSeconds` | Set to large values (e.g. `86400` seconds) in config. |
+| **Workflow run** | Workflow starter (Temporal UI or client) | Set a long run timeout (e.g. 24h) or "no timeout" when starting the workflow. |
+
+---
+
+Optional: you can pass `"modelId": "<model>"` in `input` to override the pipeline's default model for chat/RAG pipelines where the plugin supports it.

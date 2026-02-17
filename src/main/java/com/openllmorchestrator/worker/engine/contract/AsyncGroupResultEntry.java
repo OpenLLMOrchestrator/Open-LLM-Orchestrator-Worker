@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.contract;
 
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,6 +28,6 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class AsyncGroupResultEntry implements Serializable {
     private String activityName;
-    private StageResult result;
+    private CapabilityResult result;
 }
 

@@ -19,8 +19,8 @@ import com.openllmorchestrator.worker.contract.ContractCompatibility;
 import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.Map;
 
@@ -29,7 +29,7 @@ import java.util.Map;
  * Replace with a real ConditionPlugin that reads context (e.g. input, accumulatedOutput) and
  * returns output key {@code branch} (Integer: 0=then, 1=first elseif, ..., n-1=else).
  */
-public final class StubConditionPlugin implements StageHandler, ContractCompatibility, PluginTypeDescriptor {
+public final class StubConditionPlugin implements CapabilityHandler, ContractCompatibility, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.sample.StubConditionPlugin";
@@ -40,11 +40,11 @@ public final class StubConditionPlugin implements StageHandler, ContractCompatib
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         context.putOutput("branch", 0);
         context.putOutput("conditionStub", true);
-        return StageResult.builder()
-                .stageName(NAME)
+        return CapabilityResult.builder()
+                .capabilityName(NAME)
                 .output(Map.copyOf(context.getCurrentPluginOutput()))
                 .build();
     }

@@ -1,6 +1,6 @@
 # Features & Use Cases: Open LLM Orchestrator Worker
 
-This document describes the **feature set** and **use cases** enabled by the Open LLM Orchestrator Worker’s stage-based pipeline, pluggable stages, and Temporal-backed execution for AI and enterprise solutions.
+This document describes the **feature set** and **use cases** enabled by the Open LLM Orchestrator Worker’s capability-based pipeline, pluggable capabilities, and Temporal-backed execution for AI and enterprise solutions.
 
 ---
 
@@ -8,11 +8,11 @@ This document describes the **feature set** and **use cases** enabled by the Ope
 
 | Area | Features |
 |------|----------|
-| **Pipeline & stages** | Stage-based pipelines; sync/async groups; **group-level if/elseif/else** (condition plugin + thenGroup/elseGroup/elseif.thenGroup); DAG-capable execution graph; predefined stages (ACCESS, PLANNER, PLAN_EXECUTOR, MODEL, RETRIEVAL, RETRIEVE, TOOL, MCP, MEMORY, EVALUATE, FEEDBACK_CAPTURE, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY, etc.); custom and dynamic (JAR) plugins; iterative blocks and plan executor. |
+| **Pipeline & capabilities** | Capability-based pipelines; sync/async groups; **group-level if/elseif/else** (condition plugin + thenGroup/elseGroup/elseif.thenGroup); DAG-capable execution graph; predefined capabilities (ACCESS, PLANNER, PLAN_EXECUTOR, MODEL, RETRIEVAL, RETRIEVE, TOOL, MCP, MEMORY, EVALUATE, FEEDBACK_CAPTURE, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY, etc.); custom and dynamic (JAR) plugins; iterative blocks and plan executor. |
 | **Execution & kernel** | Execution-state driven kernel; deterministic ready set; versioned state (stepId, executionId); execution snapshots; interceptor layer (before/after/onError); execution modes (LIVE, REPLAY, DRY_RUN, EVALUATION, BRANCH). |
-| **Stage result & contract** | Deterministic StageResult envelope (output, metadata, deterministic, dependencies); StageMetadata & DependencyRef; ExecutionGraph (linear list → graph, topological order); CheckpointableStage (resumeFrom, branchFrom); OutputContract (schema validation, enforceStrict). |
-| **Human & signals** | Async pause: stage calls `requestSuspendForSignal()`; workflow awaits; `receiveSignal(ExecutionSignal)` (HUMAN_APPROVAL, MANUAL_OVERRIDE, COMPLIANCE_ACK); resume with payload. |
-| **Pipeline break** | Any activity can request to stop the pipeline: return `StageResult` with `requestPipelineBreak=true` or call `context.requestPipelineBreak()`. **SYNC**: first stage that requests break stops the group and pipeline. **ASYNC**: pipeline breaks only when **all** activities in the group request break; until then execution continues. |
+| **Capability result & contract** | Deterministic StageResult envelope (output, metadata, deterministic, dependencies); StageMetadata & DependencyRef; ExecutionGraph (linear list → graph, topological order); CheckpointableStage (resumeFrom, branchFrom); OutputContract (schema validation, enforceStrict). |
+| **Human & signals** | Async pause: capability calls `requestSuspendForSignal()`; workflow awaits; `receiveSignal(ExecutionSignal)` (HUMAN_APPROVAL, MANUAL_OVERRIDE, COMPLIANCE_ACK); resume with payload. |
+| **Pipeline break** | Any activity can request to stop the pipeline: return `StageResult` with `requestPipelineBreak=true` or call `context.requestPipelineBreak()`. **SYNC**: first capability that requests break stops the group and pipeline. **ASYNC**: pipeline breaks only when **all** activities in the group request break; until then execution continues. |
 | **Streaming** | StreamingStageHandler and StreamObserver (onToken, onUpdate, onComplete, onError); kernel-native streaming for partial tokens and tool output. |
 | **Agents & identity** | AgentContext (agentId, persona, AgentMemoryStore); durable agents across sessions; ExecutionContext references AgentContext; command can set agentId/persona. |
 | **Determinism & replay** | DeterminismPolicy (freezeModelParams, persistToolOutputs, persistRetrievalResults); randomnessSeed; ContextSnapshot carries policy; NONE/FULL presets for enterprise audit and replay. |
@@ -28,7 +28,7 @@ This document describes the **feature set** and **use cases** enabled by the Ope
 | **Graph export** | **ExecutionGraph** exports: toDot(), toMermaid(), toJsonForUi() for DOT, Mermaid, JSON (EXECUTION_GRAPH_EXPORT). |
 | **Learning & training stages** | EVALUATE, FEEDBACK_CAPTURE, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY; future-ready for incremental learning and model lifecycle; stub plugins provided. |
 | **Conditional groups** | At group level: **condition** plugin runs first (writes output key `branch`); then one of **then** / **elseif** / **else** runs; prefer **thenGroup**, **elseGroup**, **elseifBranches[].thenGroup** (group as children). |
-| **Config & debugging UI** | **ui-reference.md**: single reference for Configuration UI and Stage Debugging UI (predefined stages table, plugin types, config schema, pipeline structure, activity naming, context keys). |
+| **Config & debugging UI** | **ui-reference.md**: single reference for Configuration UI and Capability Debugging UI (predefined capabilities table, plugin types, config schema, pipeline structure, activity naming, context keys). |
 
 ---
 
@@ -46,11 +46,11 @@ When **enabledFeatures** is missing or empty, no optional features are enabled (
 
 **Intended design:**
 
-1. **Eliminate execution hierarchy during bootstrap** — For each feature flag, the execution hierarchy (plan shape, registered executors, interceptors, resolvers) should be built **only when the feature is enabled**. Disabled features must not register or build that code path at bootstrap, so they run no code and add no branches in the hot path. Example: if `EXECUTION_GRAPH` is off, the plan is built with linear `stageOrder` only (no graph topology); if `HUMAN_SIGNAL` is off, the workflow/kernel need not register suspend/signal handling in the built hierarchy.
+1. **Eliminate execution hierarchy during bootstrap** — For each feature flag, the execution hierarchy (plan shape, registered executors, interceptors, resolvers) should be built **only when the feature is enabled**. Disabled features must not register or build that code path at bootstrap, so they run no code and add no branches in the hot path. Example: if `EXECUTION_GRAPH` is off, the plan is built with linear capabilityOrder/stageOrder only (no graph topology); if `HUMAN_SIGNAL` is off, the workflow/kernel need not register suspend/signal handling in the built hierarchy.
 
 2. **Minimal enum check at root when runtime is required** — If a feature genuinely requires a **runtime** decision (e.g. “after this group, should we suspend for signal?”), the check must be a **single, minimal enum check at root level** (e.g. at workflow entry or kernel loop head), not scattered `isEnabled(FeatureFlag.X)` calls in many executors or activities. That way the feature is eliminated in one place: one branch at the root, and the rest of the pipeline stays feature-agnostic.
 
-**Current practice:** Flags are loaded from config at bootstrap and set on `EngineRuntime` in **SetRuntimeStep**. Plan building uses the flag **EXECUTION_GRAPH** at bootstrap to choose stage order (topological from graph vs linear from `stageOrder`), so that part of the hierarchy is already eliminated at bootstrap. Some features still use runtime checks in executors or workflow; the target state is to move those to bootstrap-time elimination or to a single root-level check where runtime is unavoidable.
+**Current practice:** Flags are loaded from config at bootstrap and set on `EngineRuntime` in **SetRuntimeStep**. Plan building uses the flag **EXECUTION_GRAPH** at bootstrap to choose capability order (topological from graph vs linear from capabilityOrder/`stageOrder`), so that part of the hierarchy is already eliminated at bootstrap. Some features still use runtime checks in executors or workflow; the target state is to move those to bootstrap-time elimination or to a single root-level check where runtime is unavoidable.
 
 ### Minimal activity state (Temporal history)
 
@@ -58,7 +58,7 @@ Temporal records workflow and activity input/output in its store (DB/Elastic). T
 
 - **activity.payload** in config supports **maxAccumulatedOutputKeys** and **maxResultOutputKeys** (0 = no limit). Use to document or enforce size limits.
 - Prefer storing large blobs (e.g. full documents, big model outputs) in external storage and passing only references (keys, URLs) in context.
-- Keep **ExecutionCommand.input** and stage outputs lean when possible so activity invocations stay small.
+- Keep **ExecutionCommand.input** and capability outputs lean when possible so activity invocations stay small.
 
 ---
 
@@ -88,7 +88,7 @@ Temporal records workflow and activity input/output in its store (DB/Elastic). T
 - **Checkpoint/resume** — Long runs, branch-from-step experimentation, replay from a step.  
 - **Output contract** — Structured LLM output, API-safe responses, schema-validated results.  
 - **Conditional groups** — If/elseif/else at group level; condition plugin selects branch; thenGroup/elseGroup (group as children).  
-- **Learning stages** — EVALUATE, FEEDBACK_CAPTURE, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY for incremental learning and model lifecycle.
+- **Learning capabilities** — EVALUATE, FEEDBACK_CAPTURE, DATASET_BUILD, TRAIN_TRIGGER, MODEL_REGISTRY for incremental learning and model lifecycle.
 
 Details for each area are in the sections below.
 
@@ -109,13 +109,13 @@ Details for each area are in the sections below.
 - **Enterprise**: cost/quality tradeoffs, vendor comparison, redundancy.
 
 ### 1.3 Dynamic Planning (LLM-as-Planner)
-- **PLANNER** stage: plugin (e.g. LLM) designs a **dynamic execution plan** and stores it in context.
-- **PLAN_EXECUTOR** stage: kernel runs that plan (no plugin); inside an iterator = **iterative plan executor**.
+- **PLANNER** capability: plugin (e.g. LLM) designs a **dynamic execution plan** and stores it in context.
+- **PLAN_EXECUTOR** capability: kernel runs that plan (no plugin); inside an iterator = **iterative plan executor**.
 - Use cases: task decomposition, multi-step reasoning, adaptive pipelines, agentic workflows.
 - **Enterprise**: complex decision flows, compliance steps, conditional sub-pipelines.
 
 ### 1.4 Tool Use & Function Calling
-- **TOOL** stage with `ToolPlugin`: call APIs, DBs, calculators, internal services.
+- **TOOL** capability with `ToolPlugin`: call APIs, DBs, calculators, internal services.
 - Chain: **Model** (decides tool) → **TOOL** (executes) → **Model** (summarizes).
 - **Enterprise**: booking, search, CRM, ERP, ticketing, data lookups.
 

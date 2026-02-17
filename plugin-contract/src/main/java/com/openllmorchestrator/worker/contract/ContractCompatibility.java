@@ -17,8 +17,8 @@ package com.openllmorchestrator.worker.contract;
 
 /**
  * Optional interface for plugins to declare which contract version they were built for.
- * The worker (or plugin loader) can call {@link ContractVersion#isCompatible(StageHandler)}
- * or {@link ContractVersion#requireCompatible(StageHandler)} before invoking the plugin.
+ * The worker (or plugin loader) can call {@link ContractVersion#isCompatible(CapabilityHandler)}
+ * or {@link ContractVersion#requireCompatible(CapabilityHandler)} before invoking the plugin.
  * <p>
  * Return a semantic version string (e.g. "0.0.1") that matches the plugin-contract dependency
  * version you compiled against.

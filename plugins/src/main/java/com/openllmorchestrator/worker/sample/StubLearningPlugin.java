@@ -19,13 +19,13 @@ import com.openllmorchestrator.worker.contract.ContractCompatibility;
 import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.Map;
 
 /** Stub learning plugin: no-op placeholder for LEARNING stage. Replace with a real LearningPlugin for incremental learning, fine-tuning, or embedding updates. */
-public final class StubLearningPlugin implements StageHandler, ContractCompatibility, PluginTypeDescriptor {
+public final class StubLearningPlugin implements CapabilityHandler, ContractCompatibility, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.sample.StubLearningPlugin";
@@ -36,11 +36,11 @@ public final class StubLearningPlugin implements StageHandler, ContractCompatibi
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         context.putOutput("learningRun", false);
         context.putOutput("learningStub", true);
-        return StageResult.builder()
-                .stageName(NAME)
+        return CapabilityResult.builder()
+                .capabilityName(NAME)
                 .output(Map.copyOf(context.getCurrentPluginOutput()))
                 .build();
     }

@@ -20,8 +20,8 @@ import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Set;
 
 /** Vector DB plugin: store chunks (doc pipeline) or retrieve (question pipeline). */
-public final class VectorStoreRetrievalPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+public final class VectorStoreRetrievalPlugin implements CapabilityHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin";
@@ -41,7 +41,7 @@ public final class VectorStoreRetrievalPlugin implements StageHandler, ContractC
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         Map<String, Object> accumulated = context.getAccumulatedOutput();
         Map<String, Object> input = context.getOriginalInput();
 
@@ -49,7 +49,7 @@ public final class VectorStoreRetrievalPlugin implements StageHandler, ContractC
         if (chunksObj instanceof List && !((List<?>) chunksObj).isEmpty()) {
             context.putOutput("stored", true);
             context.putOutput("chunkCount", ((List<?>) chunksObj).size());
-            return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+            return CapabilityResult.builder().capabilityName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
         }
 
         String question = (String) input.get("question");
@@ -57,7 +57,7 @@ public final class VectorStoreRetrievalPlugin implements StageHandler, ContractC
             context.putOutput("retrievedChunks", retrieveFromVectorDb(question));
         }
 
-        return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+        return CapabilityResult.builder().capabilityName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
     }
 
     @Override

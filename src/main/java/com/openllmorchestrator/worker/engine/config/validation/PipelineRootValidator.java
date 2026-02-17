@@ -16,16 +16,16 @@
 package com.openllmorchestrator.worker.engine.config.validation;
 
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
-import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
+import com.openllmorchestrator.worker.engine.capability.resolver.CapabilityResolver;
 
 import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
 
 import java.util.Map;
 
-/** Validates pipeline section(s): either root or stages must be set per pipeline; defaultTimeoutSeconds positive. */
+/** Validates pipeline section(s): either root or capabilities/stages must be set per pipeline; defaultTimeoutSeconds positive. */
 public final class PipelineRootValidator implements ConfigValidator {
     @Override
-    public void validate(EngineFileConfig config, StageResolver resolver) {
+    public void validate(EngineFileConfig config, CapabilityResolver resolver) {
         Map<String, PipelineSection> effective = config.getPipelinesEffective();
         if (effective.isEmpty()) {
             throw new IllegalStateException("config must have pipelines with at least one pipeline defined");

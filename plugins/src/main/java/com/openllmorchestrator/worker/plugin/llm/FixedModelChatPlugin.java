@@ -22,8 +22,8 @@ import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -40,7 +40,7 @@ import java.util.Set;
  * Chat plugin that always uses a fixed Ollama model. Used in the "query-all-models" ASYNC pipeline
  * so each stage has one model; outputs modelLabel for the merge handler.
  */
-public abstract class FixedModelChatPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+public abstract class FixedModelChatPlugin implements CapabilityHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
 
@@ -60,7 +60,7 @@ public abstract class FixedModelChatPlugin implements StageHandler, ContractComp
     protected abstract String getModelLabel();
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         Map<String, Object> input = context.getOriginalInput();
         String question = (String) input.get("question");
         if (question == null || question.isBlank()) {
@@ -70,7 +70,7 @@ public abstract class FixedModelChatPlugin implements StageHandler, ContractComp
         context.putOutput("response", response);
         context.putOutput("result", response);
         context.putOutput("modelLabel", getModelLabel());
-        return StageResult.builder().stageName(name()).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+        return CapabilityResult.builder().capabilityName(name()).data(new HashMap<>(context.getCurrentPluginOutput())).build();
     }
 
     @Override

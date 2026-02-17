@@ -16,20 +16,10 @@
 package com.openllmorchestrator.worker.contract;
 
 /**
- * Pluggable stage contract. Implementations are registered by name at bootstrap;
- * no reflection — direct map lookup and invocation for performance.
- * <p>
- * Every plugin receives {@link PluginContext}: read originalInput/accumulatedOutput,
- * write via putOutput/currentPluginOutput. Do not retain context after execute() returns.
+ * Pluggable capability contract. Implementations are registered by name at bootstrap.
+ *
+ * @deprecated Use {@link CapabilityHandler}. This interface extends it for backward compatibility.
  */
-public interface StageHandler {
-
-    /** Unique stage name (must match pipeline config). Return a constant. */
-    String name();
-
-    /**
-     * Execute the stage. Read from context; write via putOutput/currentPluginOutput.
-     * Do not retain context after this method returns.
-     */
-    StageResult execute(PluginContext context);
+@Deprecated
+public interface StageHandler extends CapabilityHandler {
 }

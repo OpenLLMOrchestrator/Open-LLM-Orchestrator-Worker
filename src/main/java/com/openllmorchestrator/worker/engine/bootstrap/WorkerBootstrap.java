@@ -23,10 +23,9 @@ import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildResolverStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.LoadConfigStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.SetRuntimeStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.ValidateConfigStep;
+import com.openllmorchestrator.worker.engine.capability.bucket.CapabilityBucketFactory;
+import com.openllmorchestrator.worker.engine.capability.custom.CustomCapabilityBucket;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
-import com.openllmorchestrator.worker.engine.stage.custom.CustomStageBucket;
-import com.openllmorchestrator.worker.engine.stage.bucket.StageBucketFactory;
-import com.openllmorchestrator.worker.engine.stage.predefined.PredefinedPluginBucket;
 
 import java.util.List;
 
@@ -48,18 +47,18 @@ public final class WorkerBootstrap {
     public static EngineFileConfig initialize() {
         BootstrapContext ctx = new BootstrapContext();
         ctx.setEnvConfig(com.openllmorchestrator.worker.engine.config.env.EnvConfig.fromEnvironment());
-        ctx.setPredefinedBucket(StageBucketFactory.createPredefinedBucket());
-        ctx.setCustomBucket(StageBucketFactory.createCustomBucket());
+        ctx.setPredefinedBucket(CapabilityBucketFactory.createPredefinedBucket());
+        ctx.setCustomBucket(CapabilityBucketFactory.createCustomBucket());
         runSteps(ctx, DEFAULT_STEPS);
         return ctx.getConfig();
     }
 
-    public static EngineFileConfig initializeWithCustomBucket(CustomStageBucket customBucket) {
+    public static EngineFileConfig initializeWithCustomBucket(CustomCapabilityBucket customBucket) {
         if (customBucket == null) {
-            throw new IllegalArgumentException("CustomStageBucket must be non-null");
+            throw new IllegalArgumentException("CustomCapabilityBucket must be non-null");
         }
         BootstrapContext ctx = new BootstrapContext();
-        ctx.setPredefinedBucket(StageBucketFactory.createPredefinedBucket());
+        ctx.setPredefinedBucket(CapabilityBucketFactory.createPredefinedBucket());
         ctx.setCustomBucket(customBucket);
         runSteps(ctx, DEFAULT_STEPS);
         return ctx.getConfig();

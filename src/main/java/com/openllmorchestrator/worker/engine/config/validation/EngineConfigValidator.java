@@ -16,7 +16,7 @@
 package com.openllmorchestrator.worker.engine.config.validation;
 
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
-import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
+import com.openllmorchestrator.worker.engine.capability.resolver.CapabilityResolver;
 
 import java.util.List;
 
@@ -32,9 +32,9 @@ public final class EngineConfigValidator {
 
     private EngineConfigValidator() {}
 
-    public static void validate(EngineFileConfig config, StageResolver stageResolver) {
+    public static void validate(EngineFileConfig config, CapabilityResolver capabilityResolver) {
         for (ConfigValidator v : VALIDATORS) {
-            v.validate(config, stageResolver);
+            v.validate(config, capabilityResolver);
         }
     }
 }

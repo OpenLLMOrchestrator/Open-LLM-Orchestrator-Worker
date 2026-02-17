@@ -17,14 +17,14 @@ package com.openllmorchestrator.worker.engine.activity.impl;
 
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.contract.ContractVersion;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
 import com.openllmorchestrator.worker.contract.OutputContract;
 import com.openllmorchestrator.worker.contract.OutputContractValidator;
 import com.openllmorchestrator.worker.contract.OutputContractViolationException;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.engine.stage.predefined.PredefinedStages;
-import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.engine.capability.predefined.PredefinedCapabilities;
+import com.openllmorchestrator.worker.engine.capability.resolver.CapabilityResolver;
 import io.temporal.activity.Activity;
 import io.temporal.activity.DynamicActivity;
 import io.temporal.common.converter.EncodedValues;
@@ -52,10 +52,10 @@ public class KernelStageDynamicActivity implements DynamicActivity {
         @SuppressWarnings("unchecked")
         Map<String, Object> accumulatedOutput = args.get(2, Map.class);
 
-        StageResolver resolver = EngineRuntime.getStageResolver();
-        StageHandler handler = resolver.resolve(stageName);
+        CapabilityResolver resolver = EngineRuntime.getCapabilityResolver();
+        CapabilityHandler handler = resolver.resolve(stageName);
         if (handler == null) {
-            if (PredefinedStages.isPredefined(stageName)) {
+            if (PredefinedCapabilities.isPredefined(stageName)) {
                 throw new IllegalStateException("Predefined stage '" + stageName
                         + "' has no plugin registered. Register a handler for this stage.");
             }
@@ -69,8 +69,8 @@ public class KernelStageDynamicActivity implements DynamicActivity {
         handler.execute(context);
         KernelStageActivityImpl.validateOutputContract(handler, context.getCurrentPluginOutput(), stageName);
         log.debug("<<< [END] Activity type: {} | Thread: {}", activityType, Thread.currentThread().getName());
-        return StageResult.builder()
-                .stageName(stageName)
+        return CapabilityResult.builder()
+                .capabilityName(stageName)
                 .output(new HashMap<>(context.getCurrentPluginOutput()))
                 .data(context.getCurrentPluginOutput())
                 .requestPipelineBreak(context.isPipelineBreakRequested())

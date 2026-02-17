@@ -5,14 +5,14 @@ import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class InMemoryCachingPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+public final class InMemoryCachingPlugin implements CapabilityHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.plugin.caching.InMemoryCachingPlugin";
     private static final String STATE_PREFIX = "cache:";
@@ -22,7 +22,7 @@ public final class InMemoryCachingPlugin implements StageHandler, ContractCompat
     public String name() { return NAME; }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         Map<String, Object> input = context.getOriginalInput();
         String key = input != null ? (String) input.get("cacheKey") : null;
         Object valueToStore = input != null ? input.get("value") : null;
@@ -42,7 +42,7 @@ public final class InMemoryCachingPlugin implements StageHandler, ContractCompat
             }
         }
         context.putOutput("cacheHit", hit);
-        return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+        return CapabilityResult.builder().capabilityName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
     }
 
     @Override

@@ -22,7 +22,7 @@ import lombok.Setter;
 import java.util.List;
 import java.util.Map;
 
-/** Pipeline section of engine config. Each pipeline has one root (one or more stages; each stage has one group). */
+/** Pipeline section of engine config. Each pipeline has one root (one or more capabilities; each capability has one group). */
 @Getter
 @Setter
 @JsonDeserialize(using = PipelineSectionDeserializer.class)
@@ -36,16 +36,16 @@ public class PipelineSection {
     private MergePolicyConfig mergePolicy;
     /** Legacy: single root GROUP/STAGE tree. Used when stages and rootByStage are null/empty. */
     private NodeConfig root;
-    /** Optional: stage name → plugin id. When absent, engine-level stagePlugins are used. */
+    /** Optional: capability name → plugin id. When absent, engine-level stagePlugins are used. */
     private Map<String, String> stagePlugins;
     /**
-     * Top-level flow: ordered list of stages. Each stage has groups; group children are activity names.
+     * Top-level flow: ordered list of capabilities. Each capability has groups; group children are activity names.
      * When non-null and non-empty, plan is built from this instead of root/rootByStage.
      */
     private List<StageBlockConfig> stages;
     /**
-     * Stage name → GROUP config. Execution order follows engine stageOrder; only stages present here are included.
-     * When non-null and non-empty, plan is built from this (stagePlugins section not needed).
+     * Capability/stage name → GROUP config. Execution order follows engine capabilityOrder (or stageOrder); only capabilities present here are included.
+     * When non-null and non-empty, plan is built from this. Accepts key "root" or "rootByCapability" in JSON.
      */
     private Map<String, NodeConfig> rootByStage;
 }

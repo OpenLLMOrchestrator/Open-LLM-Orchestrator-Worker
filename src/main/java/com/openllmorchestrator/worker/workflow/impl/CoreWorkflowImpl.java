@@ -20,9 +20,9 @@ import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.engine.contract.ExecutionSignal;
 import com.openllmorchestrator.worker.engine.contract.KernelExecutionOutcome;
 import com.openllmorchestrator.worker.engine.kernel.KernelOrchestrator;
-import com.openllmorchestrator.worker.engine.kernel.StageInvoker;
+import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
+import com.openllmorchestrator.worker.engine.kernel.CapabilityInvoker;
 import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
-import com.openllmorchestrator.worker.engine.stage.StagePlan;
 import com.openllmorchestrator.worker.workflow.CoreWorkflow;
 import io.temporal.workflow.Workflow;
 import org.slf4j.Logger;
@@ -50,9 +50,9 @@ public class CoreWorkflowImpl implements CoreWorkflow {
         String pipelineName = command.getPipelineName() != null && !command.getPipelineName().isBlank()
                 ? command.getPipelineName()
                 : "default";
-        StagePlan plan = EngineRuntime.getStagePlan(pipelineName);
+        CapabilityPlan plan = EngineRuntime.getCapabilityPlan(pipelineName);
         log.info("Executing pipeline: {}", pipelineName);
-        StageInvoker invoker = new StageInvoker();
+        CapabilityInvoker invoker = new CapabilityInvoker();
         KernelOrchestrator kernel = new KernelOrchestrator(invoker);
         KernelExecutionOutcome outcome = kernel.execute(plan, context);
         com.openllmorchestrator.worker.engine.config.FeatureFlags flags = com.openllmorchestrator.worker.engine.runtime.EngineRuntime.getFeatureFlags();

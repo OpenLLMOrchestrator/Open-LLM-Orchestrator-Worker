@@ -15,15 +15,15 @@
  */
 package com.openllmorchestrator.worker.engine.bootstrap;
 
+import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
+import com.openllmorchestrator.worker.engine.capability.activity.ActivityRegistry;
+import com.openllmorchestrator.worker.engine.capability.custom.CustomCapabilityBucket;
+import com.openllmorchestrator.worker.engine.capability.predefined.PredefinedPluginBucket;
+import com.openllmorchestrator.worker.engine.capability.resolver.CapabilityResolver;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.config.env.EnvConfig;
-import com.openllmorchestrator.worker.engine.stage.StagePlan;
-import com.openllmorchestrator.worker.engine.stage.activity.ActivityRegistry;
 
 import java.util.Map;
-import com.openllmorchestrator.worker.engine.stage.custom.CustomStageBucket;
-import com.openllmorchestrator.worker.engine.stage.predefined.PredefinedPluginBucket;
-import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -35,14 +35,12 @@ public class BootstrapContext {
     private EnvConfig envConfig;
     private EngineFileConfig config;
     private PredefinedPluginBucket predefinedBucket;
-    private CustomStageBucket customBucket;
+    private CustomCapabilityBucket customBucket;
     private ActivityRegistry activityRegistry;
-    /** Registry containing only plugins that pass compatibility and (if config.plugins is set) are in the allowed list. Used for resolution and static plan build. */
     private ActivityRegistry compatibleActivityRegistry;
-    private StageResolver resolver;
-    /** Single plan (legacy); used when plans map is not set. */
-    private StagePlan plan;
-    /** Named pipeline plans: pipeline name → StagePlan. When set, use getStagePlan(name) at runtime. */
-    private Map<String, StagePlan> plans;
+    private CapabilityResolver resolver;
+    private CapabilityPlan plan;
+    /** Named pipeline plans: pipeline name → CapabilityPlan. When set, use getCapabilityPlan(name) at runtime. */
+    private Map<String, CapabilityPlan> plans;
 }
 

@@ -19,18 +19,18 @@ import com.openllmorchestrator.worker.engine.config.FeatureFlag;
 import com.openllmorchestrator.worker.engine.config.FeatureFlags;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.engine.contract.PlannerContextKeys;
-import com.openllmorchestrator.worker.contract.StageMetadata;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityMetadata;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 import com.openllmorchestrator.worker.engine.contract.VersionedState;
 import com.openllmorchestrator.worker.engine.plan.PlanValidator;
 import com.openllmorchestrator.worker.engine.plan.PlanValidator.PlanValidationException;
 import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
-import com.openllmorchestrator.worker.engine.kernel.StageInvoker;
+import com.openllmorchestrator.worker.engine.kernel.CapabilityInvoker;
 import com.openllmorchestrator.worker.engine.kernel.interceptor.ExecutionInterceptorChain;
-import com.openllmorchestrator.worker.engine.kernel.interceptor.StageContext;
-import com.openllmorchestrator.worker.engine.stage.StageGroupSpec;
-import com.openllmorchestrator.worker.engine.stage.StagePlan;
-import com.openllmorchestrator.worker.engine.stage.predefined.PredefinedStages;
+import com.openllmorchestrator.worker.engine.kernel.interceptor.CapabilityContext;
+import com.openllmorchestrator.worker.engine.capability.CapabilityGroupSpec;
+import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
+import com.openllmorchestrator.worker.engine.capability.predefined.PredefinedCapabilities;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -50,27 +50,27 @@ public final class PlanExecutorGroupExecutor implements GroupExecutor {
     }
 
     @Override
-    public boolean supports(StageGroupSpec spec) {
+    public boolean supports(CapabilityGroupSpec spec) {
         if (spec == null || spec.getDefinitions() == null || spec.getDefinitions().isEmpty()) {
             return false;
         }
         return spec.getDefinitions().size() == 1
-                && PredefinedStages.PLAN_EXECUTOR.equals(spec.getDefinitions().get(0).getStageBucketName());
+                && PredefinedCapabilities.PLAN_EXECUTOR.equals(spec.getDefinitions().get(0).getCapabilityBucketName());
     }
 
     @Override
-    public void execute(StageGroupSpec spec, StageInvoker invoker, ExecutionContext context,
+    public void execute(CapabilityGroupSpec spec, CapabilityInvoker invoker, ExecutionContext context,
                         int groupIndex, ExecutionInterceptorChain interceptorChain) {
-        StageContext stageCtx = StageContext.from(groupIndex, spec.getDefinitions().get(0), context.getVersionedState(), context);
-        interceptorChain.beforeStage(stageCtx);
+        CapabilityContext stageCtx = CapabilityContext.from(groupIndex, spec.getDefinitions().get(0), context.getVersionedState(), context);
+        interceptorChain.beforeCapability(stageCtx);
         try {
             Map<String, Object> accumulated = context.getAccumulatedOutput();
             Object raw = accumulated != null ? accumulated.get(PlannerContextKeys.KEY_DYNAMIC_PLAN) : null;
-            StagePlan subPlan = raw instanceof StagePlan ? (StagePlan) raw : null;
+            CapabilityPlan subPlan = raw instanceof CapabilityPlan ? (CapabilityPlan) raw : null;
             if (subPlan == null) {
                 log.debug("PLAN_EXECUTOR: no dynamic plan in context (key={}); skipping", PlannerContextKeys.KEY_DYNAMIC_PLAN);
-                StageResult empty = StageResult.builder().stageName(PredefinedStages.PLAN_EXECUTOR).build();
-                interceptorChain.afterStage(stageCtx, empty);
+                CapabilityResult empty = CapabilityResult.builder().capabilityName(PredefinedCapabilities.PLAN_EXECUTOR).build();
+                interceptorChain.afterCapability(stageCtx, empty);
                 return;
             }
             FeatureFlags flags = EngineRuntime.getFeatureFlags();
@@ -87,19 +87,19 @@ public final class PlanExecutorGroupExecutor implements GroupExecutor {
             log.info("PLAN_EXECUTOR: executing dynamic plan with {} group(s)", subPlan.getGroups().size());
             subPlanRunner.run(subPlan, context);
             VersionedState after = context.getVersionedState();
-            StageResult.StageResultBuilder resultBuilder = StageResult.builder()
-                    .stageName(PredefinedStages.PLAN_EXECUTOR)
+            CapabilityResult.CapabilityResultBuilder resultBuilder = CapabilityResult.builder()
+                    .capabilityName(PredefinedCapabilities.PLAN_EXECUTOR)
                     .output(context.getAccumulatedOutput())
                     .data(context.getAccumulatedOutput());
             if (flags != null && flags.isEnabled(FeatureFlag.STAGE_RESULT_ENVELOPE)) {
-                resultBuilder.metadata(StageMetadata.builder()
-                        .stageName(PredefinedStages.PLAN_EXECUTOR)
+                resultBuilder.metadata(CapabilityMetadata.builder()
+                        .capabilityName(PredefinedCapabilities.PLAN_EXECUTOR)
                         .stepId(after != null ? after.getStepId() : 0L)
                         .executionId(after != null ? after.getExecutionId() : null)
-                        .stageBucketName(PredefinedStages.PLAN_EXECUTOR)
+                        .capabilityBucketName(PredefinedCapabilities.PLAN_EXECUTOR)
                         .build());
             }
-            interceptorChain.afterStage(stageCtx, resultBuilder.build());
+            interceptorChain.afterCapability(stageCtx, resultBuilder.build());
         } catch (Exception e) {
             interceptorChain.onError(stageCtx, e);
             throw e;
@@ -109,7 +109,7 @@ public final class PlanExecutorGroupExecutor implements GroupExecutor {
     /** Runs a sub-plan with the given context (e.g. kernel.execute(plan, context)). */
     @FunctionalInterface
     public interface SubPlanRunner {
-        void run(StagePlan subPlan, ExecutionContext context);
+        void run(CapabilityPlan subPlan, ExecutionContext context);
     }
 }
 

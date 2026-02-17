@@ -23,9 +23,9 @@ import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
 public final class SetRuntimeStep implements BootstrapStep {
     @Override
     public void run(BootstrapContext ctx) {
-        EngineRuntime.setStageResolver(ctx.getResolver());
+        EngineRuntime.setCapabilityResolver(ctx.getResolver());
         EngineRuntime.setConfig(ctx.getConfig());
-        EngineRuntime.setStagePlans(ctx.getPlans());
+        EngineRuntime.setCapabilityPlans(ctx.getPlans());
         EngineRuntime.setFeatureFlags(ctx.getConfig().getFeatureFlagsEffective());
         EngineRuntime.CONFIG = ctx.getConfig();
     }

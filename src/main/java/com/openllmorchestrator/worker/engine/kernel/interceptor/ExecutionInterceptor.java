@@ -15,27 +15,17 @@
  */
 package com.openllmorchestrator.worker.engine.kernel.interceptor;
 
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 /**
- * Kernel-level interceptor (not a stage). Invoked before each stage, after each stage, and on error.
- * Plug in: SnapshotWriter, AuditWriter, Tracer, Evaluator, CostMeter, etc.
+ * Kernel-level interceptor. Invoked before each capability, after each capability, and on error.
  */
 public interface ExecutionInterceptor {
 
-    /**
-     * Called before the stage runs. State in ctx is the versioned state before this stage.
-     */
-    void beforeStage(StageContext ctx);
+    void beforeCapability(CapabilityContext ctx);
 
-    /**
-     * Called after the stage completed successfully. result is the stage output (before merge).
-     */
-    void afterStage(StageContext ctx, StageResult result);
+    void afterCapability(CapabilityContext ctx, CapabilityResult result);
 
-    /**
-     * Called when the stage threw an exception.
-     */
-    void onError(StageContext ctx, Exception e);
+    void onError(CapabilityContext ctx, Exception e);
 }
 

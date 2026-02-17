@@ -22,8 +22,8 @@ import com.openllmorchestrator.worker.engine.policy.BudgetGuardrailEnforcer;
 import com.openllmorchestrator.worker.engine.policy.ExecutionPolicyResolver;
 import com.openllmorchestrator.worker.engine.security.SecurityHardeningGate;
 import com.openllmorchestrator.worker.contract.OutputContractValidator;
-import com.openllmorchestrator.worker.engine.stage.StagePlan;
-import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
+import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
+import com.openllmorchestrator.worker.engine.capability.resolver.CapabilityResolver;
 
 import java.util.Collections;
 import java.util.Map;
@@ -40,8 +40,8 @@ import java.util.Map;
 public final class EngineRuntime {
 
     private static volatile EngineFileConfig config;
-    private static volatile Map<String, StagePlan> stagePlansByName;
-    private static volatile StageResolver stageResolver;
+    private static volatile Map<String, CapabilityPlan> capabilityPlansByName;
+    private static volatile CapabilityResolver capabilityResolver;
     private static volatile OutputContractValidator outputContractValidator;
     private static volatile FeatureFlags featureFlags;
     private static volatile ExecutionPolicyResolver executionPolicyResolver;
@@ -62,40 +62,40 @@ public final class EngineRuntime {
         EngineRuntime.config = config;
     }
 
-    /** Execution hierarchy (plan) for default pipeline; same as getStagePlan("default"). */
-    public static StagePlan getStagePlan() {
-        return getStagePlan("default");
+    /** Execution hierarchy (plan) for default pipeline; same as getCapabilityPlan("default"). */
+    public static CapabilityPlan getCapabilityPlan() {
+        return getCapabilityPlan("default");
     }
 
     /** Execution hierarchy (plan) for the given pipeline name. Workflow payload should pass this name. */
-    public static StagePlan getStagePlan(String pipelineName) {
-        Map<String, StagePlan> map = stagePlansByName;
+    public static CapabilityPlan getCapabilityPlan(String pipelineName) {
+        Map<String, CapabilityPlan> map = capabilityPlansByName;
         if (map == null || map.isEmpty()) {
-            throw new IllegalStateException("Engine not bootstrapped. Stage plans not set.");
+            throw new IllegalStateException("Engine not bootstrapped. Capability plans not set.");
         }
         String name = pipelineName != null && !pipelineName.isBlank() ? pipelineName : "default";
-        StagePlan p = map.get(name);
+        CapabilityPlan p = map.get(name);
         if (p == null) {
             throw new IllegalStateException("Unknown pipeline name: '" + name + "'. Available: " + map.keySet());
         }
         return p;
     }
 
-    public static void setStagePlans(Map<String, StagePlan> plans) {
-        EngineRuntime.stagePlansByName = plans != null ? Collections.unmodifiableMap(plans) : null;
+    public static void setCapabilityPlans(Map<String, CapabilityPlan> plans) {
+        EngineRuntime.capabilityPlansByName = plans != null ? Collections.unmodifiableMap(plans) : null;
     }
 
-    /** Resolves predefined stages via config + plugin bucket, custom stages via custom bucket. */
-    public static StageResolver getStageResolver() {
-        StageResolver r = stageResolver;
+    /** Resolves predefined capabilities via config + plugin bucket, custom capabilities via custom bucket. */
+    public static CapabilityResolver getCapabilityResolver() {
+        CapabilityResolver r = capabilityResolver;
         if (r == null) {
-            throw new IllegalStateException("Engine not bootstrapped. Stage resolver not set.");
+            throw new IllegalStateException("Engine not bootstrapped. Capability resolver not set.");
         }
         return r;
     }
 
-    public static void setStageResolver(StageResolver stageResolver) {
-        EngineRuntime.stageResolver = stageResolver;
+    public static void setCapabilityResolver(CapabilityResolver capabilityResolver) {
+        EngineRuntime.capabilityResolver = capabilityResolver;
     }
 
     /** Optional validator for stages implementing {@link com.openllmorchestrator.worker.contract.OutputContract}. */

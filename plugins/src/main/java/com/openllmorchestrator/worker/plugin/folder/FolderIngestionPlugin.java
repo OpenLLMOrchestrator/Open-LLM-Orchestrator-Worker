@@ -20,8 +20,8 @@ import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +43,7 @@ import java.util.stream.Stream;
  * Input: "folderPath" (required), optional "fileExtensions" (e.g. ".txt,.md"),
  * optional "recursive" (boolean, default false).
  */
-public final class FolderIngestionPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+public final class FolderIngestionPlugin implements CapabilityHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.plugin.folder.FolderIngestionPlugin";
@@ -56,13 +56,13 @@ public final class FolderIngestionPlugin implements StageHandler, ContractCompat
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         Map<String, Object> input = context.getOriginalInput();
         String folderPath = (String) input.get("folderPath");
         if (folderPath == null || folderPath.isBlank()) {
             context.putOutput("error", "input.folderPath is required");
             context.putOutput("tokenizedChunks", List.<Map<String, Object>>of());
-            return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+            return CapabilityResult.builder().capabilityName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
         }
 
         Set<String> extensions = parseExtensions((String) input.get("fileExtensions"));
@@ -93,7 +93,7 @@ public final class FolderIngestionPlugin implements StageHandler, ContractCompat
         context.putOutput("tokenizedChunks", chunks);
         context.putOutput("fileCount", chunks.size());
 
-        return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+        return CapabilityResult.builder().capabilityName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
     }
 
     @Override

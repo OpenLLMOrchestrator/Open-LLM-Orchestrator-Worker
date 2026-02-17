@@ -17,11 +17,11 @@ package com.openllmorchestrator.worker.engine.bootstrap.steps;
 
 import com.openllmorchestrator.worker.contract.ContractVersion;
 import com.openllmorchestrator.worker.contract.ContractVersionException;
-import com.openllmorchestrator.worker.contract.StageHandler;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapContext;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapStep;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
-import com.openllmorchestrator.worker.engine.stage.activity.ActivityRegistry;
+import com.openllmorchestrator.worker.engine.capability.activity.ActivityRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,10 +47,10 @@ public final class BuildCompatiblePluginsStep implements BootstrapStep {
             return;
         }
         Set<String> allowed = config != null ? config.getPluginsEffective() : null;
-        Map<String, StageHandler> compatible = new LinkedHashMap<>();
-        for (Map.Entry<String, StageHandler> e : full.getHandlers().entrySet()) {
+        Map<String, CapabilityHandler> compatible = new LinkedHashMap<>();
+        for (Map.Entry<String, CapabilityHandler> e : full.getHandlers().entrySet()) {
             String name = e.getKey();
-            StageHandler handler = e.getValue();
+            CapabilityHandler handler = e.getValue();
             if (allowed != null && !allowed.contains(name)) {
                 continue;
             }

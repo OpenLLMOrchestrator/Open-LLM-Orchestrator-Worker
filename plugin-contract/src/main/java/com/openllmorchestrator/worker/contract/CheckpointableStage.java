@@ -16,13 +16,8 @@
 package com.openllmorchestrator.worker.contract;
 
 /**
- * Optional capability for stages that support checkpointing and replay.
+ * @deprecated Use {@link CheckpointableCapability}.
  */
-public interface CheckpointableStage extends StageHandler {
-
-    boolean supportsReplay();
-
-    StageResult resumeFrom(long stepId, PluginContext context);
-
-    StageResult branchFrom(long stepId, PluginContext context);
+@Deprecated
+public interface CheckpointableStage extends CheckpointableCapability {
 }

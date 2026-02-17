@@ -1,28 +1,30 @@
-# Configuration UI & Stage Debugging UI Reference
+# Configuration UI & Capability Debugging UI Reference
 
 This document is a **structured reference** for building:
 
 - **Configuration UI** — Forms, dropdowns, and pipeline editors that produce valid engine config (e.g. `config/<CONFIG_KEY>.json`).
-- **Stage debugging UI** — Inspecting workflow runs: current stage, stage order, activity names, and context (input/output) at each step.
+- **Capability debugging UI** — Inspecting workflow runs: current capability, capability order, activity names, and context (input/output) at each step.
 
 Use the tables and schemas below as the single source of truth for allowed values, field types, and execution semantics. Cross-references: [configuration-reference.md](configuration-reference.md) (full config schema), [config-reference.md](config-reference.md) (load order, env), [plugin-contract.md](plugin-contract.md) (plugin API).
 
+**Capability flow:** Predefined capabilities (below) have a fixed order via **`capabilityOrder`** (or **`stageOrder`**). Users can define **custom capabilities** in config (**`capabilities`**: name → `{ "pluginType", "name" }`) and reference any capability—predefined or custom—anywhere in the flow.
+
 ---
 
-## 1. Predefined stages (for config and debugging)
+## 1. Predefined capabilities (for config and debugging)
 
 Use this table to:
 
-- Populate **stageOrder** dropdowns and drag-and-drop stage lists.
-- Show **stage labels and descriptions** in pipeline and debugging UIs.
+- Populate **capabilityOrder** (or **stageOrder**) dropdowns and drag-and-drop capability lists.
+- Show **capability labels and descriptions** in pipeline and debugging UIs.
 - Resolve **aliases** (e.g. RETRIEVE → same semantics as RETRIEVAL).
 
-| Stage ID | Name | Description | Alias of | Order | Suggested plugin types | Debugging hint |
-|----------|------|-------------|----------|-------|------------------------|----------------|
-| ACCESS | ACCESS | Access control, auth, tenant check | — | 0 | AccessControlPlugin, TenantPolicyPlugin, RateLimitPlugin | First stage; check permissions before any work. |
-| PRE_CONTEXT_SETUP | PRE_CONTEXT_SETUP | Set up context before planning/execution | — | 1 | (custom) | Context keys set here are visible to later stages. |
+| Capability ID | Name | Description | Alias of | Order | Suggested plugin types | Debugging hint |
+|---------------|------|-------------|----------|-------|------------------------|----------------|
+| ACCESS | ACCESS | Access control, auth, tenant check | — | 0 | AccessControlPlugin, TenantPolicyPlugin, RateLimitPlugin | First capability; check permissions before any work. |
+| PRE_CONTEXT_SETUP | PRE_CONTEXT_SETUP | Set up context before planning/execution | — | 1 | (custom) | Context keys set here are visible to later capabilities. |
 | PLANNER | PLANNER | LLM-driven plan (task decomposition) | — | 2 | (internal) | Plan is stored in context for PLAN_EXECUTOR. |
-| PLAN_EXECUTOR | PLAN_EXECUTOR | Execute sub-plan from planner | — | 3 | (internal) | Runs stages dictated by dynamic plan. |
+| PLAN_EXECUTOR | PLAN_EXECUTOR | Execute sub-plan from planner | — | 3 | (internal) | Runs capabilities dictated by dynamic plan. |
 | EXECUTION_CONTROLLER | EXECUTION_CONTROLLER | Control execution flow | — | 4 | (custom) | Optional control point. |
 | ITERATIVE_BLOCK | ITERATIVE_BLOCK | Start of iterative loop | — | 5 | (internal) | Loop boundary; children may run multiple times. |
 | MODEL | MODEL | LLM invocation (chat/completion) | — | 6 | ModelPlugin | Output: response, result, or model-specific keys. |
@@ -32,7 +34,7 @@ Use this table to:
 | MCP | MCP | MCP tools/servers | — | 10 | MCPPlugin | Output: MCP-specific keys. |
 | MEMORY | MEMORY | Read/write conversation or user state | — | 11 | MemoryPlugin | Input/output: memory keys; state across turns. |
 | REFLECTION | REFLECTION | Reflect on output (e.g. self-critique) | — | 12 | (custom) | Often reads result, writes refined or meta output. |
-| SUB_OBSERVABILITY | SUB_OBSERVABILITY | Per-stage observability | — | 13 | ObservabilityPlugin, TracingPlugin | Metrics/traces for this segment. |
+| SUB_OBSERVABILITY | SUB_OBSERVABILITY | Per-capability observability | — | 13 | ObservabilityPlugin, TracingPlugin | Metrics/traces for this segment. |
 | SUB_CUSTOM | SUB_CUSTOM | Custom sub-logic | — | 14 | CustomStagePlugin | Arbitrary logic. |
 | ITERATIVE_BLOCK_END | ITERATIVE_BLOCK_END | End of iterative block | — | 15 | (internal) | Paired with ITERATIVE_BLOCK. |
 | FILTER | FILTER | Filter, tokenize, chunk input | — | 16 | FilterPlugin, GuardrailPlugin | Output: tokenizedChunks, filtered input, etc. |
@@ -46,9 +48,9 @@ Use this table to:
 | TRAIN_TRIGGER | TRAIN_TRIGGER | Trigger training job | — | 24 | TrainTriggerPlugin | Output: jobId, status; triggers fine-tune/LoRA. |
 | MODEL_REGISTRY | MODEL_REGISTRY | Register/promote trained model | — | 25 | ModelRegistryPlugin | Output: modelId, version; serving rollout. |
 | OBSERVABILITY | OBSERVABILITY | Final observability | — | 26 | ObservabilityPlugin, TracingPlugin, AuditPlugin | Logging, metrics, audit. |
-| CUSTOM | CUSTOM | Custom stage | — | 27 | CustomStagePlugin | Last predefined; custom logic. |
+| CUSTOM | CUSTOM | Custom capability | — | 27 | CustomStagePlugin | Last predefined; custom logic. |
 
-**Canonical stage order (array for default stageOrder):**  
+**Canonical capability order (array for default capabilityOrder or stageOrder):**  
 `ACCESS`, `PRE_CONTEXT_SETUP`, `PLANNER`, `PLAN_EXECUTOR`, `EXECUTION_CONTROLLER`, `ITERATIVE_BLOCK`, `MODEL`, `RETRIEVAL`, `RETRIEVE`, `TOOL`, `MCP`, `MEMORY`, `REFLECTION`, `SUB_OBSERVABILITY`, `SUB_CUSTOM`, `ITERATIVE_BLOCK_END`, `FILTER`, `POST_PROCESS`, `EVALUATION`, `EVALUATE`, `FEEDBACK`, `FEEDBACK_CAPTURE`, `LEARNING`, `DATASET_BUILD`, `TRAIN_TRIGGER`, `MODEL_REGISTRY`, `OBSERVABILITY`, `CUSTOM`.
 
 **Minimal learning flow (for “learning pipeline” preset):**  
@@ -58,9 +60,9 @@ Use this table to:
 
 ## 2. Plugin types (for STAGE node `pluginType`)
 
-Use for **plugin type dropdown** in pipeline editor and for **filtering plugins by stage**. Each STAGE node must have `pluginType` from this list and `name` = activity/plugin id (FQCN or short name).
+Use for **plugin type dropdown** in pipeline editor and for **filtering plugins by capability**. Each STAGE node must have `pluginType` from this list and `name` = activity/plugin id (FQCN or short name).
 
-| Plugin type (value) | Description | Typical stages |
+| Plugin type (value) | Description | Typical capabilities |
 |---------------------|-------------|----------------|
 | AccessControlPlugin | Access control, auth | ACCESS |
 | TenantPolicyPlugin | Tenant policies, limits | ACCESS |
@@ -92,7 +94,7 @@ Use for **plugin type dropdown** in pipeline editor and for **filtering plugins 
 | LangChainAdapterPlugin | LangChain adapter | (custom) |
 | AgentOrchestratorPlugin | Agent orchestration | (custom) |
 | WorkflowExtensionPlugin | Workflow extension | (custom) |
-| CustomStagePlugin | Custom stage | CUSTOM, SUB_CUSTOM |
+| CustomStagePlugin | Custom capability | CUSTOM, SUB_CUSTOM |
 
 ---
 
@@ -105,7 +107,7 @@ Use for **plugin type dropdown** in pipeline editor and for **filtering plugins 
 | worker | object | Yes | Form: queueName (text), strictBoot (checkbox). |
 | temporal | object | No | Form: target, namespace. |
 | activity | object | No | Nested: payload (numbers), defaultTimeouts (numbers), retryPolicy (numbers + string[]). |
-| stageOrder | string[] | No | Ordered list; options = predefined stages (§1). |
+| capabilityOrder / stageOrder | string[] | No | Ordered list; options = predefined capabilities (§1). |
 | mergePolicies | object | No | Key-value; value = LAST_WINS \| FIRST_WINS \| PREFIX_BY_ACTIVITY \| FQCN. |
 | pipelines | object | Yes | Pipeline list; each pipeline = form or canvas (§5). |
 | plugins | string[] | No | Multi-select or list; values = allowed plugin names (FQCN/activity id). |
@@ -141,57 +143,57 @@ Use for **plugin type dropdown** in pipeline editor and for **filtering plugins 
 
 ## 5. Pipeline structure (for pipeline editor)
 
-- **Root by stage (recommended):** `pipelines.<id>.root` is an object whose **keys are stage names** (from §1) and values are **GROUP** nodes. Order of execution = order of stages in **stageOrder** (only stages present in root are run).
-- **One stage = one card/column:** Each key in `root` is one stage; value must be `{ "type": "GROUP", "executionMode": "SYNC"|"ASYNC", "children": [ ... ] }`.
+- **Root by capability (recommended):** `pipelines.<id>.root` is an object whose **keys are capability names** (from §1) and values are **GROUP** nodes. Order of execution = order of capabilities in **capabilityOrder** (or **stageOrder**) (only capabilities present in root are run).
+- **One capability = one card/column:** Each key in `root` is one capability; value must be `{ "type": "GROUP", "executionMode": "SYNC"|"ASYNC", "children": [ ... ] }`.
 - **Children:** Array of **STAGE** nodes or nested **GROUP**. Each STAGE: `{ "type": "STAGE", "name": "<activity id>", "pluginType": "<from §2>" }`. Optional: `timeoutSeconds`, `retryPolicy`, etc.
 - **Async group options:** `asyncCompletionPolicy`: ALL | FIRST_SUCCESS | FIRST_FAILURE | ALL_SETTLED. `asyncOutputMergePolicy`: name from mergePolicies or built-in (LAST_WINS, FIRST_WINS, PREFIX_BY_ACTIVITY).
 
-Validation: Every STAGE must have `name` and `pluginType`; `pluginType` must be from §2; stage names in `root` and `stageOrder` should be from §1 (or custom if supported).
+Validation: Every STAGE must have `name` and `pluginType`; `pluginType` must be from §2; capability names in `root` and `capabilityOrder`/`stageOrder` should be from §1 (or custom if supported).
 
 **Conditional groups (if/elseif/else):** On a GROUP node set `condition` to a plugin name (activity id). That plugin runs first and must write output key **`branch`** (Integer): 0 = then, 1 = first elseif, …, n−1 = else. **Within condition, use group as children:** prefer **`thenGroup`** (one GROUP), **`elseGroup`** (one GROUP), and **`elseifBranches[].thenGroup`** (one GROUP per branch). Alternatively use `thenChildren`, `elseChildren`, or `elseifBranches[].then` (lists). Only the selected branch runs. Use **ConditionPlugin** as `pluginType` for the condition plugin; stub: `StubConditionPlugin` (always returns branch 0).
 
 ---
 
-## 6. Stage debugging UI reference
+## 6. Capability debugging UI reference
 
 ### 6.1 Activity name in Temporal and logs
 
 - **Format:** `{stageBucketName}::{activityName}`.  
   Example: `MODEL::com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin`.
-- **stageBucketName** = stage name (e.g. MODEL, RETRIEVAL, EVALUATE). Use §1 to show a human-readable label.
+- **stageBucketName** = capability name (e.g. MODEL, RETRIEVAL, EVALUATE). Use §1 to show a human-readable label.
 - **activityName** = plugin `name()` (FQCN or short name). Use this to match config STAGE `name` and plugin registry.
 
 **Debugging UI:** In Temporal activity list (or your run view), parse the activity type to show “Stage: MODEL”, “Plugin: Llama32ChatPlugin”. Link to pipeline config where this stage/plugin is defined.
 
 ### 6.2 Context keys (per execution)
 
-- **originalInput** — Read-only. Keys from workflow input (e.g. `question`, `document`, `messages`, `pipelineName`). Same for all stages in the run.
-- **accumulatedOutput** — Read-only at plugin entry. Merged output from all **previous** stages. Common keys (pipeline-dependent):
+- **originalInput** — Read-only. Keys from workflow input (e.g. `question`, `document`, `messages`, `pipelineName`). Same for all capabilities in the run.
+- **accumulatedOutput** — Read-only at plugin entry. Merged output from all **previous** capabilities. Common keys (pipeline-dependent):
   - `tokenizedChunks`, `retrievedChunks` (after FILTER/RETRIEVAL)
   - `result`, `response` (after MODEL, POST_PROCESS)
   - `memory*`, plugin-specific keys
-- **currentPluginOutput** — What this plugin writes via `context.putOutput(key, value)`. After the stage, this map is merged into accumulated output for the next stage.
+- **currentPluginOutput** — What this plugin writes via `context.putOutput(key, value)`. After the capability, this map is merged into accumulated output for the next capability.
 
 **Debugging UI:** For “current stage” show: stage name (§1), activity name, and a snapshot of **originalInput** (collapsed), **accumulatedOutput** (expandable), and **currentPluginOutput** (or stage result output) after the stage completes.
 
 ### 6.3 Execution flow (for “stage timeline” or “run diagram”)
 
-1. Order of stages = **stageOrder** (or pipeline root keys in that order). Only stages present in the pipeline root (and in stageOrder) run.
-2. Within a stage: one or more **groups**; each group runs its **children** (SYNC = sequential, ASYNC = parallel). After ASYNC, merge policy runs.
+1. Order of capabilities = **capabilityOrder** (or **stageOrder**) (or pipeline root keys in that order). Only capabilities present in the pipeline root (and in capabilityOrder/stageOrder) run.
+2. Within a capability: one or more **groups**; each group runs its **children** (SYNC = sequential, ASYNC = parallel). After ASYNC, merge policy runs.
 3. Each child is one **activity** = one plugin. Activity type string = `stageBucketName::activityName` (see 6.1).
 
-**Debugging UI:** Render a vertical or horizontal timeline of stages; for each stage show group(s) and activity names; for each activity show status (scheduled/running/completed/failed) and optional input/output summary (key names or truncated values).
+**Debugging UI:** Render a vertical or horizontal timeline of capabilities; for each capability show group(s) and activity names; for each activity show status (scheduled/running/completed/failed) and optional input/output summary (key names or truncated values).
 
 ### 6.4 Useful display fields per run
 
 | Field | Source | Use in UI |
 |-------|--------|-----------|
 | Pipeline name | workflow input / ExecutionCommand | Title or breadcrumb. |
-| Stage order | config stageOrder + pipeline root | List of “expected” stages. |
-| Current / completed stage | Temporal activity history | Highlight current; checkmarks for completed. |
-| Activity type | Activity type string | Parse to stage + plugin name. |
+| Capability order | config capabilityOrder/stageOrder + pipeline root | List of “expected” stages. |
+| Current / completed capability | Temporal activity history | Highlight current; checkmarks for completed. |
+| Activity type | Activity type string | Parse to capability + plugin name. |
 | Input (to activity) | originalInput + accumulatedOutput | Expandable “Input” panel. |
-| Output (from activity) | Stage result / currentPluginOutput | “Output” or “Result” panel. |
+| Output (from activity) | Result / currentPluginOutput | “Output” or “Result” panel. |
 | Error | Activity failure | Error message and stack. |
 
 ---
@@ -220,4 +222,4 @@ Custom: value in `mergePolicies` can be a FQCN; reference by the key in `asyncOu
 
 ---
 
-*This reference is intended to be stable so that Configuration UI and Stage Debugging UI can rely on it for validation, dropdowns, and display logic. When adding new predefined stages or plugin types, update this file and the code (PredefinedStages, PluginTypes, configuration-reference.md) together.*
+*This reference is intended to be stable so that Configuration UI and Capability Debugging UI can rely on it for validation, dropdowns, and display logic. When adding new predefined capabilities or plugin types, update this file and the code (PredefinedStages/PredefinedCapabilities, PluginTypes, configuration-reference.md) together.*

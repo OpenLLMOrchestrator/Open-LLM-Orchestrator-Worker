@@ -4,7 +4,7 @@
     "queueName": "core-task-queue",
     "strictBoot": false
   },
-  "stageOrder": ["RETRIEVAL", "MODEL", "POST_PROCESS"],
+  "capabilityOrder": ["RETRIEVAL", "MODEL", "POST_PROCESS"],
   "plugins": [
     "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin",
     "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin",

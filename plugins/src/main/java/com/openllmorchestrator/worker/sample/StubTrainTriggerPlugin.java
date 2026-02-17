@@ -19,13 +19,13 @@ import com.openllmorchestrator.worker.contract.ContractCompatibility;
 import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.Map;
 
 /** Stub train-trigger plugin: no-op placeholder for TRAIN_TRIGGER stage. Replace with a real implementation to trigger fine-tuning or training jobs when conditions are met. */
-public final class StubTrainTriggerPlugin implements StageHandler, ContractCompatibility, PluginTypeDescriptor {
+public final class StubTrainTriggerPlugin implements CapabilityHandler, ContractCompatibility, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.sample.StubTrainTriggerPlugin";
@@ -36,11 +36,11 @@ public final class StubTrainTriggerPlugin implements StageHandler, ContractCompa
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         context.putOutput("trainTriggerRun", false);
         context.putOutput("trainTriggerStub", true);
-        return StageResult.builder()
-                .stageName(NAME)
+        return CapabilityResult.builder()
+                .capabilityName(NAME)
                 .output(Map.copyOf(context.getCurrentPluginOutput()))
                 .build();
     }

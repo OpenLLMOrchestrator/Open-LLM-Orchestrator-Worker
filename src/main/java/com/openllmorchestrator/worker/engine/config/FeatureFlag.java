@@ -37,7 +37,7 @@ public enum FeatureFlag {
     OUTPUT_CONTRACT,
     /** Execution graph (DAG): topological order; when off, linear stageOrder only. */
     EXECUTION_GRAPH,
-    /** Stage result envelope: StageMetadata, DependencyRef, deterministic flag on result. */
+    /** Stage result envelope: CapabilityMetadata, DependencyRef, deterministic flag on result. */
     STAGE_RESULT_ENVELOPE,
     /** Versioned state: stepId, executionId, immutable state per step. */
     VERSIONED_STATE,

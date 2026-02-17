@@ -20,8 +20,8 @@ import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.List;
 import java.util.Map;
@@ -30,7 +30,7 @@ import java.util.Set;
 /**
  * Document tokenizer plugin. Splits document content into chunks (e.g. for embedding and storage).
  */
-public final class DocumentTokenizerPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+public final class DocumentTokenizerPlugin implements CapabilityHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.plugin.tokenizer.DocumentTokenizerPlugin";
@@ -41,7 +41,7 @@ public final class DocumentTokenizerPlugin implements StageHandler, ContractComp
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         Map<String, Object> input = context.getOriginalInput();
 
         Object docObj = input.get("document");
@@ -50,7 +50,7 @@ public final class DocumentTokenizerPlugin implements StageHandler, ContractComp
 
         context.putOutput("tokenizedChunks", chunks);
 
-        return StageResult.builder().stageName(NAME).data(context.getCurrentPluginOutput()).build();
+        return CapabilityResult.builder().capabilityName(NAME).data(context.getCurrentPluginOutput()).build();
     }
 
     @Override

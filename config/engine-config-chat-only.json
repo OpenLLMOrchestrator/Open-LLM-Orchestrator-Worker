@@ -4,7 +4,7 @@
     "queueName": "core-task-queue",
     "strictBoot": false
   },
-  "stageOrder": ["MODEL", "POST_PROCESS"],
+  "capabilityOrder": ["MODEL", "POST_PROCESS"],
   "plugins": [
     "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin",
     "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin"

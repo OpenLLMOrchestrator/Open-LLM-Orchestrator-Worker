@@ -69,7 +69,7 @@ Optional fields you can add on the same level as `pipelineName` and `input`: `op
 
 ## 2. Train flow (ingest folder into vector DB)
 
-Use this to read **all files** from a folder and put them into the vector DB. The plugin reads every file (e.g. under `samples/rag-docs`), outputs chunks, and the vector store stage stores them.
+Use this to read **all files** from a folder and put them into the vector DB. The plugin reads every file (e.g. under `samples/rag-docs`), outputs chunks, and the vector store capability stores them.
 
 ### 3.1 Open "Start Workflow"
 
@@ -117,7 +117,7 @@ Use this to read **all files** from a folder and put them into the vector DB. Th
 
 ### 2.4 Start the workflow
 
-- Click **Start** (or **Run**). The workflow will read all matching files from the folder and pass them to the vector store stage.
+- Click **Start** (or **Run**). The workflow will read all matching files from the folder and pass them to the vector store capability.
 
 ---
 
@@ -165,7 +165,7 @@ Another example:
 ### 3.4 Start the workflow
 
 - Click **Start** (or **Run**).
-- In the workflow result/history, the last stage output will contain the **response** from the LLM (stub or real, depending on your plugin).
+- In the workflow result/history, the last capability output will contain the **response** from the LLM (stub or real, depending on your plugin).
 
 ---
 

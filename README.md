@@ -2,14 +2,14 @@
 
 # Open LLM Orchestrator Worker
 
-A **Temporal-native worker** that runs **config-driven pipelines** for document ingestion, retrieval, and LLM-based question answering (RAG). All behavior is defined in configuration—pipelines, stages, plugins, timeouts, and merge policies—with no hardcoded flows in the engine.
+A **Temporal-native worker** that runs **config-driven pipelines** for document ingestion, retrieval, and LLM-based question answering (RAG). All behavior is defined in configuration—pipelines, capabilities, plugins, timeouts, and merge policies—with no hardcoded flows in the engine.
 
 ---
 
 ## What it does
 
 - **Runs workflows** on a Temporal task queue (`CoreWorkflow`): you send an `ExecutionCommand` with a pipeline name and input; the worker executes the pipeline and returns the accumulated output (including the LLM **result**).
-- **Pipelines** are defined in config (e.g. `config/default.json` or `config/<CONFIG_KEY>.json`): recursive GROUP/STAGE trees or stage-based flows with SYNC/ASYNC groups. Each stage is implemented by a **plugin** (activity) registered by name.
+- **Pipelines** are defined in config (e.g. `config/default.json` or `config/<CONFIG_KEY>.json`): recursive GROUP/STAGE trees or capability-based flows with SYNC/ASYNC groups. Each capability is implemented by a **plugin** (activity) registered by name.
 - **Built-in pipelines** in the default config:
   - **document-ingestion** — Tokenize a document and store chunks in the vector store.
   - **document-ingestion-folder** — Read all files from a folder and store them as chunks.
@@ -22,7 +22,7 @@ Plugins (tokenizer, vector store, folder ingestion, LLM) are included in this re
 ## Features
 
 - **Config-first**: Pipelines, timeouts, retries, merge policies, and task queue come from config (file, Redis, or DB). Env vars override connection settings in production.
-- **Temporal-native**: Single workflow type (`CoreWorkflowImpl`); activities for each stage; workflow returns the full result map (including `result` from the LLM plugin).
+- **Temporal-native**: Single workflow type (`CoreWorkflowImpl`); activities for each capability; workflow returns the full result map (including `result` from the LLM plugin).
 - **Extensible**: Add pipelines and plugins by config and registration; async merge is a **plugin** invoked as an activity before exiting each ASYNC group.
 - **RAG-ready**: Sample pipelines and plugins for document chunking, vector store (stub/real), and LLM (Ollama; URL and model via `OLLAMA_BASE_URL`, `OLLAMA_MODEL`).
 
@@ -67,7 +67,7 @@ For local development, **Temporal** is required; **Ollama** is optional (the LLM
      "input": { "question": "What is the Open LLM Orchestrator Worker?" }
    }
    ```
-   The workflow **result** is a map containing all stage outputs; the LLM plugin sets **`result`** (and `response`) to the model’s answer.
+   The workflow **result** is a map containing all capability outputs; the LLM plugin sets **`result`** (and `response`) to the model’s answer.
 
 ---
 
@@ -84,17 +84,17 @@ For local development, **Temporal** is required; **Ollama** is optional (the LLM
 
 **Full list** (workflow name, pipeline ID, payload, summary): see **[config/README.md](config/README.md)**.
 
-Workflow **input** is always an **ExecutionCommand**: `{ "pipelineName": "<id>", "input": { ... } }`. The workflow **return value** is a **Map&lt;String, Object&gt;** (accumulated output), including `result` and often `output` from the LLM/post-process stages.
+Workflow **input** is always an **ExecutionCommand**: `{ "pipelineName": "<id>", "input": { ... } }`. The workflow **return value** is a **Map&lt;String, Object&gt;** (accumulated output), including `result` and often `output` from the LLM/post-process capabilities.
 
 ---
 
 ## Configuration
 
 - **Location**: Config is loaded once at startup in order **Redis** → **DB** → **file**. The file path is **`config/<CONFIG_KEY>.json`** when `CONFIG_FILE_PATH` is unset (e.g. `config/default.json` for `CONFIG_KEY=default`). Multiple config files can live in `config/` (e.g. `default.json`, `production.json`); set **`CONFIG_KEY`** to choose which one to load. When config is loaded from file, it is written back to Redis and DB so other pods can use it.
-- **Content**: `worker` (task queue), `temporal`, `activity` (timeouts/retry), `pipelines` (required), optional `redis`, `database`, `stageOrder`, `mergePolicies`. See [Config reference](docs/config-reference.md).
+- **Content**: `worker` (task queue), `temporal`, `activity` (timeouts/retry), `pipelines` (required), optional `redis`, `database`, `capabilityOrder`/`stageOrder`, `mergePolicies`. See [Config reference](docs/config-reference.md).
 - **Production**: Queue name, Redis, and DB URLs are overridden by **environment variables** (e.g. `QUEUE_NAME`, `REDIS_HOST`, `DB_URL`, `CONFIG_KEY`). See the [config reference — environment variables](docs/config-reference.md#production-environment-variables-container) section.
 
-Example configs for each use case (minimal, full, stages, multi-pipeline, document-ingestion, chat-only, RAG, production) are in **`config-examples/`**.
+Example configs for each use case (minimal, full, capabilities, multi-pipeline, document-ingestion, chat-only, RAG, production) are in **`config/`** (see [config reference](docs/config-reference.md)).
 
 ---
 
@@ -103,7 +103,7 @@ Example configs for each use case (minimal, full, stages, multi-pipeline, docume
 | Path | Description |
 |------|-------------|
 | **`config/`** | Config files: **`config/<CONFIG_KEY>.json`** (e.g. `config/default.json`). Load order: Redis → DB → file; file choice by `CONFIG_KEY`. |
-| **`config-examples/`** | Example configs per use case (minimal, full, stages, multi-pipeline, document-ingestion, chat-only, RAG, production). |
+| **`config/`** | Example configs per use case (minimal, full, capabilities, multi-pipeline, document-ingestion, chat-only, RAG, production). |
 | **`docs/README.md`** | Documentation index (all docs and config/env summary). |
 | **`docs/architecture.md`** | High-level architecture and package layout. |
 | **`docs/config-reference.md`** | Full config reference, env vars, and merge policies. |

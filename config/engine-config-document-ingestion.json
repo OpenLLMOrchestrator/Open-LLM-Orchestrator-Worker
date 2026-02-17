@@ -4,7 +4,7 @@
     "queueName": "core-task-queue",
     "strictBoot": false
   },
-  "stageOrder": ["FILTER", "RETRIEVAL"],
+  "capabilityOrder": ["FILTER", "RETRIEVAL"],
   "plugins": [
     "com.openllmorchestrator.worker.plugin.tokenizer.DocumentTokenizerPlugin",
     "com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin"

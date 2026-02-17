@@ -18,15 +18,15 @@ package com.openllmorchestrator.worker.engine.activity.impl;
 import com.openllmorchestrator.worker.engine.activity.KernelStageActivity;
 import com.openllmorchestrator.worker.engine.config.FeatureFlag;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
 import com.openllmorchestrator.worker.contract.OutputContract;
 import com.openllmorchestrator.worker.contract.OutputContractValidator;
 import com.openllmorchestrator.worker.contract.ContractVersion;
 import com.openllmorchestrator.worker.contract.OutputContractViolationException;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.engine.stage.predefined.PredefinedStages;
-import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.engine.capability.predefined.PredefinedCapabilities;
+import com.openllmorchestrator.worker.engine.capability.resolver.CapabilityResolver;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -40,13 +40,13 @@ import java.util.Map;
 public class KernelStageActivityImpl implements KernelStageActivity {
 
     @Override
-    public StageResult execute(String stageName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput) {
+    public CapabilityResult execute(String stageName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput) {
         log.debug(">>> [START] Stage: {} | Thread: {}", stageName, Thread.currentThread().getName());
 
-        StageResolver resolver = EngineRuntime.getStageResolver();
-        StageHandler handler = resolver.resolve(stageName);
+        CapabilityResolver resolver = EngineRuntime.getCapabilityResolver();
+        CapabilityHandler handler = resolver.resolve(stageName);
         if (handler == null) {
-            if (PredefinedStages.isPredefined(stageName)) {
+            if (PredefinedCapabilities.isPredefined(stageName)) {
                 throw new IllegalStateException("Predefined stage '" + stageName
                         + "' has no plugin registered. Register a handler for this stage.");
             }
@@ -57,21 +57,21 @@ public class KernelStageActivityImpl implements KernelStageActivity {
         ExecutionContext context = ExecutionContext.forActivity(
                 originalInput != null ? originalInput : Map.of(),
                 accumulatedOutput != null ? accumulatedOutput : Map.of());
-        StageResult handlerResult = handler.execute(context);
+        CapabilityResult handlerResult = handler.execute(context);
         validateOutputContract(handler, context.getCurrentPluginOutput(), stageName);
         log.debug("<<< [END] Stage: {} | Thread: {}", stageName, Thread.currentThread().getName());
         Map<String, Object> output = context.getCurrentPluginOutput() != null && !context.getCurrentPluginOutput().isEmpty()
                 ? new HashMap<>(context.getCurrentPluginOutput())
                 : (handlerResult != null && handlerResult.getOutput() != null ? new HashMap<>(handlerResult.getOutput()) : new HashMap<>());
         boolean requestBreak = context.isPipelineBreakRequested() || (handlerResult != null && handlerResult.isRequestPipelineBreak());
-        return StageResult.builder()
-                .stageName(stageName)
+        return CapabilityResult.builder()
+                .capabilityName(stageName)
                 .output(output)
                 .requestPipelineBreak(requestBreak)
                 .build();
     }
 
-    static void validateOutputContract(StageHandler handler, Map<String, Object> output, String stageName) {
+    static void validateOutputContract(CapabilityHandler handler, Map<String, Object> output, String stageName) {
         if (EngineRuntime.getFeatureFlags() != null && !EngineRuntime.getFeatureFlags().isEnabled(FeatureFlag.OUTPUT_CONTRACT)) {
             return;
         }

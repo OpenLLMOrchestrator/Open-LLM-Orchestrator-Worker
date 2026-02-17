@@ -15,8 +15,8 @@
  */
 package com.openllmorchestrator.worker.engine.kernel;
 
+import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
 import com.openllmorchestrator.worker.engine.contract.ContextSnapshot;
-import com.openllmorchestrator.worker.engine.stage.StagePlan;
 import lombok.Getter;
 
 import java.util.Collections;
@@ -29,12 +29,12 @@ import java.util.Set;
  */
 @Getter
 public class ExecutionSnapshot {
-    private final StagePlan plan;
+    private final CapabilityPlan plan;
     /** Group indices that have completed (deterministic set). */
     private final Set<Integer> completedGroupIndices;
     private final ContextSnapshot contextSnapshot;
 
-    public ExecutionSnapshot(StagePlan plan, Set<Integer> completedGroupIndices, ContextSnapshot contextSnapshot) {
+    public ExecutionSnapshot(CapabilityPlan plan, Set<Integer> completedGroupIndices, ContextSnapshot contextSnapshot) {
         this.plan = plan;
         this.completedGroupIndices = completedGroupIndices != null
                 ? Collections.unmodifiableSet(completedGroupIndices)

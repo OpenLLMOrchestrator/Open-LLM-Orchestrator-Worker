@@ -16,15 +16,8 @@
 package com.openllmorchestrator.worker.contract;
 
 /**
- * Optional streaming-aware stage contract. When a handler implements this, the kernel may call
- * execute(context, observer) with a non-null observer for streaming output.
+ * @deprecated Use {@link StreamingCapabilityHandler}.
  */
-public interface StreamingStageHandler extends StageHandler {
-
-    StageResult execute(PluginContext context, StreamObserver observer);
-
-    @Override
-    default StageResult execute(PluginContext context) {
-        return execute(context, null);
-    }
+@Deprecated
+public interface StreamingStageHandler extends StreamingCapabilityHandler {
 }

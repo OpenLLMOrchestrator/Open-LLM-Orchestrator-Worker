@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.plugin;
 
-import com.openllmorchestrator.worker.contract.StageHandler;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
@@ -29,8 +29,8 @@ import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
- * Loads a StageHandler from a JAR file. The JAR must provide a service implementation via
- * META-INF/services/com.openllmorchestrator.worker.contract.StageHandler.
+ * Loads a CapabilityHandler from a JAR file. The JAR must provide a service implementation via
+ * META-INF/services/com.openllmorchestrator.worker.contract.CapabilityHandler.
  * If the file does not exist or loading fails, returns null (caller should log and register a no-op wrapper).
  */
 @Slf4j
@@ -39,13 +39,13 @@ public final class DynamicPluginLoader {
     private DynamicPluginLoader() {}
 
     /**
-     * Try to load a single StageHandler from the given JAR path.
+     * Try to load a single CapabilityHandler from the given JAR path.
      *
      * @param jarPath path to the JAR (absolute or relative to current working directory)
      * @param pluginName name used for logging and registration
-     * @return the loaded handler, or null if the file is missing, not a JAR, or no StageHandler service is found
+     * @return the loaded handler, or null if the file is missing, not a JAR, or no CapabilityHandler service is found
      */
-    public static StageHandler load(String jarPath, String pluginName) {
+    public static CapabilityHandler load(String jarPath, String pluginName) {
         if (jarPath == null || jarPath.isBlank()) {
             log.debug("Dynamic plugin '{}': JAR path is blank, skipping.", pluginName);
             return null;
@@ -67,15 +67,15 @@ public final class DynamicPluginLoader {
         try {
             URL jarUrl = file.toURI().toURL();
             try (URLClassLoader loader = new URLClassLoader(new URL[]{jarUrl}, Thread.currentThread().getContextClassLoader())) {
-                ServiceLoader<StageHandler> serviceLoader = ServiceLoader.load(StageHandler.class, loader);
-                Iterator<StageHandler> it = serviceLoader.iterator();
+                ServiceLoader<CapabilityHandler> serviceLoader = ServiceLoader.load(CapabilityHandler.class, loader);
+                Iterator<CapabilityHandler> it = serviceLoader.iterator();
                 if (!it.hasNext()) {
-                    log.info("Dynamic plugin '{}': no StageHandler service found in JAR '{}' (expect META-INF/services/com.openllmorchestrator.worker.contract.StageHandler); skipping.", pluginName, resolved);
+                    log.info("Dynamic plugin '{}': no CapabilityHandler service found in JAR '{}' (expect META-INF/services/com.openllmorchestrator.worker.contract.CapabilityHandler); skipping.", pluginName, resolved);
                     return null;
                 }
-                StageHandler handler = it.next();
+                CapabilityHandler handler = it.next();
                 if (it.hasNext()) {
-                    log.warn("Dynamic plugin '{}': multiple StageHandler implementations in JAR '{}'; using first.", pluginName, resolved);
+                    log.warn("Dynamic plugin '{}': multiple CapabilityHandler implementations in JAR '{}'; using first.", pluginName, resolved);
                 }
                 log.info("Dynamic plugin '{}' loaded successfully from '{}'.", pluginName, resolved);
                 return handler;
@@ -87,14 +87,14 @@ public final class DynamicPluginLoader {
     }
 
     /**
-     * Load all StageHandler implementations from the given JAR. Each handler is registered by its {@link StageHandler#name()}.
+     * Load all CapabilityHandler implementations from the given JAR. Each handler is registered by its {@link CapabilityHandler#name()}.
      * Use when one JAR provides multiple plugins (e.g. sample-plugins.jar).
      *
      * @param jarPath path to the JAR (absolute or relative to current working directory)
      * @return map of plugin name to handler; empty if file missing, not a JAR, or no services found; never null
      */
-    public static Map<String, StageHandler> loadAll(String jarPath) {
-        Map<String, StageHandler> out = new LinkedHashMap<>();
+    public static Map<String, CapabilityHandler> loadAll(String jarPath) {
+        Map<String, CapabilityHandler> out = new LinkedHashMap<>();
         if (jarPath == null || jarPath.isBlank()) {
             return out;
         }
@@ -107,8 +107,8 @@ public final class DynamicPluginLoader {
         try {
             URL jarUrl = file.toURI().toURL();
             try (URLClassLoader loader = new URLClassLoader(new URL[]{jarUrl}, Thread.currentThread().getContextClassLoader())) {
-                ServiceLoader<StageHandler> serviceLoader = ServiceLoader.load(StageHandler.class, loader);
-                for (StageHandler handler : serviceLoader) {
+                ServiceLoader<CapabilityHandler> serviceLoader = ServiceLoader.load(CapabilityHandler.class, loader);
+                for (CapabilityHandler handler : serviceLoader) {
                     String name = handler != null ? handler.name() : null;
                     if (name != null && !name.isBlank()) {
                         out.put(name, handler);

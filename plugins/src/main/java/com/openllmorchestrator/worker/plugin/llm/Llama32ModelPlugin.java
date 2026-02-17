@@ -22,8 +22,8 @@ import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -41,7 +41,7 @@ import java.util.Set;
  * Base URL from env OLLAMA_BASE_URL; default model from OLLAMA_MODEL.
  * Input: "question" (string) or "messages" (chat array); optional "modelId". Uses retrievedChunks for RAG context.
  */
-public final class Llama32ModelPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+public final class Llama32ModelPlugin implements CapabilityHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin";
@@ -63,7 +63,7 @@ public final class Llama32ModelPlugin implements StageHandler, ContractCompatibi
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         Map<String, Object> input = context.getOriginalInput();
         Map<String, Object> accumulated = context.getAccumulatedOutput();
 
@@ -79,7 +79,7 @@ public final class Llama32ModelPlugin implements StageHandler, ContractCompatibi
         context.putOutput("response", response);
         context.putOutput("result", response);
 
-        return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+        return CapabilityResult.builder().capabilityName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
     }
 
     @Override

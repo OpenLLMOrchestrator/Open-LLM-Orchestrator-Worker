@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.kernel.merge;
 
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -48,9 +48,9 @@ public enum AsyncOutputMergePolicy implements AsyncMergePolicy {
      * For PREFIX_BY_ACTIVITY: each result's keys are prefixed by activity name.
      */
     @Override
-    public void mergeAll(Map<String, Object> accumulated, List<NamedStageResult> results) {
+    public void mergeAll(Map<String, Object> accumulated, List<NamedCapabilityResult> results) {
         if (results == null || results.isEmpty()) return;
-        for (NamedStageResult r : results) {
+        for (NamedCapabilityResult r : results) {
             Map<String, Object> data = r.getResult() != null && r.getResult().getData() != null
                     ? r.getResult().getData()
                     : Collections.emptyMap();
@@ -65,22 +65,22 @@ public enum AsyncOutputMergePolicy implements AsyncMergePolicy {
 
     /** Pair of activity name and its stage result (for ordered merge). */
     @Getter
-    public static class NamedStageResult {
+    public static class NamedCapabilityResult {
         private final String activityName;
-        private final StageResult result;
+        private final CapabilityResult result;
 
-        public NamedStageResult(String activityName, StageResult result) {
+        public NamedCapabilityResult(String activityName, CapabilityResult result) {
             this.activityName = activityName;
             this.result = result;
         }
 
-        public static List<NamedStageResult> from(List<String> names, List<StageResult> results) {
+        public static List<NamedCapabilityResult> from(List<String> names, List<CapabilityResult> results) {
             if (names == null || results == null || names.size() != results.size()) {
                 return Collections.emptyList();
             }
-            List<NamedStageResult> out = new ArrayList<>(names.size());
+            List<NamedCapabilityResult> out = new ArrayList<>(names.size());
             for (int i = 0; i < names.size(); i++) {
-                out.add(new NamedStageResult(names.get(i), results.get(i)));
+                out.add(new NamedCapabilityResult(names.get(i), results.get(i)));
             }
             return out;
         }

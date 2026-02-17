@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.kernel.interceptor;
 
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 /**
  * No-op interceptor. Use when you need a placeholder or to satisfy a non-null list.
@@ -28,12 +28,12 @@ public final class NoOpExecutionInterceptor implements ExecutionInterceptor {
     private NoOpExecutionInterceptor() {}
 
     @Override
-    public void beforeStage(StageContext ctx) {}
+    public void beforeCapability(CapabilityContext ctx) {}
 
     @Override
-    public void afterStage(StageContext ctx, StageResult result) {}
+    public void afterCapability(CapabilityContext ctx, CapabilityResult result) {}
 
     @Override
-    public void onError(StageContext ctx, Exception e) {}
+    public void onError(CapabilityContext ctx, Exception e) {}
 }
 

@@ -1,0 +1,12 @@
+com.openllmorchestrator.worker.sample.SampleEchoPlugin
+com.openllmorchestrator.worker.sample.StubFilterPlugin
+com.openllmorchestrator.worker.sample.StubRetrievalPlugin
+com.openllmorchestrator.worker.sample.StubModelPlugin
+com.openllmorchestrator.worker.sample.StubRefinementPlugin
+com.openllmorchestrator.worker.sample.StubEvaluationPlugin
+com.openllmorchestrator.worker.sample.StubFeedbackPlugin
+com.openllmorchestrator.worker.sample.StubLearningPlugin
+com.openllmorchestrator.worker.sample.StubDatasetBuildPlugin
+com.openllmorchestrator.worker.sample.StubTrainTriggerPlugin
+com.openllmorchestrator.worker.sample.StubModelRegistryPlugin
+com.openllmorchestrator.worker.sample.StubConditionPlugin

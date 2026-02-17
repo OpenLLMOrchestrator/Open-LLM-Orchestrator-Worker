@@ -16,7 +16,7 @@
 package com.openllmorchestrator.worker.engine.plan;
 
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.stage.StagePlan;
+import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
 
 import java.util.List;
 
@@ -33,7 +33,7 @@ public interface PlanValidator {
      * @param plan    dynamic plan from PLANNER
      * @param context current execution context (tenant, user, allowed list from policy)
      */
-    void validate(StagePlan plan, ExecutionContext context) throws PlanValidationException;
+    void validate(CapabilityPlan plan, ExecutionContext context) throws PlanValidationException;
 
     /** Result of validation: allowed stage names, max depth. */
     interface ValidationRules {

@@ -2,7 +2,7 @@
 
 # Engine configuration reference
 
-All engine behaviour is driven by configuration. **Nothing is hardcoded in the engine.** For **Configuration UI** and **Stage Debugging UI** (stages, plugin types, activity names, context keys), see [**ui-reference.md**](ui-reference.md).
+All engine behaviour is driven by configuration. **Nothing is hardcoded in the engine.** For **Configuration UI** and **Capability Debugging UI** (capabilities, plugin types, activity names, context keys), see [**ui-reference.md**](ui-reference.md).
 
 ---
 
@@ -12,14 +12,14 @@ Example configs live under [`config-examples/`](../config-examples/). Copy and a
 
 | File | Use case |
 |------|----------|
-| [`engine-config-minimal.json`](../config-examples/engine-config-minimal.json) | **Minimal** — Bare minimum: worker queue + one pipeline (`default`) with root (stage map). No temporal, redis, database, or activity. Template plugin names (`com.example.*`). Good for quick start or as a copy-paste base. |
-| [`engine-config-full.json`](../config-examples/engine-config-full.json) | **Full** — All sections: worker, temporal, activity (timeouts + retry), redis, database, stageOrder, pipelines with root (stage map). Template plugin names. Use when you need every section in one file. |
-| [`engine-config-stages.json`](../config-examples/engine-config-stages.json) | **Stages format** — Same pipeline flow expressed with `pipelines.default.stages` (array of stage blocks). Each stage has groups; group `children` are activity names (plugin ids). Use when you prefer the stages-array style over root map. |
-| [`engine-config-multi-pipeline.json`](../config-examples/engine-config-multi-pipeline.json) | **Multiple pipelines** — Two pipelines: `chat` and `document-extraction`. Workflow payload must set `pipelineName` to one of these. Shows mergePolicy and rootByStage. Template plugin names. |
+| [`engine-config-minimal.json`](../config-examples/engine-config-minimal.json) | **Minimal** — Bare minimum: worker queue + one pipeline (`default`) with root (capability map). No temporal, redis, database, or activity. Template plugin names (`com.example.*`). Good for quick start or as a copy-paste base. |
+| [`engine-config-full.json`](../config-examples/engine-config-full.json) | **Full** — All sections: worker, temporal, activity (timeouts + retry), redis, database, capabilityOrder/stageOrder, pipelines with root (capability map). Template plugin names. Use when you need every section in one file. |
+| [`engine-config-capabilities.json`](../config/engine-config-capabilities.json) | **Capabilities format** — Same pipeline flow expressed with `pipelines.default.stages` (array of capability blocks). Each capability has groups; group `children` are activity names (plugin ids). Use when you prefer the stages-array style over root map. |
+| [`engine-config-multi-pipeline.json`](../config-examples/engine-config-multi-pipeline.json) | **Multiple pipelines** — Two pipelines: `chat` and `document-extraction`. Workflow payload must set `pipelineName` to one of these. Shows mergePolicy and rootByCapability/rootByStage. Template plugin names. |
 | [`engine-config-document-ingestion.json`](../config-examples/engine-config-document-ingestion.json) | **Document ingestion** — Single pipeline: FILTER (DocumentTokenizerPlugin) → RETRIEVAL (VectorStoreRetrievalPlugin). Uses real OLO plugin FQCNs. For indexing/digesting documents into a vector store. |
 | [`engine-config-chat-only.json`](../config-examples/engine-config-chat-only.json) | **Chat only** — Single pipeline: MODEL (Llama32ChatPlugin) → POST_PROCESS (AnswerFormatPlugin). No retrieval. Uses real OLO plugins; requires Ollama (or compatible) for the model. |
 | [`engine-config-rag.json`](../config-examples/engine-config-rag.json) | **RAG** — Single pipeline: RETRIEVAL (VectorStoreRetrievalPlugin) → MODEL (Llama32ModelPlugin) → POST_PROCESS (AnswerFormatPlugin). Uses real OLO plugins. For question-answer over indexed documents. |
-| [`engine-config-production.json`](../config-examples/engine-config-production.json) | **Production-style** — Same shape as full: worker, temporal, activity, redis, database, stageOrder, pipelines. In production, set queue/Redis/DB via env (see [Production: environment variables (container)](#production-environment-variables-container)). |
+| [`engine-config-production.json`](../config-examples/engine-config-production.json) | **Production-style** — Same shape as full: worker, temporal, activity, redis, database, capabilityOrder/stageOrder, pipelines. In production, set queue/Redis/DB via env (see [Production: environment variables (container)](#production-environment-variables-container)). |
 
 ---
 
@@ -68,7 +68,7 @@ After config is loaded, **connection values** (queue name, Redis, DB) are **over
 
 ### Execution hierarchy: build once, reuse for container lifecycle
 
-The **execution hierarchy** (stage plan, resolver, and plugin/activity registries) is **built once** at bootstrap from config and **reused for the entire container lifecycle**. It is **immutable** and holds **no transactional or request-scoped data** (no workflow ID, request context, or per-execution state). This avoids memory leaks: per-run state is passed as execution context at run time and is never retained by the runtime or by stage handlers.
+The **execution hierarchy** (capability plan, resolver, and plugin/activity registries) is **built once** at bootstrap from config and **reused for the entire container lifecycle**. It is **immutable** and holds **no transactional or request-scoped data** (no workflow ID, request context, or per-execution state). This avoids memory leaks: per-run state is passed as execution context at run time and is never retained by the runtime or by capability handlers.
 
 ---
 

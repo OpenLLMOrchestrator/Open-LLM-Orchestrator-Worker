@@ -20,8 +20,8 @@ import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +32,7 @@ import java.util.Set;
  * if length exceeds maxLength (input.maxLength or 10000) or contains blocklist term (input.blocklistWords comma-separated),
  * sets guardrailTriggered and filteredContent.
  */
-public final class SimpleGuardrailPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+public final class SimpleGuardrailPlugin implements CapabilityHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.plugin.guardrail.SimpleGuardrailPlugin";
@@ -44,7 +44,7 @@ public final class SimpleGuardrailPlugin implements StageHandler, ContractCompat
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         Map<String, Object> input = context.getOriginalInput();
         Map<String, Object> accumulated = context.getAccumulatedOutput();
         String content = null;
@@ -81,7 +81,7 @@ public final class SimpleGuardrailPlugin implements StageHandler, ContractCompat
         }
         context.putOutput("guardrailTriggered", triggered);
         context.putOutput("filteredContent", filtered);
-        return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+        return CapabilityResult.builder().capabilityName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
     }
 
     @Override

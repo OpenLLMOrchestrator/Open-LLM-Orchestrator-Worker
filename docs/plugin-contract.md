@@ -8,9 +8,9 @@ This document is the **authoritative contract** for building plugins for the Ope
 
 ## 1. What is a plugin?
 
-A **plugin** is a unit of work that runs at a specific **stage** in a pipeline. The engine executes stages in order; each stage can run one or more plugins (in SYNC or ASYNC groups). The engine resolves the plugin by **name** (the same name you use in pipeline config), invokes it with an **execution context**, and merges its **result** into the pipeline state.
+A **plugin** is a unit of work that runs at a specific **capability** in a pipeline. The engine executes capabilities in order; each capability can run one or more plugins (in SYNC or ASYNC groups). The engine resolves the plugin by **name** (the same name you use in pipeline config), invokes it with an **execution context**, and merges its **result** into the pipeline state.
 
-- **Stage** = pipeline phase (e.g. `ACCESS`, `RETRIEVAL`, `MODEL`, `POST_PROCESS`). Order is defined by `stageOrder` or pipeline structure.
+- **Capability** = pipeline phase (e.g. `ACCESS`, `RETRIEVAL`, `MODEL`, `POST_PROCESS`). Order is defined by `capabilityOrder` (or legacy `stageOrder`) or pipeline structure.
 - **Activity name** = the identifier used in config and registry. It is usually a **fully qualified class name (FQCN)** or a short name (e.g. `LAST_WINS` for a merge handler).
 - **Plugin** = an implementation of `StageHandler` registered under that activity name. The engine looks up the handler by name and calls `execute(context)`.
 
@@ -18,7 +18,7 @@ No reflection is used at runtime: resolution is a **map lookup** by name. Plugin
 
 ---
 
-## 2. Core contract: StageHandler
+## 2. Core contract: StageHandler (capability handler)
 
 Every plugin must implement:
 
@@ -69,14 +69,14 @@ The engine passes one `ExecutionContext` per invocation. You use it to read inpu
 | Method | Description |
 |--------|-------------|
 | `getOriginalInput()` | Read-only map: initial pipeline input (e.g. `question`, `document`, `messages`). Same for every plugin in the run. |
-| `getAccumulatedOutput()` | Read-only map: outputs from all previous stages. Keys and conventions are pipeline-specific (e.g. `tokenizedChunks`, `retrievedChunks`, `result`, `response`). |
-| `putOutput(key, value)` | Write your stage output. Same as `getCurrentPluginOutput().put(key, value)`. These entries are merged into accumulated state after your stage. |
+| `getAccumulatedOutput()` | Read-only map: outputs from all previous capabilities. Keys and conventions are pipeline-specific (e.g. `tokenizedChunks`, `retrievedChunks`, `result`, `response`). |
+| `putOutput(key, value)` | Write your capability output. Same as `getCurrentPluginOutput().put(key, value)`. These entries are merged into accumulated state after your capability. |
 | `getCurrentPluginOutput()` | Mutable map for this plugin’s output. Prefer `putOutput(key, value)` for clarity. |
 
 ### 3.2 Optional behavior (feature-flagged)
 
 - **Human-in-the-loop:** `requestSuspendForSignal()` — request workflow to suspend until an external signal (e.g. human approval). Only effective when `HUMAN_SIGNAL` is enabled.
-- **Pipeline break:** `requestPipelineBreak()` — request to stop the pipeline after this stage (no further stages). For ASYNC groups, break happens only when all activities in the group request break (when so configured).
+- **Pipeline break:** `requestPipelineBreak()` — request to stop the pipeline after this capability (no further capabilities run). For ASYNC groups, break happens only when all activities in the group request break (when so configured).
 - **Agent context:** `getAgentContext()`, `setAgentContext(...)` — when `AGENT_CONTEXT` is enabled, for durable agent identity and memory.
 - **Determinism:** `getDeterminismPolicy()`, `getRandomnessSeed()` — when `DETERMINISM_POLICY` is enabled, for reproducible runs.
 

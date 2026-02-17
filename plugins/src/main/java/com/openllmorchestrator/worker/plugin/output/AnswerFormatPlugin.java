@@ -20,8 +20,8 @@ import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +31,7 @@ import java.util.Set;
  * Post-process stage that renders the model output as a single line: ANS: "&lt;response&gt;".
  * Reads "result" or "response" from accumulated output and writes "output" in that format.
  */
-public final class AnswerFormatPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+public final class AnswerFormatPlugin implements CapabilityHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.plugin.output.AnswerFormatPlugin";
@@ -43,7 +43,7 @@ public final class AnswerFormatPlugin implements StageHandler, ContractCompatibi
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         Map<String, Object> accumulated = context.getAccumulatedOutput();
         String text = null;
         Object result = accumulated.get("result");
@@ -61,7 +61,7 @@ public final class AnswerFormatPlugin implements StageHandler, ContractCompatibi
         }
         String formatted = PREFIX + escapeQuotes(text) + "\"";
         context.putOutput("output", formatted);
-        return StageResult.builder().stageName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
+        return CapabilityResult.builder().capabilityName(NAME).data(new HashMap<>(context.getCurrentPluginOutput())).build();
     }
 
     @Override

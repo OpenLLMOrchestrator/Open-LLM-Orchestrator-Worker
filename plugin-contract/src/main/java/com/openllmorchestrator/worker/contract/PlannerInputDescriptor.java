@@ -70,12 +70,12 @@ public interface PlannerInputDescriptor {
      * @param handlers stage handlers (e.g. compatible plugin registry values)
      * @return union of required field keys from all descriptors; never null
      */
-    static Set<String> collectRequiredFields(Iterable<? extends StageHandler> handlers) {
+    static Set<String> collectRequiredFields(Iterable<? extends CapabilityHandler> handlers) {
         Set<String> union = new LinkedHashSet<>();
         if (handlers == null) {
             return union;
         }
-        for (StageHandler h : handlers) {
+        for (CapabilityHandler h : handlers) {
             if (h instanceof PlannerInputDescriptor) {
                 Set<String> fields = ((PlannerInputDescriptor) h).getRequiredInputFieldsForPlanner();
                 if (fields != null) {
@@ -94,7 +94,7 @@ public interface PlannerInputDescriptor {
      * @param handlers stage handlers (e.g. compatible plugin registry values)
      * @return list of planner-facing plugin info; never null
      */
-    static List<PlannerPluginInfo> collectPluginInfo(Iterable<? extends StageHandler> handlers) {
+    static List<PlannerPluginInfo> collectPluginInfo(Iterable<? extends CapabilityHandler> handlers) {
         return collectPluginInfoOrAvailableTools(handlers, null);
     }
 
@@ -111,19 +111,19 @@ public interface PlannerInputDescriptor {
      *                       If null or empty, include all handlers that implement {@link PlannerInputDescriptor}.
      * @return list of planner-facing plugin info to send as available tools; never null
      */
-    static List<PlannerPluginInfo> collectAvailableTools(Iterable<? extends StageHandler> handlers,
+    static List<PlannerPluginInfo> collectAvailableTools(Iterable<? extends CapabilityHandler> handlers,
                                                          Set<String> typesToInclude) {
         return collectPluginInfoOrAvailableTools(handlers, typesToInclude);
     }
 
     private static List<PlannerPluginInfo> collectPluginInfoOrAvailableTools(
-            Iterable<? extends StageHandler> handlers, Set<String> typesToInclude) {
+            Iterable<? extends CapabilityHandler> handlers, Set<String> typesToInclude) {
         List<PlannerPluginInfo> out = new ArrayList<>();
         if (handlers == null) {
             return out;
         }
         boolean filterByType = typesToInclude != null && !typesToInclude.isEmpty();
-        for (StageHandler h : handlers) {
+        for (CapabilityHandler h : handlers) {
             if (!(h instanceof PlannerInputDescriptor)) {
                 continue;
             }

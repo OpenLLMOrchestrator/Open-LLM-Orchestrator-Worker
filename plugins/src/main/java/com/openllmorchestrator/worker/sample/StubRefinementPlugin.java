@@ -20,15 +20,15 @@ import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 /** Stub refinement plugin: formats result/response as ANS: "...". For demos and contract-only plugins module. */
-public final class StubRefinementPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+public final class StubRefinementPlugin implements CapabilityHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.sample.StubRefinementPlugin";
@@ -39,7 +39,7 @@ public final class StubRefinementPlugin implements StageHandler, ContractCompati
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         Map<String, Object> accumulated = context.getAccumulatedOutput();
         Object result = accumulated.get("result");
         if (result == null) {
@@ -48,8 +48,8 @@ public final class StubRefinementPlugin implements StageHandler, ContractCompati
         String text = result != null ? result.toString().trim() : "";
         String formatted = "ANS: \"" + (text.isEmpty() ? "" : text.replace("\\", "\\\\").replace("\"", "\\\"")) + "\"";
         context.putOutput("output", formatted);
-        return StageResult.builder()
-                .stageName(NAME)
+        return CapabilityResult.builder()
+                .capabilityName(NAME)
                 .output(new HashMap<>(context.getCurrentPluginOutput()))
                 .build();
     }

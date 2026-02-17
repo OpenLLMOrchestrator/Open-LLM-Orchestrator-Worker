@@ -29,7 +29,8 @@ import java.util.Map;
 /**
  * Deserializes pipeline section. The "root" key is polymorphic:
  * - If root is an object with "type" (e.g. GROUP), it is a single root tree (legacy) → set root.
- * - Otherwise root is an object with stage names as keys and GROUP configs as values → set rootByStage.
+ * - Otherwise root is an object with capability names as keys and GROUP configs as values → set rootByStage.
+ * "rootByCapability" is an alias for the same map shape (capability name → GROUP); when present it sets rootByStage.
  */
 public final class PipelineSectionDeserializer extends JsonDeserializer<PipelineSection> {
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -62,6 +63,12 @@ public final class PipelineSectionDeserializer extends JsonDeserializer<Pipeline
             if (rootNode.isObject() && rootNode.has("type")) {
                 section.setRoot(MAPPER.treeToValue(rootNode, NodeConfig.class));
             } else if (rootNode.isObject()) {
+                section.setRootByStage(MAPPER.convertValue(rootNode, new TypeReference<Map<String, NodeConfig>>() {}));
+            }
+        }
+        if (node.has("rootByCapability")) {
+            JsonNode rootNode = node.get("rootByCapability");
+            if (rootNode.isObject()) {
                 section.setRootByStage(MAPPER.convertValue(rootNode, new TypeReference<Map<String, NodeConfig>>() {}));
             }
         }

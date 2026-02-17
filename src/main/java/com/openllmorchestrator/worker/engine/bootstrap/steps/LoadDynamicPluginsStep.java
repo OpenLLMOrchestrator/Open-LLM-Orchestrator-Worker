@@ -15,13 +15,13 @@
  */
 package com.openllmorchestrator.worker.engine.bootstrap.steps;
 
-import com.openllmorchestrator.worker.contract.StageHandler;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapContext;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapStep;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.plugin.DynamicPluginLoader;
-import com.openllmorchestrator.worker.engine.stage.activity.ActivityRegistry;
-import com.openllmorchestrator.worker.engine.stage.handler.DynamicPluginWrapper;
+import com.openllmorchestrator.worker.engine.capability.activity.ActivityRegistry;
+import com.openllmorchestrator.worker.engine.capability.handler.DynamicPluginWrapper;
 
 import java.util.Map;
 
@@ -51,7 +51,7 @@ public final class LoadDynamicPluginsStep implements BootstrapStep {
             if (jarPath == null || jarPath.isBlank()) {
                 continue;
             }
-            Map<String, StageHandler> loaded = DynamicPluginLoader.loadAll(jarPath);
+            Map<String, CapabilityHandler> loaded = DynamicPluginLoader.loadAll(jarPath);
             loaded.forEach(builder::register);
         }
         for (Map.Entry<String, String> entry : dynamicPlugins.entrySet()) {
@@ -60,8 +60,8 @@ public final class LoadDynamicPluginsStep implements BootstrapStep {
             if (pluginName == null || pluginName.isBlank()) {
                 continue;
             }
-            StageHandler loaded = DynamicPluginLoader.load(jarPath, pluginName);
-            StageHandler handler = loaded != null ? loaded : new DynamicPluginWrapper(pluginName, null);
+            CapabilityHandler loaded = DynamicPluginLoader.load(jarPath, pluginName);
+            CapabilityHandler handler = loaded != null ? loaded : new DynamicPluginWrapper(pluginName, null);
             builder.register(pluginName, handler);
         }
         ctx.setActivityRegistry(builder.build());

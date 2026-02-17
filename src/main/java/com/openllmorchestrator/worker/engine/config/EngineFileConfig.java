@@ -15,11 +15,13 @@
  */
 package com.openllmorchestrator.worker.engine.config;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.openllmorchestrator.worker.engine.contract.ExecutionGraph;
 import com.openllmorchestrator.worker.engine.config.activity.ActivityDefaultsConfig;
 import com.openllmorchestrator.worker.engine.config.database.DatabaseConfig;
 import com.openllmorchestrator.worker.engine.config.env.EnvConfig;
+import com.openllmorchestrator.worker.engine.config.pipeline.CapabilityDef;
 import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
 import com.openllmorchestrator.worker.engine.config.queue.QueueTopologyConfig;
 import com.openllmorchestrator.worker.engine.config.redis.RedisConfig;
@@ -45,10 +47,17 @@ public class EngineFileConfig {
     private RedisConfig redis;
     private DatabaseConfig database;
     /**
-     * Canonical stage order for execution. When using rootByStage, only stages present there are included,
-     * in this order. Not-defined stages are skipped. If null/empty, predefined stage order in code is used.
+     * Capability order for execution. Fixed flow for predefined capabilities; only capabilities present in pipeline root are run, in this order.
+     * Accepts JSON key "capabilityOrder" (preferred) or "stageOrder" (backward compatibility) via {@link com.fasterxml.jackson.annotation.JsonAlias}.
      */
-    private List<String> stageOrder;
+    @JsonAlias("stageOrder")
+    private List<String> capabilityOrder;
+    /**
+     * User-defined capabilities: capability name → definition (pluginType + name).
+     * These can be referenced anywhere in the capability flow (root or inside groups).
+     * Predefined capabilities (ACCESS, MODEL, etc.) need not be listed here.
+     */
+    private Map<String, CapabilityDef> capabilities;
     /**
      * Stage name → plugin id for predefined stages (e.g. ACCESS → "default").
      * Used when resolving handlers. Pipeline-level stagePlugins override when set.
@@ -63,11 +72,11 @@ public class EngineFileConfig {
     private Map<String, PipelineSection> pipelines;
     /**
      * Dynamic plugins: plugin name (activity id) → path to JAR file.
-     * At bootstrap the engine tries to load each JAR and register a StageHandler; if the file is missing or load fails, a no-op wrapper is registered and a log message is emitted. At runtime, if the plugin was not loaded, the wrapper logs and returns empty output.
+     * At bootstrap the engine tries to load each JAR and register a CapabilityHandler; if the file is missing or load fails, a no-op wrapper is registered and a log message is emitted. At runtime, if the plugin was not loaded, the wrapper logs and returns empty output.
      */
     private Map<String, String> dynamicPlugins;
     /**
-     * JAR paths that provide multiple plugins via ServiceLoader. Each JAR is loaded with {@link com.openllmorchestrator.worker.engine.plugin.DynamicPluginLoader#loadAll(String)} and every StageHandler is registered by its {@link com.openllmorchestrator.worker.contract.StageHandler#name()}.
+     * JAR paths that provide multiple plugins via ServiceLoader. Each JAR is loaded with {@link com.openllmorchestrator.worker.engine.plugin.DynamicPluginLoader#loadAll(String)} and every CapabilityHandler is registered by its {@link com.openllmorchestrator.worker.contract.CapabilityHandler#name()}.
      */
     private List<String> dynamicPluginJars;
 
@@ -98,7 +107,8 @@ public class EngineFileConfig {
         merged.temporal = fromStorage != null ? fromStorage.temporal : null;
         merged.activity = fromStorage != null ? fromStorage.activity : null;
         merged.pipelines = fromStorage != null ? fromStorage.pipelines : null;
-        merged.stageOrder = fromStorage != null ? fromStorage.stageOrder : null;
+        merged.capabilityOrder = fromStorage != null ? fromStorage.capabilityOrder : null;
+        merged.capabilities = fromStorage != null ? fromStorage.capabilities : null;
         merged.stagePlugins = fromStorage != null ? fromStorage.stagePlugins : null;
         merged.mergePolicies = fromStorage != null ? fromStorage.mergePolicies : null;
         merged.dynamicPlugins = fromStorage != null ? fromStorage.dynamicPlugins : null;
@@ -120,17 +130,17 @@ public class EngineFileConfig {
         return mergePolicies != null ? mergePolicies : Collections.emptyMap();
     }
 
-    /** Effective stage order: config stageOrder if set, else predefined order in code. */
+    /** Effective capability order: config capabilityOrder (or stageOrder in JSON) if set, else predefined order in code. */
     public List<String> getStageOrderEffective() {
-        if (stageOrder != null && !stageOrder.isEmpty()) {
-            return stageOrder;
+        if (capabilityOrder != null && !capabilityOrder.isEmpty()) {
+            return capabilityOrder;
         }
-        return com.openllmorchestrator.worker.engine.stage.predefined.PredefinedStages.orderedNames();
+        return com.openllmorchestrator.worker.engine.capability.predefined.PredefinedCapabilities.orderedNames();
     }
 
     /**
-     * Effective execution graph. When only stageOrder is set, a linear graph is built (backward compatibility).
-     * For future DAG support, config can provide an explicit graph; until then, graph is derived from stageOrder.
+     * Effective execution graph. When capabilityOrder is set, a linear graph is built (backward compatibility).
+     * For future DAG support, config can provide an explicit graph; until then, graph is derived from capabilityOrder.
      */
     public ExecutionGraph getExecutionGraphEffective() {
         return ExecutionGraph.fromLinearOrder(getStageOrderEffective());
@@ -139,6 +149,11 @@ public class EngineFileConfig {
     /** Effective stage plugins: engine-level if set. */
     public Map<String, String> getStagePluginsEffective() {
         return stagePlugins != null && !stagePlugins.isEmpty() ? stagePlugins : Collections.emptyMap();
+    }
+
+    /** User-defined capabilities (name → definition). Empty if not set. Used to resolve custom capability names anywhere in the flow. */
+    public Map<String, CapabilityDef> getCapabilitiesEffective() {
+        return capabilities != null && !capabilities.isEmpty() ? capabilities : Collections.emptyMap();
     }
 
     /** All pipeline names to use at runtime. Requires at least one pipeline in config. */

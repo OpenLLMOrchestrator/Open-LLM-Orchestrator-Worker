@@ -19,13 +19,13 @@ import com.openllmorchestrator.worker.contract.ContractCompatibility;
 import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.Map;
 
 /** Stub feedback plugin: no-op placeholder for FEEDBACK stage. Replace with a real FeedbackPlugin that collects user ratings/corrections for incremental learning. */
-public final class StubFeedbackPlugin implements StageHandler, ContractCompatibility, PluginTypeDescriptor {
+public final class StubFeedbackPlugin implements CapabilityHandler, ContractCompatibility, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.sample.StubFeedbackPlugin";
@@ -36,11 +36,11 @@ public final class StubFeedbackPlugin implements StageHandler, ContractCompatibi
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         context.putOutput("feedbackCollected", false);
         context.putOutput("feedbackStub", true);
-        return StageResult.builder()
-                .stageName(NAME)
+        return CapabilityResult.builder()
+                .capabilityName(NAME)
                 .output(Map.copyOf(context.getCurrentPluginOutput()))
                 .build();
     }

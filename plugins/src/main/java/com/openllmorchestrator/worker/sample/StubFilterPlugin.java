@@ -20,8 +20,8 @@ import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Set;
 
 /** Stub filter plugin: passes document through as a single tokenized chunk. For demos and contract-only plugins module. */
-public final class StubFilterPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+public final class StubFilterPlugin implements CapabilityHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.sample.StubFilterPlugin";
@@ -41,7 +41,7 @@ public final class StubFilterPlugin implements StageHandler, ContractCompatibili
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         Map<String, Object> input = context.getOriginalInput();
         Object doc = input.get("document");
         String text = doc != null ? doc.toString() : "";
@@ -50,8 +50,8 @@ public final class StubFilterPlugin implements StageHandler, ContractCompatibili
             chunks.add(Map.of("text", text, "index", 0));
         }
         context.putOutput("tokenizedChunks", chunks);
-        return StageResult.builder()
-                .stageName(NAME)
+        return CapabilityResult.builder()
+                .capabilityName(NAME)
                 .output(new HashMap<>(context.getCurrentPluginOutput()))
                 .build();
     }

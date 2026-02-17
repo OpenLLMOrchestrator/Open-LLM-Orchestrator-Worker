@@ -32,7 +32,7 @@
     "username": "postgres",
     "password": "postgres"
   },
-  "stageOrder": ["ACCESS", "MEMORY", "RETRIEVAL", "RETRIEVE", "MODEL", "EVALUATE", "FEEDBACK_CAPTURE", "DATASET_BUILD", "TRAIN_TRIGGER", "MODEL_REGISTRY", "MCP", "TOOL", "FILTER", "POST_PROCESS", "EVALUATION", "FEEDBACK", "LEARNING", "OBSERVABILITY", "CUSTOM"],
+  "capabilityOrder": ["ACCESS", "MEMORY", "RETRIEVAL", "RETRIEVE", "MODEL", "EVALUATE", "FEEDBACK_CAPTURE", "DATASET_BUILD", "TRAIN_TRIGGER", "MODEL_REGISTRY", "MCP", "TOOL", "FILTER", "POST_PROCESS", "EVALUATION", "FEEDBACK", "LEARNING", "OBSERVABILITY", "CUSTOM"],
   "pipelines": {
     "default": {
       "defaultTimeoutSeconds": 30,

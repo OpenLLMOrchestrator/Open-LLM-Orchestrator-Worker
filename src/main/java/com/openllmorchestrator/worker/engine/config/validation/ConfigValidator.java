@@ -16,10 +16,10 @@
 package com.openllmorchestrator.worker.engine.config.validation;
 
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
-import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
+import com.openllmorchestrator.worker.engine.capability.resolver.CapabilityResolver;
 
 /** One validation concern. Add new validators without changing existing ones (OCP). */
 public interface ConfigValidator {
-    void validate(EngineFileConfig config, StageResolver resolver);
+    void validate(EngineFileConfig config, CapabilityResolver resolver);
 }
 

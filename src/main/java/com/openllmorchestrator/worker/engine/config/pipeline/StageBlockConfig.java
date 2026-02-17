@@ -23,7 +23,7 @@ import java.util.List;
 
 /**
  * Top-level stage in the pipeline flow. Each stage has one or more groups (sync/async, recursive).
- * Group children are activity names (plugin ids), each implemented by one StageHandler.
+ * Group children are activity names (plugin ids), each implemented by one CapabilityHandler.
  */
 @Getter
 @Setter

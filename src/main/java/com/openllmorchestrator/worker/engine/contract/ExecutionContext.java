@@ -144,7 +144,7 @@ public class ExecutionContext implements PluginContext {
         this.resumeSignal = resumeSignal;
     }
 
-    /** Request to break the pipeline (no further stages). Activity/stage sets this or returns StageResult with requestPipelineBreak=true. */
+    /** Request to break the pipeline (no further stages). Activity/stage sets this or returns CapabilityResult with requestPipelineBreak=true. */
     public void requestPipelineBreak() {
         this.pipelineBreakRequested = true;
     }

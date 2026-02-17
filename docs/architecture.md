@@ -25,7 +25,7 @@ flowchart LR
     App -->|"2. Bootstrap"| WF
     Temporal -->|"3. Dispatch workflows"| WF
     WF -->|"4. Invoke activities"| Act
-    Act -->|"5. Run stages"| Act
+    Act -->|"5. Run capabilities"| Act
 ```
 
 - **Temporal** drives workflows and activities.
@@ -53,7 +53,7 @@ flowchart TB
         DTOs[worker · redis · database · pipeline]
     end
 
-    subgraph Stage["Stage Engine"]
+    subgraph Capability["Capability Engine"]
         Plan[stage.plan]
         Predefined[stage.predefined]
         Custom[stage.custom]

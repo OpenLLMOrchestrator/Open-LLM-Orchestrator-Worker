@@ -18,17 +18,17 @@ package com.openllmorchestrator.worker.engine.contract;
 /**
  * Well-known keys for planner/plan-executor flow.
  * <ul>
- *   <li>PLANNER stage: a plugin (e.g. LLM planner) builds a {@link com.openllmorchestrator.worker.engine.stage.StagePlan}
- *       using {@link com.openllmorchestrator.worker.engine.stage.StagePlanBuilder} or
- *       {@link com.openllmorchestrator.worker.engine.stage.plan.StagePlanFactory} and stores it in context
+ *   <li>PLANNER capability: a plugin (e.g. LLM planner) builds a {@link com.openllmorchestrator.worker.engine.capability.CapabilityPlan}
+ *       using {@link com.openllmorchestrator.worker.engine.capability.CapabilityPlanBuilder} or
+ *       {@link com.openllmorchestrator.worker.engine.capability.plan.CapabilityPlanFactory} and stores it in context
  *       under {@link #KEY_DYNAMIC_PLAN} via {@code context.putOutput(KEY_DYNAMIC_PLAN, plan)}.</li>
- *   <li>PLAN_EXECUTOR stage: not a plugin; the kernel reads the plan from accumulated output under this key
+ *   <li>PLAN_EXECUTOR capability: not a plugin; the kernel reads the plan from accumulated output under this key
  *       and executes it (when used inside an iterator, acts as an iterative plan executor).</li>
  * </ul>
  */
 public final class PlannerContextKeys {
 
-    /** Key in plugin output / accumulated output where the PLANNER plugin stores the dynamic {@link com.openllmorchestrator.worker.engine.stage.StagePlan}. */
+    /** Key in plugin output / accumulated output where the PLANNER plugin stores the dynamic {@link com.openllmorchestrator.worker.engine.capability.CapabilityPlan}. */
     public static final String KEY_DYNAMIC_PLAN = "dynamicPlan";
 
     private PlannerContextKeys() {}

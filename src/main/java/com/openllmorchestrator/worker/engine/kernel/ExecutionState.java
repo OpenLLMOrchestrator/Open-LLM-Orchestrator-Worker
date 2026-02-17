@@ -15,9 +15,9 @@
  */
 package com.openllmorchestrator.worker.engine.kernel;
 
+import com.openllmorchestrator.worker.engine.capability.CapabilityGroupSpec;
+import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.stage.StageGroupSpec;
-import com.openllmorchestrator.worker.engine.stage.StagePlan;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -33,11 +33,11 @@ import java.util.Set;
  */
 @Getter
 public class ExecutionState {
-    private final StagePlan plan;
+    private final CapabilityPlan plan;
     private final ExecutionContext context;
     private final Set<Integer> completedGroupIndices;
 
-    public ExecutionState(StagePlan plan, ExecutionContext context) {
+    public ExecutionState(CapabilityPlan plan, ExecutionContext context) {
         this.plan = plan;
         this.context = context;
         this.completedGroupIndices = new HashSet<>();
@@ -45,7 +45,7 @@ public class ExecutionState {
 
     /** Deterministic: returns group indices that are ready (all dependencies completed), in ascending order. */
     public List<Integer> getReadyGroupIndices() {
-        List<StageGroupSpec> groups = plan.getGroups();
+        List<CapabilityGroupSpec> groups = plan.getGroups();
         if (groups.isEmpty()) return List.of();
         List<Integer> ready = new ArrayList<>();
         for (int i = 0; i < groups.size(); i++) {

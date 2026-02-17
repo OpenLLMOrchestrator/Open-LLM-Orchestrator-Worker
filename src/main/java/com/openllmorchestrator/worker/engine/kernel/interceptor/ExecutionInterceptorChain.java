@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.kernel.interceptor;
 
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Non-optional snapshot interceptor layer: invokes all registered interceptors before/after each stage and on error.
+ * Non-optional snapshot interceptor layer: invokes all registered interceptors before/after each capability and on error.
  * Exceptions from one interceptor are logged and do not block others.
  */
 @Slf4j
@@ -43,29 +43,29 @@ public final class ExecutionInterceptorChain implements ExecutionInterceptor {
     }
 
     @Override
-    public void beforeStage(StageContext ctx) {
+    public void beforeCapability(CapabilityContext ctx) {
         for (ExecutionInterceptor interceptor : interceptors) {
             try {
-                interceptor.beforeStage(ctx);
+                interceptor.beforeCapability(ctx);
             } catch (Exception e) {
-                log.warn("ExecutionInterceptor {} failed in beforeStage: {}", interceptor.getClass().getSimpleName(), e.getMessage(), e);
+                log.warn("ExecutionInterceptor {} failed in beforeCapability: {}", interceptor.getClass().getSimpleName(), e.getMessage(), e);
             }
         }
     }
 
     @Override
-    public void afterStage(StageContext ctx, StageResult result) {
+    public void afterCapability(CapabilityContext ctx, CapabilityResult result) {
         for (ExecutionInterceptor interceptor : interceptors) {
             try {
-                interceptor.afterStage(ctx, result);
+                interceptor.afterCapability(ctx, result);
             } catch (Exception e) {
-                log.warn("ExecutionInterceptor {} failed in afterStage: {}", interceptor.getClass().getSimpleName(), e.getMessage(), e);
+                log.warn("ExecutionInterceptor {} failed in afterCapability: {}", interceptor.getClass().getSimpleName(), e.getMessage(), e);
             }
         }
     }
 
     @Override
-    public void onError(StageContext ctx, Exception e) {
+    public void onError(CapabilityContext ctx, Exception e) {
         for (ExecutionInterceptor interceptor : interceptors) {
             try {
                 interceptor.onError(ctx, e);

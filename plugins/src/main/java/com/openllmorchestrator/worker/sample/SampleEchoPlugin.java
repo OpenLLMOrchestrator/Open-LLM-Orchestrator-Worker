@@ -20,8 +20,8 @@ import com.openllmorchestrator.worker.contract.PlannerInputDescriptor;
 import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +33,7 @@ import java.util.Set;
  * {@link PlannerInputDescriptor} and {@link PluginTypeDescriptor} so it can be
  * sent as an "available tool" when the planner filters by type.
  */
-public final class SampleEchoPlugin implements StageHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
+public final class SampleEchoPlugin implements CapabilityHandler, ContractCompatibility, PlannerInputDescriptor, PluginTypeDescriptor {
 
     /** Contract version this plugin was built against (match plugin-contract dependency version). */
     private static final String CONTRACT_VERSION = "0.0.1";
@@ -46,14 +46,14 @@ public final class SampleEchoPlugin implements StageHandler, ContractCompatibili
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         Map<String, Object> out = new HashMap<>(context.getOriginalInput());
         out.put("_echo", true);
         for (Map.Entry<String, Object> e : out.entrySet()) {
             context.putOutput(e.getKey(), e.getValue());
         }
-        return StageResult.builder()
-                .stageName(NAME)
+        return CapabilityResult.builder()
+                .capabilityName(NAME)
                 .output(new HashMap<>(context.getCurrentPluginOutput()))
                 .build();
     }

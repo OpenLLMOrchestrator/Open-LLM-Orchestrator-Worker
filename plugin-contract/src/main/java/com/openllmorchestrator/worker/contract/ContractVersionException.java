@@ -17,7 +17,7 @@ package com.openllmorchestrator.worker.contract;
 
 /**
  * Thrown when a plugin declares a required contract version that is not compatible
- * with the runtime contract version (see {@link ContractVersion#requireCompatible(StageHandler)}).
+ * with the runtime contract version (see {@link ContractVersion#requireCompatible(CapabilityHandler)}).
  */
 public class ContractVersionException extends IllegalStateException {
 

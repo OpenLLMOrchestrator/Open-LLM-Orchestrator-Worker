@@ -19,13 +19,13 @@ import com.openllmorchestrator.worker.contract.ContractCompatibility;
 import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.Map;
 
 /** Stub evaluation plugin: no-op placeholder for EVALUATION stage. Replace with a real EvaluationPlugin that scores model output for quality gates or learning triggers. */
-public final class StubEvaluationPlugin implements StageHandler, ContractCompatibility, PluginTypeDescriptor {
+public final class StubEvaluationPlugin implements CapabilityHandler, ContractCompatibility, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.sample.StubEvaluationPlugin";
@@ -36,11 +36,11 @@ public final class StubEvaluationPlugin implements StageHandler, ContractCompati
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         context.putOutput("evaluationScore", 1.0);
         context.putOutput("evaluationStub", true);
-        return StageResult.builder()
-                .stageName(NAME)
+        return CapabilityResult.builder()
+                .capabilityName(NAME)
                 .output(Map.copyOf(context.getCurrentPluginOutput()))
                 .build();
     }

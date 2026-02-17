@@ -15,14 +15,14 @@
  */
 package com.openllmorchestrator.worker.engine.bootstrap.steps;
 
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapContext;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapStep;
-import com.openllmorchestrator.worker.engine.stage.activity.ActivityRegistry;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.engine.stage.handler.merge.FirstWinsMergeHandler;
-import com.openllmorchestrator.worker.engine.stage.handler.merge.LastWinsMergeHandler;
-import com.openllmorchestrator.worker.engine.stage.handler.merge.PrefixByActivityMergeHandler;
-import com.openllmorchestrator.worker.engine.stage.handler.merge.AllModelsResponseFormatMergeHandler;
+import com.openllmorchestrator.worker.engine.capability.activity.ActivityRegistry;
+import com.openllmorchestrator.worker.engine.capability.handler.merge.AllModelsResponseFormatMergeHandler;
+import com.openllmorchestrator.worker.engine.capability.handler.merge.FirstWinsMergeHandler;
+import com.openllmorchestrator.worker.engine.capability.handler.merge.LastWinsMergeHandler;
+import com.openllmorchestrator.worker.engine.capability.handler.merge.PrefixByActivityMergeHandler;
 import com.openllmorchestrator.worker.plugin.folder.FolderIngestionPlugin;
 import com.openllmorchestrator.worker.plugin.vectordb.VectorStoreRetrievalPlugin;
 import com.openllmorchestrator.worker.plugin.llm.Llama32ModelPlugin;
@@ -67,35 +67,35 @@ public final class BuildActivityRegistryStep implements BootstrapStep {
 
     @Override
     public void run(BootstrapContext ctx) {
-        StageHandler vectorStore = new VectorStoreRetrievalPlugin();
-        StageHandler llm = new Llama32ModelPlugin();
-        StageHandler llmChat = new Llama32ChatPlugin();
-        StageHandler tokenizer = new DocumentTokenizerPlugin();
-        StageHandler folderIngestion = new FolderIngestionPlugin();
-        StageHandler answerFormat = new AnswerFormatPlugin();
-        StageHandler allowAllAccess = new AllowAllAccessControlPlugin();
-        StageHandler echoTool = new EchoToolPlugin();
-        StageHandler contextMemory = new ContextMemoryPlugin();
-        StageHandler simpleGuardrail = new SimpleGuardrailPlugin();
-        StageHandler simplePromptBuilder = new SimplePromptBuilderPlugin();
-        StageHandler inMemoryCaching = new InMemoryCachingPlugin();
-        StageHandler passThroughObservability = new PassThroughObservabilityPlugin();
-        StageHandler sampleEcho = new SampleEchoPlugin();
-        StageHandler stubFilter = new StubFilterPlugin();
-        StageHandler stubRetrieval = new StubRetrievalPlugin();
-        StageHandler stubModel = new StubModelPlugin();
-        StageHandler stubRefinement = new StubRefinementPlugin();
-        StageHandler stubEvaluation = new StubEvaluationPlugin();
-        StageHandler stubFeedback = new StubFeedbackPlugin();
-        StageHandler stubLearning = new StubLearningPlugin();
-        StageHandler stubDatasetBuild = new StubDatasetBuildPlugin();
-        StageHandler stubTrainTrigger = new StubTrainTriggerPlugin();
-        StageHandler stubModelRegistry = new StubModelRegistryPlugin();
-        StageHandler stubCondition = new StubConditionPlugin();
-        StageHandler lastWins = new LastWinsMergeHandler();
-        StageHandler firstWins = new FirstWinsMergeHandler();
-        StageHandler prefixByActivity = new PrefixByActivityMergeHandler();
-        StageHandler allModelsFormat = new AllModelsResponseFormatMergeHandler();
+        CapabilityHandler vectorStore = new VectorStoreRetrievalPlugin();
+        CapabilityHandler llm = new Llama32ModelPlugin();
+        CapabilityHandler llmChat = new Llama32ChatPlugin();
+        CapabilityHandler tokenizer = new DocumentTokenizerPlugin();
+        CapabilityHandler folderIngestion = new FolderIngestionPlugin();
+        CapabilityHandler answerFormat = new AnswerFormatPlugin();
+        CapabilityHandler allowAllAccess = new AllowAllAccessControlPlugin();
+        CapabilityHandler echoTool = new EchoToolPlugin();
+        CapabilityHandler contextMemory = new ContextMemoryPlugin();
+        CapabilityHandler simpleGuardrail = new SimpleGuardrailPlugin();
+        CapabilityHandler simplePromptBuilder = new SimplePromptBuilderPlugin();
+        CapabilityHandler inMemoryCaching = new InMemoryCachingPlugin();
+        CapabilityHandler passThroughObservability = new PassThroughObservabilityPlugin();
+        CapabilityHandler sampleEcho = new SampleEchoPlugin();
+        CapabilityHandler stubFilter = new StubFilterPlugin();
+        CapabilityHandler stubRetrieval = new StubRetrievalPlugin();
+        CapabilityHandler stubModel = new StubModelPlugin();
+        CapabilityHandler stubRefinement = new StubRefinementPlugin();
+        CapabilityHandler stubEvaluation = new StubEvaluationPlugin();
+        CapabilityHandler stubFeedback = new StubFeedbackPlugin();
+        CapabilityHandler stubLearning = new StubLearningPlugin();
+        CapabilityHandler stubDatasetBuild = new StubDatasetBuildPlugin();
+        CapabilityHandler stubTrainTrigger = new StubTrainTriggerPlugin();
+        CapabilityHandler stubModelRegistry = new StubModelRegistryPlugin();
+        CapabilityHandler stubCondition = new StubConditionPlugin();
+        CapabilityHandler lastWins = new LastWinsMergeHandler();
+        CapabilityHandler firstWins = new FirstWinsMergeHandler();
+        CapabilityHandler prefixByActivity = new PrefixByActivityMergeHandler();
+        CapabilityHandler allModelsFormat = new AllModelsResponseFormatMergeHandler();
 
         ActivityRegistry registry = ActivityRegistry.builder()
                 .register(FQCN_VECTOR_STORE, vectorStore)

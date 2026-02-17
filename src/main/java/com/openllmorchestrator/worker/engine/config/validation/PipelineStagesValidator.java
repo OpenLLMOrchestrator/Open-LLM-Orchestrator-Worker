@@ -20,7 +20,7 @@ import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.GroupConfig;
 import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
 import com.openllmorchestrator.worker.engine.config.pipeline.StageBlockConfig;
-import com.openllmorchestrator.worker.engine.stage.resolver.StageResolver;
+import com.openllmorchestrator.worker.engine.capability.resolver.CapabilityResolver;
 
 import java.util.List;
 import java.util.Map;
@@ -30,7 +30,7 @@ public final class PipelineStagesValidator implements ConfigValidator {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
-    public void validate(EngineFileConfig config, StageResolver resolver) {
+    public void validate(EngineFileConfig config, CapabilityResolver resolver) {
         Map<String, PipelineSection> effective = config.getPipelinesEffective();
         for (Map.Entry<String, PipelineSection> e : effective.entrySet()) {
             PipelineSection section = e.getValue();
@@ -53,7 +53,7 @@ public final class PipelineStagesValidator implements ConfigValidator {
         }
     }
 
-    private static void validateGroup(GroupConfig group, StageResolver resolver) {
+    private static void validateGroup(GroupConfig group, CapabilityResolver resolver) {
         if (group == null) {
             throw new IllegalStateException("pipeline.stages: group is null");
         }

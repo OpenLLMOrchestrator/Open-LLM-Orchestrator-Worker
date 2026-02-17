@@ -19,13 +19,13 @@ import com.openllmorchestrator.worker.contract.ContractCompatibility;
 import com.openllmorchestrator.worker.contract.PluginContext;
 import com.openllmorchestrator.worker.contract.PluginTypeDescriptor;
 import com.openllmorchestrator.worker.contract.PluginTypes;
-import com.openllmorchestrator.worker.contract.StageHandler;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityHandler;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 
 import java.util.Map;
 
 /** Stub model-registry plugin: no-op placeholder for MODEL_REGISTRY stage. Replace with a real implementation to register or promote trained models for serving. */
-public final class StubModelRegistryPlugin implements StageHandler, ContractCompatibility, PluginTypeDescriptor {
+public final class StubModelRegistryPlugin implements CapabilityHandler, ContractCompatibility, PluginTypeDescriptor {
 
     private static final String CONTRACT_VERSION = "0.0.1";
     public static final String NAME = "com.openllmorchestrator.worker.sample.StubModelRegistryPlugin";
@@ -36,11 +36,11 @@ public final class StubModelRegistryPlugin implements StageHandler, ContractComp
     }
 
     @Override
-    public StageResult execute(PluginContext context) {
+    public CapabilityResult execute(PluginContext context) {
         context.putOutput("modelRegistryRun", false);
         context.putOutput("modelRegistryStub", true);
-        return StageResult.builder()
-                .stageName(NAME)
+        return CapabilityResult.builder()
+                .capabilityName(NAME)
                 .output(Map.copyOf(context.getCurrentPluginOutput()))
                 .build();
     }

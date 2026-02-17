@@ -74,7 +74,7 @@ public final class ContractVersion {
      * If the handler implements {@link ContractCompatibility}, its required version is checked;
      * otherwise the handler is considered compatible.
      */
-    public static boolean isCompatible(StageHandler handler) {
+    public static boolean isCompatible(CapabilityHandler handler) {
         if (handler == null) return true;
         if (!(handler instanceof ContractCompatibility c)) return true;
         String required = c.getRequiredContractVersion();
@@ -84,7 +84,7 @@ public final class ContractVersion {
     /**
      * Throws {@link ContractVersionException} if the handler declares a contract version that is not compatible.
      */
-    public static void requireCompatible(StageHandler handler) {
+    public static void requireCompatible(CapabilityHandler handler) {
         if (handler == null) return;
         if (!(handler instanceof ContractCompatibility c)) return;
         String required = c.getRequiredContractVersion();

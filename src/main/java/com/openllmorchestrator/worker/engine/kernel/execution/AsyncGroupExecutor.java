@@ -18,17 +18,17 @@ package com.openllmorchestrator.worker.engine.kernel.execution;
 import com.openllmorchestrator.worker.engine.config.FeatureFlag;
 import com.openllmorchestrator.worker.engine.config.FeatureFlags;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.contract.StageMetadata;
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityMetadata;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
+import com.openllmorchestrator.worker.engine.capability.AsyncCompletionPolicy;
+import com.openllmorchestrator.worker.engine.capability.CapabilityDefinition;
+import com.openllmorchestrator.worker.engine.capability.CapabilityExecutionMode;
+import com.openllmorchestrator.worker.engine.capability.CapabilityGroupSpec;
 import com.openllmorchestrator.worker.engine.contract.VersionedState;
-import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
-import com.openllmorchestrator.worker.engine.kernel.StageInvoker;
+import com.openllmorchestrator.worker.engine.kernel.CapabilityInvoker;
+import com.openllmorchestrator.worker.engine.kernel.interceptor.CapabilityContext;
 import com.openllmorchestrator.worker.engine.kernel.interceptor.ExecutionInterceptorChain;
-import com.openllmorchestrator.worker.engine.kernel.interceptor.StageContext;
-import com.openllmorchestrator.worker.engine.stage.AsyncCompletionPolicy;
-import com.openllmorchestrator.worker.engine.stage.StageDefinition;
-import com.openllmorchestrator.worker.engine.stage.StageExecutionMode;
-import com.openllmorchestrator.worker.engine.stage.StageGroupSpec;
+import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
 import io.temporal.workflow.Promise;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,40 +39,40 @@ import java.util.Map;
 @Slf4j
 public final class AsyncGroupExecutor implements GroupExecutor {
     @Override
-    public boolean supports(StageGroupSpec spec) {
+    public boolean supports(CapabilityGroupSpec spec) {
         return spec != null && spec.getDefinitions() != null && !spec.getDefinitions().isEmpty()
-                && spec.getDefinitions().get(0).getExecutionMode() == StageExecutionMode.ASYNC;
+                && spec.getDefinitions().get(0).getExecutionMode() == CapabilityExecutionMode.ASYNC;
     }
 
     @Override
-    public void execute(StageGroupSpec spec, StageInvoker invoker, ExecutionContext context,
+    public void execute(CapabilityGroupSpec spec, CapabilityInvoker invoker, ExecutionContext context,
                         int groupIndex, ExecutionInterceptorChain interceptorChain) {
-        List<StageDefinition> group = spec.getDefinitions();
+        List<CapabilityDefinition> group = spec.getDefinitions();
         VersionedState stateBefore = context.getVersionedState();
-        for (StageDefinition def : group) {
-            StageContext stageCtx = StageContext.from(groupIndex, def, stateBefore, context);
-            interceptorChain.beforeStage(stageCtx);
+        for (CapabilityDefinition def : group) {
+            CapabilityContext capCtx = CapabilityContext.from(groupIndex, def, stateBefore, context);
+            interceptorChain.beforeCapability(capCtx);
         }
         AsyncCompletionPolicy policy = spec.getAsyncPolicy() != null ? spec.getAsyncPolicy() : AsyncCompletionPolicy.ALL;
-        List<Promise<StageResult>> promises = new ArrayList<>();
-        for (StageDefinition def : group) {
-            log.info("Scheduling ASYNC stage: {}", def.getName());
+        List<Promise<CapabilityResult>> promises = new ArrayList<>();
+        for (CapabilityDefinition def : group) {
+            log.info("Scheduling ASYNC capability: {}", def.getName());
             promises.add(invoker.invokeAsync(def, context));
         }
         waitForPromises(policy, promises);
         List<String> names = new ArrayList<>(group.size());
-        List<StageResult> results = new ArrayList<>(group.size());
+        List<CapabilityResult> results = new ArrayList<>(group.size());
         for (int i = 0; i < group.size(); i++) {
-            StageDefinition def = group.get(i);
+            CapabilityDefinition def = group.get(i);
             names.add(def.getName());
-            StageContext stageCtx = StageContext.from(groupIndex, def, stateBefore, context);
+            CapabilityContext capCtx = CapabilityContext.from(groupIndex, def, stateBefore, context);
             try {
-                StageResult r = promises.get(i).get();
+                CapabilityResult r = promises.get(i).get();
                 results.add(r);
-                interceptorChain.afterStage(stageCtx, r);
+                interceptorChain.afterCapability(capCtx, r);
             } catch (Exception e) {
-                results.add(StageResult.builder().stageName(def.getName()).build());
-                interceptorChain.onError(stageCtx, e);
+                results.add(CapabilityResult.builder().capabilityName(def.getName()).build());
+                interceptorChain.onError(capCtx, e);
             }
         }
         String taskQueue = group.isEmpty() ? null : group.get(0).getTaskQueue();
@@ -88,21 +88,21 @@ public final class AsyncGroupExecutor implements GroupExecutor {
         }
         FeatureFlags flags = EngineRuntime.getFeatureFlags();
         for (int i = 0; i < results.size(); i++) {
-            StageResult r = results.get(i);
+            CapabilityResult r = results.get(i);
             if (flags != null && flags.isEnabled(FeatureFlag.STAGE_RESULT_ENVELOPE) && r.getMetadata() == null && i < group.size()) {
-                StageDefinition def = group.get(i);
-                r.setMetadata(StageMetadata.builder()
-                        .stageName(def.getName())
+                CapabilityDefinition def = group.get(i);
+                r.setMetadata(CapabilityMetadata.builder()
+                        .capabilityName(def.getName())
                         .stepId(next.getStepId())
                         .executionId(next.getExecutionId())
-                        .stageBucketName(def.getStageBucketName())
+                        .capabilityBucketName(def.getStageBucketName())
                         .build());
             }
-            log.info("Completed ASYNC stage: {} (stepId after async={})", r.getStageName(), next.getStepId());
+            log.info("Completed ASYNC capability: {} (stepId after async={})", r.getCapabilityName(), next.getStepId());
         }
     }
 
-    private static void waitForPromises(AsyncCompletionPolicy policy, List<Promise<StageResult>> promises) {
+    private static void waitForPromises(AsyncCompletionPolicy policy, List<Promise<CapabilityResult>> promises) {
         switch (policy) {
             case ALL:
             case FIRST_FAILURE:

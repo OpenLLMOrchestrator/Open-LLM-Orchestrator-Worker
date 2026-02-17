@@ -15,14 +15,15 @@
  */
 package com.openllmorchestrator.worker.contract;
 
-import lombok.Builder;
-import lombok.Getter;
+/**
+ * @deprecated Use {@link CapabilityMetadata}.
+ */
+@Deprecated
+public class StageMetadata extends CapabilityMetadata {
 
-@Getter
-@Builder
-public class StageMetadata {
-    private final String stageName;
-    private final long stepId;
-    private final String executionId;
-    private final String stageBucketName;
+    private static final long serialVersionUID = 1L;
+
+    public StageMetadata(String capabilityName, long stepId, String executionId, String capabilityBucketName) {
+        super(capabilityName, stepId, executionId, capabilityBucketName);
+    }
 }

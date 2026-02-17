@@ -3,9 +3,9 @@
  */
 package com.openllmorchestrator.worker.engine.plan;
 
+import com.openllmorchestrator.worker.engine.capability.CapabilityGroupSpec;
+import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
-import com.openllmorchestrator.worker.engine.stage.StageGroupSpec;
-import com.openllmorchestrator.worker.engine.stage.StagePlan;
 
 import java.util.HashSet;
 import java.util.List;
@@ -26,18 +26,18 @@ public class PlanValidatorImpl implements PlanValidator {
     }
 
     @Override
-    public void validate(StagePlan plan, ExecutionContext context) throws PlanValidationException {
+    public void validate(CapabilityPlan plan, ExecutionContext context) throws PlanValidationException {
         if (plan == null) return;
-        List<StageGroupSpec> groups = plan.getGroups();
+        List<CapabilityGroupSpec> groups = plan.getGroups();
         if (groups == null) return;
         if (!allowedStageNames.isEmpty()) {
             Set<String> allowed = new HashSet<>(allowedStageNames);
-            for (StageGroupSpec g : groups) {
+            for (CapabilityGroupSpec g : groups) {
                 if (g != null && g.getDefinitions() != null) {
                     for (var def : g.getDefinitions()) {
                         String name = def != null ? def.getStageBucketName() : null;
                         if (name != null && !allowed.contains(name)) {
-                            throw new PlanValidationException("Unauthorized stage in plan: " + name);
+                            throw new PlanValidationException("Unauthorized capability in plan: " + name);
                         }
                     }
                 }

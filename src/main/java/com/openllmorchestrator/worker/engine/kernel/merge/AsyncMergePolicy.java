@@ -30,6 +30,6 @@ public interface AsyncMergePolicy {
      * @param accumulated mutable accumulated output (updated in place)
      * @param results     list of (activityName, result) in completion or config order
      */
-    void mergeAll(Map<String, Object> accumulated, List<AsyncOutputMergePolicy.NamedStageResult> results);
+    void mergeAll(Map<String, Object> accumulated, List<AsyncOutputMergePolicy.NamedCapabilityResult> results);
 }
 

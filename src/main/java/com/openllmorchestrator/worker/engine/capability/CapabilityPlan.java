@@ -1,0 +1,47 @@
+/*
+ * Copyright 2026 Open LLM Orchestrator contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.openllmorchestrator.worker.engine.capability;
+
+import lombok.Getter;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Execution hierarchy: ordered list of stage groups. Built once at bootstrap from config
+ * and reused for the container lifecycle. Immutable; holds no transactional or request-scoped data.
+ * Graph-capable: each group may declare {@link CapabilityGroupSpec#getDependsOnGroupIndices()}; kernel runs
+ * a group when all its dependencies have completed (deterministic ready set).
+ */
+@Getter
+public class CapabilityPlan {
+    private final List<CapabilityGroupSpec> groups;
+
+    CapabilityPlan(List<CapabilityGroupSpec> groups) {
+        this.groups = Collections.unmodifiableList(new ArrayList<>(groups));
+    }
+
+    public static CapabilityPlanBuilder builder() {
+        return new CapabilityPlanBuilder();
+    }
+
+    /** Build a plan from a list of group specs (e.g. for conditional branch sub-plans). */
+    public static CapabilityPlan fromGroups(List<CapabilityGroupSpec> groups) {
+        return new CapabilityPlan(groups != null ? groups : List.of());
+    }
+}
+

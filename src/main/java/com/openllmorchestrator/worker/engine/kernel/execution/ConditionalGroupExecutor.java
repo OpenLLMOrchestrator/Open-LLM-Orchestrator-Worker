@@ -15,14 +15,14 @@
  */
 package com.openllmorchestrator.worker.engine.kernel.execution;
 
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
+import com.openllmorchestrator.worker.engine.capability.CapabilityDefinition;
+import com.openllmorchestrator.worker.engine.capability.CapabilityGroupSpec;
+import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.engine.contract.VersionedState;
-import com.openllmorchestrator.worker.engine.kernel.StageInvoker;
+import com.openllmorchestrator.worker.engine.kernel.CapabilityInvoker;
 import com.openllmorchestrator.worker.engine.kernel.interceptor.ExecutionInterceptorChain;
-import com.openllmorchestrator.worker.engine.stage.StageDefinition;
-import com.openllmorchestrator.worker.engine.stage.StageGroupSpec;
-import com.openllmorchestrator.worker.engine.stage.StagePlan;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -39,24 +39,24 @@ public final class ConditionalGroupExecutor implements GroupExecutor {
 
     private static final String OUTPUT_KEY_BRANCH = "branch";
 
-    private final BiConsumer<StagePlan, ExecutionContext> runSubPlan;
+    private final BiConsumer<CapabilityPlan, ExecutionContext> runSubPlan;
 
-    public ConditionalGroupExecutor(BiConsumer<StagePlan, ExecutionContext> runSubPlan) {
+    public ConditionalGroupExecutor(BiConsumer<CapabilityPlan, ExecutionContext> runSubPlan) {
         this.runSubPlan = runSubPlan != null ? runSubPlan : (p, c) -> {};
     }
 
     @Override
-    public boolean supports(StageGroupSpec spec) {
+    public boolean supports(CapabilityGroupSpec spec) {
         return spec != null && spec.getConditionDefinition() != null && spec.getBranches() != null && !spec.getBranches().isEmpty();
     }
 
     @Override
-    public void execute(StageGroupSpec spec, StageInvoker invoker, ExecutionContext context,
+    public void execute(CapabilityGroupSpec spec, CapabilityInvoker invoker, ExecutionContext context,
                        int groupIndex, ExecutionInterceptorChain interceptorChain) {
-        StageDefinition conditionDef = spec.getConditionDefinition();
-        List<List<StageGroupSpec>> branches = spec.getBranches();
+        CapabilityDefinition conditionDef = spec.getConditionDefinition();
+        List<List<CapabilityGroupSpec>> branches = spec.getBranches();
         log.info("Executing conditional group: condition plugin={}", conditionDef.getName());
-        StageResult conditionResult = invoker.invokeSync(conditionDef, context);
+        CapabilityResult conditionResult = invoker.invokeSync(conditionDef, context);
         Map<String, Object> output = conditionResult != null ? conditionResult.getOutput() : null;
         if (output != null && !output.isEmpty()) {
             Map<String, Object> merged = new HashMap<>(context.getAccumulatedOutput());
@@ -69,8 +69,8 @@ public final class ConditionalGroupExecutor implements GroupExecutor {
         Object branchObj = output != null ? output.get(OUTPUT_KEY_BRANCH) : null;
         int branchIndex = toBranchIndex(branchObj, branches.size());
         log.info("Condition selected branch {} (0=then, {} = else)", branchIndex, branches.size() - 1);
-        List<StageGroupSpec> selectedBranch = branches.get(branchIndex);
-        StagePlan branchPlan = StagePlan.fromGroups(selectedBranch);
+        List<CapabilityGroupSpec> selectedBranch = branches.get(branchIndex);
+        CapabilityPlan branchPlan = CapabilityPlan.fromGroups(selectedBranch);
         runSubPlan.accept(branchPlan, context);
     }
 

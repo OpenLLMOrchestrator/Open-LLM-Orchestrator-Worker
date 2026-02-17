@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Execution graph for stage ordering. Replaces linear stageOrder with a DAG-capable structure.
+ * Execution graph for capability ordering. Replaces linear stageOrder with a DAG-capable structure.
  * Backward compatibility: a linear list auto-converts to a simple chain (nodes in order, edges A→B→C).
  */
 @Getter

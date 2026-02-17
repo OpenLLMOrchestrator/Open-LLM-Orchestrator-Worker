@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.activity;
 
-import com.openllmorchestrator.worker.contract.StageResult;
+import com.openllmorchestrator.worker.contract.CapabilityResult;
 import io.temporal.activity.ActivityInterface;
 import io.temporal.activity.ActivityMethod;
 
@@ -29,6 +29,6 @@ public interface KernelStageActivity {
      * accumulated output from previous stages; returns its output in result.data.
      */
     @ActivityMethod
-    StageResult execute(String stageName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput);
+    CapabilityResult execute(String stageName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput);
 }
 

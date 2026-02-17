@@ -21,7 +21,9 @@ The config is **JSON**. All keys are case-sensitive. Unknown keys are ignored (`
 | `worker` | object | Yes* | Worker and task queue. See §3. |
 | `temporal` | object | No | Temporal server connection. See §4. |
 | `activity` | object | No | Activity defaults (timeouts, retry, payload limits). See §5. |
-| `stageOrder` | array of string | No | **Execution order** of stage names. See §6. Used when using `root`/`rootByStage`. |
+| `capabilityOrder` | array of string | No | **Execution order** of capability names (fixed flow). Prefer over `stageOrder`. See §6. |
+| `stageOrder` | array of string | No | Legacy alias for `capabilityOrder`. See §6. |
+| `capabilities` | object | No | **Custom capabilities**: name → `{ "pluginType", "name" }`. Can be referenced anywhere in the flow. See §6. |
 | `stagePlugins` | object | No | Stage name → plugin/activity id. See §7. |
 | `mergePolicies` | object | No | Merge policy name → implementation. See §8. |
 | `pipelines` | object | **Yes** | Named pipelines. At least one required. See §9. |
@@ -145,18 +147,35 @@ All values in **seconds**.
 
 ---
 
-## 6. Stage order (`stageOrder`)
+## 6. Capability order and custom capabilities
+
+### 6.1 Capability order (`capabilityOrder`, `stageOrder`)
 
 **Type:** Array of strings.  
-**Default:** If null/empty, predefined order in code is used.
+**Keys:** Prefer **`capabilityOrder`**; **`stageOrder`** is supported for backward compatibility.  
+**Default:** If both null/empty, predefined order in code is used.
 
-**Allowed values (predefined stages):**  
+**Allowed values (predefined capabilities):**  
 `ACCESS`, `PRE_CONTEXT_SETUP`, `PLANNER`, `PLAN_EXECUTOR`, `EXECUTION_CONTROLLER`, `ITERATIVE_BLOCK`, `MODEL`, `RETRIEVAL`, `RETRIEVE`, `TOOL`, `MCP`, `MEMORY`, `REFLECTION`, `SUB_OBSERVABILITY`, `SUB_CUSTOM`, `ITERATIVE_BLOCK_END`, `FILTER`, `POST_PROCESS`, `EVALUATION`, `EVALUATE`, `FEEDBACK`, `FEEDBACK_CAPTURE`, `LEARNING`, `DATASET_BUILD`, `TRAIN_TRIGGER`, `MODEL_REGISTRY`, `OBSERVABILITY`, `CUSTOM`.  
-Full table with descriptions and order: [ui-reference.md §1](ui-reference.md#1-predefined-stages-for-config-and-debugging).
+Full table: [ui-reference.md §1](ui-reference.md#1-predefined-stages-for-config-and-debugging).
 
-**Semantics:** When a pipeline uses `root` (as stage-name → GROUP map, i.e. rootByStage), only stages **present in this list** and **present in the pipeline root** are included, in this order. Stages not in the list or not in the root are skipped.
+**Semantics:** Fixed flow for predefined capabilities. When a pipeline uses `root` (or `rootByCapability`) as capability-name → GROUP map, only capabilities **present in this list** and **present in the pipeline root** are included, in this order. Names may be predefined or custom (see §6.2).
 
-**UI hint:** Ordered list; drag to reorder. Options = predefined stage names + custom (if supported).
+**UI hint:** Ordered list; drag to reorder. Options = predefined capability names + any custom capability names defined in `capabilities`.
+
+### 6.2 Custom capabilities (`capabilities`)
+
+**Type:** Object. Keys = capability name (string), value = `{ "pluginType": string, "name": string }`.
+
+**Semantics:** User-defined capabilities that can be **referenced anywhere in the capability flow**: in the pipeline root (add the name to `capabilityOrder` and to the root map) or inside any GROUP as a STAGE with `name` = the capability name. Resolution order: predefined capability → config-defined capability → activity by id → custom bucket.
+
+**Example:**
+```json
+"capabilities": {
+  "MY_SUMMARY": { "pluginType": "ModelPlugin", "name": "com.openllmorchestrator.worker.plugin.llm.Llama32ChatPlugin" },
+  "MY_GUARD": { "pluginType": "GuardrailPlugin", "name": "com.example.GuardrailPlugin" }
+}
+```
 
 ---
 
