@@ -1,5 +1,6 @@
 rootProject.name = 'open-llm-orchestrator-worker'
 include 'plugin-contract'
+include 'engine-config'
 // Optional: include in-repo plugins project only if present (worker loads from plugin zips in plugins/ by default)
 if (file('plugins/build.gradle').exists()) {
     include 'plugins'

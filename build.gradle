@@ -14,6 +14,7 @@ repositories {
 // Compile-time plugins: in-repo project (when present) + JARs from plugins/ folder (unpacked zips + loose *.jar)
 dependencies {
     implementation project(':plugin-contract')
+    implementation project(':engine-config')
     if (project.findProject(':plugins') != null) {
         implementation project(':plugins')
     }

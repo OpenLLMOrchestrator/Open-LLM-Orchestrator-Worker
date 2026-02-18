@@ -15,14 +15,15 @@
  */
 package com.openllmorchestrator.worker.engine.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.openllmorchestrator.worker.engine.config.EngineConfigMapper;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
 public class FileConfigRepository {
 
-    private final ObjectMapper mapper =
-            new ObjectMapper();
+    private static final EngineConfigMapper MAPPER = EngineConfigMapper.getInstance();
 
     public QueueConfig find(String queueName) {
 
@@ -34,9 +35,9 @@ public class FileConfigRepository {
             if (!file.exists())
                 return null;
 
-            return mapper.readValue(
-                    file,
-                    QueueConfig.class);
+            try (InputStream in = new FileInputStream(file)) {
+                return MAPPER.queueConfigFromJson(in);
+            }
 
         } catch (Exception e) {
             return null;

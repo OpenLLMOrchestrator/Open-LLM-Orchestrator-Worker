@@ -16,7 +16,7 @@
 package com.openllmorchestrator.worker.engine.config.source;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.openllmorchestrator.worker.engine.config.EngineConfigMapper;
 import com.openllmorchestrator.worker.engine.config.redis.RedisConfig;
 import redis.clients.jedis.Jedis;
 
@@ -30,7 +30,7 @@ public final class RedisConfigRepository implements ConfigRepository {
     private static final String KEY_PREFIX = "olo:engine:config:";
     private static final String DEFAULT_CONFIG_KEY = "default";
     private static final String DEFAULT_VERSION = "1.0";
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final EngineConfigMapper MAPPER = EngineConfigMapper.getInstance();
 
     private final Jedis jedis;
 

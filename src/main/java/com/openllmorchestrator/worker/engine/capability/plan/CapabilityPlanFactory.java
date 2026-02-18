@@ -15,6 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.capability.plan;
 
+import com.openllmorchestrator.worker.engine.config.EngineConfigRuntime;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.config.FeatureFlag;
 import com.openllmorchestrator.worker.engine.config.pipeline.NodeConfig;
@@ -132,9 +133,9 @@ CapabilityPlanFactory {
     private static void buildFromRootByCapability(EngineFileConfig fileConfig, PipelineSection section,
                                              Map<String, NodeConfig> rootByCapability, CapabilityPlanBuilder builder,
                                              Set<String> allowedPluginNames) {
-        List<String> capabilityOrder = fileConfig.getFeatureFlagsEffective().isEnabled(FeatureFlag.EXECUTION_GRAPH)
-                ? fileConfig.getExecutionGraphEffective().topologicalOrder()
-                : fileConfig.getCapabilityOrderEffective();
+        List<String> capabilityOrder = EngineConfigRuntime.getFeatureFlagsEffective(fileConfig).isEnabled(FeatureFlag.EXECUTION_GRAPH)
+                ? EngineConfigRuntime.getExecutionGraphEffective(fileConfig).topologicalOrder()
+                : EngineConfigRuntime.getCapabilityOrderEffective(fileConfig);
         int defaultMaxDepth = section.getDefaultMaxGroupDepth() > 0 ? section.getDefaultMaxGroupDepth() : 5;
         PlanBuildContext ctx = new PlanBuildContext(
                 section.getDefaultTimeoutSeconds(),

@@ -103,8 +103,32 @@ public final class PipelineNodeValidator implements ConfigValidator {
         if (mode == null || (!"SYNC".equalsIgnoreCase(mode) && !"ASYNC".equalsIgnoreCase(mode))) {
             throw new IllegalStateException("GROUP node must have executionMode SYNC or ASYNC");
         }
+        // Each group may have at most one plugin of type PLUGIN_IF and at most one PLUGIN_ITERATOR (applies to whole group).
+        int ifCount = 0;
+        int iteratorCount = 0;
+        int forkCount = 0;
+        int joinCount = 0;
         for (NodeConfig child : node.getChildren()) {
             validateNode(child, defaultTimeoutSeconds, visited, resolver);
+            if (child.isPlugin() && child.getPluginType() != null) {
+                String pt = child.getPluginType();
+                if (AllowedPluginTypes.PLUGIN_IF.equals(pt)) ifCount++;
+                else if (AllowedPluginTypes.PLUGIN_ITERATOR.equals(pt)) iteratorCount++;
+                else if (AllowedPluginTypes.FORK.equals(pt)) forkCount++;
+                else if (AllowedPluginTypes.JOIN.equals(pt)) joinCount++;
+            }
+        }
+        if (ifCount > 1) {
+            throw new IllegalStateException("GROUP may have at most one plugin of type " + AllowedPluginTypes.PLUGIN_IF + "; found " + ifCount);
+        }
+        if (iteratorCount > 1) {
+            throw new IllegalStateException("GROUP may have at most one plugin of type " + AllowedPluginTypes.PLUGIN_ITERATOR + "; found " + iteratorCount);
+        }
+        if (forkCount > 1) {
+            throw new IllegalStateException("ASYNC GROUP may have at most one " + AllowedPluginTypes.FORK + " plugin; found " + forkCount);
+        }
+        if (joinCount > 1) {
+            throw new IllegalStateException("ASYNC GROUP may have at most one " + AllowedPluginTypes.JOIN + " plugin; found " + joinCount);
         }
     }
 }

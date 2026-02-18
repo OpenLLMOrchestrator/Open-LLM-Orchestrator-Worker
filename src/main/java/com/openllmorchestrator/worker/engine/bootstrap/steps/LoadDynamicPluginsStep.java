@@ -20,9 +20,12 @@ import com.openllmorchestrator.worker.engine.bootstrap.BootstrapContext;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapStep;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.plugin.DynamicPluginLoader;
+import com.openllmorchestrator.worker.engine.plugin.RuntimePluginDirLoader;
 import com.openllmorchestrator.worker.engine.capability.activity.ActivityRegistry;
 import com.openllmorchestrator.worker.engine.capability.handler.DynamicPluginWrapper;
 
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 
@@ -32,6 +35,7 @@ import java.util.ServiceLoader;
  *    Registered by name(), by class name (FQCN), and by worker-package alias when config sets pluginRepoPackagePrefix.
  * (2) Config dynamicPluginJars (list of JAR paths, loadAll each) for additional runtime JARs.
  * (3) Config dynamicPlugins (plugin name → JAR path), for explicit name→path mapping.
+ * (4) Runtime plugins dir: folder from env {@code PLUGINS_DIR} (or system property {@code plugins.dir}, or {@code user.dir/plugins}), scanned for {@code *.zip} and {@code *.olo}; each archive is expanded and JARs are loaded.
  * If a JAR is missing or load fails, registers a {@link DynamicPluginWrapper} that logs and no-ops at runtime.
  */
 public final class LoadDynamicPluginsStep implements BootstrapStep {
@@ -70,6 +74,14 @@ public final class LoadDynamicPluginsStep implements BootstrapStep {
                 builder.register(pluginName, handler);
                 registerHandler(builder, handler, pluginRepoPrefix);
             }
+        }
+
+        // (4) Runtime plugins dir: scan default folder (or PLUGINS_DIR env) for *.zip / *.olo, expand and load JARs
+        List<Path> runtimeJars = RuntimePluginDirLoader.collectJarPathsFromPluginsDir();
+        for (Path jarPath : runtimeJars) {
+            String pathStr = jarPath.toAbsolutePath().toString();
+            Map<String, CapabilityHandler> loaded = DynamicPluginLoader.loadAll(pathStr);
+            loaded.forEach((name, handler) -> registerHandler(builder, handler, pluginRepoPrefix));
         }
 
         ctx.setActivityRegistry(builder.build());

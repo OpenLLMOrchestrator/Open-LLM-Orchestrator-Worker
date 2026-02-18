@@ -15,7 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.config.loader;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.openllmorchestrator.worker.engine.config.EngineConfigMapper;
 import com.openllmorchestrator.worker.engine.config.EngineFileConfig;
 import com.openllmorchestrator.worker.engine.config.env.EnvConfig;
 import com.openllmorchestrator.worker.engine.config.source.ConfigRepository;
@@ -27,7 +27,7 @@ import com.openllmorchestrator.worker.engine.config.source.ConfigRepository;
  * Returns full EngineFileConfig with connection config (queue, redis, db) from env.
  */
 public final class HierarchicalConfigLoader {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final EngineConfigMapper MAPPER = EngineConfigMapper.getInstance();
 
     private HierarchicalConfigLoader() {}
 
@@ -66,7 +66,7 @@ public final class HierarchicalConfigLoader {
 
     private static EngineFileConfig parse(String json) {
         try {
-            return MAPPER.readValue(json, EngineFileConfig.class);
+            return MAPPER.fromJson(json);
         } catch (Exception e) {
             throw new RuntimeException("Invalid engine config JSON", e);
         }

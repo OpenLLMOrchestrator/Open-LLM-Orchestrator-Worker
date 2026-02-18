@@ -17,6 +17,7 @@ package com.openllmorchestrator.worker.engine.bootstrap.steps;
 
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapContext;
 import com.openllmorchestrator.worker.engine.bootstrap.BootstrapStep;
+import com.openllmorchestrator.worker.engine.config.EngineConfigRuntime;
 import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
 
 /** Step: set resolver, config, and execution hierarchy (plans) on EngineRuntime for container lifecycle. No per-run state is stored. */
@@ -26,7 +27,7 @@ public final class SetRuntimeStep implements BootstrapStep {
         EngineRuntime.setCapabilityResolver(ctx.getResolver());
         EngineRuntime.setConfig(ctx.getConfig());
         EngineRuntime.setCapabilityPlans(ctx.getPlans());
-        EngineRuntime.setFeatureFlags(ctx.getConfig().getFeatureFlagsEffective());
+        EngineRuntime.setFeatureFlags(EngineConfigRuntime.getFeatureFlagsEffective(ctx.getConfig()));
         EngineRuntime.CONFIG = ctx.getConfig();
     }
 }

@@ -15,14 +15,14 @@
  */
 package com.openllmorchestrator.worker.engine.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.openllmorchestrator.worker.engine.config.EngineConfigMapper;
 import redis.clients.jedis.Jedis;
 
 public class RedisConfigRepository {
 
+    private static final EngineConfigMapper MAPPER = EngineConfigMapper.getInstance();
+
     private final Jedis jedis;
-    private final ObjectMapper mapper =
-            new ObjectMapper();
 
     public RedisConfigRepository() {
         this.jedis = new Jedis("localhost", 6379);
@@ -34,8 +34,7 @@ public class RedisConfigRepository {
             String json = jedis.get(key);
             if (json == null) return null;
 
-            return mapper.readValue(
-                    json, QueueConfig.class);
+            return MAPPER.queueConfigFromJson(json);
 
         } catch (Exception e) {
             return null;
@@ -46,8 +45,7 @@ public class RedisConfigRepository {
         try {
             String key = "queue:config:"
                     + config.getQueueName();
-            jedis.set(key,
-                    mapper.writeValueAsString(config));
+            jedis.set(key, MAPPER.toJson(config));
         } catch (Exception ignored) {
         }
     }
