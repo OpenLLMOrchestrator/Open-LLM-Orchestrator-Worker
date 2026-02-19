@@ -28,6 +28,7 @@ import java.util.Map;
 
 /**
  * Immutable context for the execution interceptor at a single capability (before/after/onError).
+ * Optional executionContext is set when building from ExecutionContext so feature execution plugins can access full context.
  */
 @Getter
 @Builder
@@ -39,6 +40,8 @@ public class CapabilityContext {
     private final Map<String, Object> stateBefore;
     private final ExecutionMode executionMode;
     private final String pipelineName;
+    /** Optional: set when built from ExecutionContext so feature plugins can read/write accumulated output etc. */
+    private final ExecutionContext executionContext;
 
     public Map<String, Object> getStateBefore() {
         return stateBefore != null ? Collections.unmodifiableMap(stateBefore) : Map.of();
@@ -57,6 +60,7 @@ public class CapabilityContext {
                         : Map.of())
                 .executionMode(executionMode != null ? executionMode : ExecutionMode.LIVE)
                 .pipelineName(pipelineName != null ? pipelineName : "")
+                .executionContext(null)
                 .build();
     }
 
@@ -68,6 +72,17 @@ public class CapabilityContext {
         String pipeline = context != null && context.getCommand() != null && context.getCommand().getPipelineName() != null
                 ? context.getCommand().getPipelineName()
                 : "default";
-        return from(executionId, stepId, groupIndex, definition, versionedState, mode, pipeline);
+        return CapabilityContext.builder()
+                .executionId(executionId)
+                .stepId(stepId)
+                .groupIndex(groupIndex)
+                .capabilityDefinition(definition)
+                .stateBefore(versionedState != null && versionedState.getState() != null
+                        ? new HashMap<>(versionedState.getState())
+                        : Map.of())
+                .executionMode(mode)
+                .pipelineName(pipeline)
+                .executionContext(context)
+                .build();
     }
 }

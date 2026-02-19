@@ -21,7 +21,12 @@ package com.openllmorchestrator.worker.engine.contract;
  *   <li>PLANNER capability: a plugin (e.g. LLM planner) builds a {@link com.openllmorchestrator.worker.engine.capability.CapabilityPlan}
  *       using {@link com.openllmorchestrator.worker.engine.capability.CapabilityPlanBuilder} or
  *       {@link com.openllmorchestrator.worker.engine.capability.plan.CapabilityPlanFactory} and stores it in context
- *       under {@link #KEY_DYNAMIC_PLAN} via {@code context.putOutput(KEY_DYNAMIC_PLAN, plan)}.</li>
+ *       under {@link #KEY_DYNAMIC_PLAN} via {@code context.putOutput(KEY_DYNAMIC_PLAN, plan)} (for PLAN_EXECUTOR sub-plan).</li>
+ *   <li>To replace the <b>main</b> execution plan for this run (planner/debug only): get current plan (from
+ *       {@link com.openllmorchestrator.worker.engine.contract.ExecutionContext#getExecutionPlan()} if set, else from
+ *       EngineRuntime for this queue/pipeline), create a copy with {@code plan.copyForExecution()}, modify, then
+ *       {@link com.openllmorchestrator.worker.engine.contract.ExecutionContext#setExecutionPlan(com.openllmorchestrator.worker.engine.capability.CapabilityPlan)}.
+ *       The copy is created only in planner/debug phase; static flow keeps this null and uses the immutable global tree.</li>
  *   <li>PLAN_EXECUTOR capability: not a plugin; the kernel reads the plan from accumulated output under this key
  *       and executes it (when used inside an iterator, acts as an iterative plan executor).</li>
  * </ul>

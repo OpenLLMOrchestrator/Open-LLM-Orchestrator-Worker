@@ -167,6 +167,16 @@ writer.writeJsonToRedis(json, redis, "default", "1.0");
 writer.writeToRedis(queueConfig, redis);
 ```
 
+### Queue-specific template (engine config per task queue)
+
+The worker loads **one engine config per task queue** (see design: queue-specific template configuration). Use the **same queue name** as the config key so the worker finds it at bootstrap:
+
+- **Redis:** `writer.writeToRedis(config, redis, queueName)` → key `olo:engine:config:<queueName>:<version>` (e.g. `olo:engine:config:chat:1.0`).
+- **File:** `writer.writeToFile(config, Paths.get("config/" + queueName + ".json"))` → e.g. `config/chat.json`.
+- **DB:** Persist with `config_key = "engine_config:" + queueName` (e.g. `engine_config:chat`) in table `olo_config`.
+
+No shared “default” key: each queue has its own template. To add a new queue, create and store its engine config under that queue’s key in Redis or DB (or add `config/<queueName>.json`).
+
 ## 4. Full example: build and publish
 
 ```java

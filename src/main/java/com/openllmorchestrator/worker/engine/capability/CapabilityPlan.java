@@ -43,5 +43,14 @@ public class CapabilityPlan {
     public static CapabilityPlan fromGroups(List<CapabilityGroupSpec> groups) {
         return new CapabilityPlan(groups != null ? groups : List.of());
     }
+
+    /**
+     * Returns a copy of this plan for execution-scoped use. The copy is stored in {@link com.openllmorchestrator.worker.engine.contract.ExecutionContext}
+     * before any stage can modify the hierarchy (e.g. planner). Modifications apply only to the copy; the global
+     * per-queue execution tree remains immutable.
+     */
+    public CapabilityPlan copyForExecution() {
+        return fromGroups(new ArrayList<>(getGroups()));
+    }
 }
 

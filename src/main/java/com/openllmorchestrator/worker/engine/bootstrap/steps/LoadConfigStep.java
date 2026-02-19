@@ -35,9 +35,14 @@ public final class LoadConfigStep implements BootstrapStep {
             env = com.openllmorchestrator.worker.engine.config.env.EnvConfig.fromEnvironment();
             ctx.setEnvConfig(env);
         }
-        ConfigRepository redisRepo = new RedisConfigRepository(env.getRedis());
-        ConfigRepository dbRepo = new DbConfigRepository(env.getDatabase());
-        ConfigRepository fileRepo = new FileConfigRepository(env.getConfigFilePath());
+        String queueName = ctx.getQueueName();
+        if (queueName == null || queueName.isBlank()) {
+            queueName = env.getWorker() != null ? env.getWorker().getQueueName() : "default";
+            ctx.setQueueName(queueName);
+        }
+        ConfigRepository redisRepo = new RedisConfigRepository(env.getRedis(), queueName);
+        ConfigRepository dbRepo = new DbConfigRepository(env.getDatabase(), queueName);
+        ConfigRepository fileRepo = new FileConfigRepository(env.getConfigFilePath(), queueName);
         ctx.setConfig(HierarchicalConfigLoader.load(env, redisRepo, dbRepo, fileRepo));
     }
 }

@@ -23,6 +23,7 @@ import com.openllmorchestrator.worker.engine.kernel.KernelOrchestrator;
 import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
 import com.openllmorchestrator.worker.engine.kernel.CapabilityInvoker;
 import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
+import com.openllmorchestrator.worker.engine.kernel.interceptor.ExecutionInterceptorChain;
 import com.openllmorchestrator.worker.workflow.CoreWorkflow;
 import io.temporal.workflow.Workflow;
 import org.slf4j.Logger;
@@ -46,22 +47,30 @@ public class CoreWorkflowImpl implements CoreWorkflow {
 
     @Override
     public Map<String, Object> execute(ExecutionCommand command) {
-        ExecutionContext context = ExecutionContext.from(command, com.openllmorchestrator.worker.engine.runtime.EngineRuntime.getFeatureFlags());
+        if (command.getQueueName() == null || command.getQueueName().isBlank()) {
+            command.setQueueName(Workflow.getInfo().getTaskQueue());
+        }
+        String queueName = command.getQueueName();
+        ExecutionContext context = ExecutionContext.from(command, EngineRuntime.getFeatureFlags(queueName));
         String pipelineName = command.getPipelineName() != null && !command.getPipelineName().isBlank()
                 ? command.getPipelineName()
                 : "default";
-        CapabilityPlan plan = EngineRuntime.getCapabilityPlan(pipelineName);
-        log.info("Executing pipeline: {}", pipelineName);
+        // Static flow: use immutable global plan (context.executionPlan stays null). Planner/debug phases create a copy in context before modifying.
+        CapabilityPlan globalPlan = EngineRuntime.getCapabilityPlan(queueName, pipelineName);
+        CapabilityPlan planToRun = context.getExecutionPlan() != null ? context.getExecutionPlan() : globalPlan;
+        log.info("Executing pipeline: {} (queue: {})", pipelineName, queueName);
         CapabilityInvoker invoker = new CapabilityInvoker();
-        KernelOrchestrator kernel = new KernelOrchestrator(invoker);
-        KernelExecutionOutcome outcome = kernel.execute(plan, context);
-        com.openllmorchestrator.worker.engine.config.FeatureFlags flags = com.openllmorchestrator.worker.engine.runtime.EngineRuntime.getFeatureFlags();
+        ExecutionInterceptorChain chain = EngineRuntime.getExecutionInterceptorChain(queueName);
+        KernelOrchestrator kernel = new KernelOrchestrator(invoker, chain);
+        KernelExecutionOutcome outcome = kernel.execute(planToRun, context);
+        com.openllmorchestrator.worker.engine.config.FeatureFlags flags = EngineRuntime.getFeatureFlags(queueName);
         while (flags != null && flags.isEnabled(com.openllmorchestrator.worker.engine.config.FeatureFlag.HUMAN_SIGNAL) && outcome.isSuspended()) {
             log.info("Workflow suspended at step {}; awaiting signal.", outcome.getSuspendedAtStepId());
             Workflow.await(() -> receivedSignal != null);
             context.setResumeSignal(receivedSignal);
             receivedSignal = null;
-            outcome = kernel.execute(plan, context);
+            planToRun = context.getExecutionPlan() != null ? context.getExecutionPlan() : globalPlan;
+            outcome = kernel.execute(planToRun, context);
         }
         return new HashMap<>(context.getAccumulatedOutput());
     }

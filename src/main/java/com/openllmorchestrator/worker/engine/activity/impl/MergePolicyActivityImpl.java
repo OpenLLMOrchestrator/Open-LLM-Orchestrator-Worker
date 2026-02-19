@@ -39,14 +39,15 @@ import java.util.Map;
 public class MergePolicyActivityImpl implements MergePolicyActivity {
 
     @Override
-    public Map<String, Object> merge(String mergePolicyName,
+    public Map<String, Object> merge(String queueName,
+                                     String mergePolicyName,
                                      Map<String, Object> originalInput,
                                      Map<String, Object> accumulatedOutput,
                                      List<AsyncGroupResultEntry> asyncResults) {
         if (mergePolicyName == null || mergePolicyName.isBlank()) {
             mergePolicyName = "LAST_WINS";
         }
-        CapabilityResolver resolver = EngineRuntime.getCapabilityResolver();
+        CapabilityResolver resolver = EngineRuntime.getCapabilityResolver(queueName);
         CapabilityHandler handler = resolver.resolve(mergePolicyName);
         if (handler == null) {
             if (PredefinedCapabilities.isPredefined(mergePolicyName)) {

@@ -33,15 +33,23 @@ public final class RedisConfigRepository implements ConfigRepository {
     private static final EngineConfigMapper MAPPER = EngineConfigMapper.getInstance();
 
     private final Jedis jedis;
+    private final String configKey;
 
     public RedisConfigRepository(RedisConfig redis) {
+        this(redis, null);
+    }
+
+    /** @param configKey queue or config key (e.g. queue name). Null → use env CONFIG_KEY or "default". */
+    public RedisConfigRepository(RedisConfig redis, String configKey) {
         this.jedis = new Jedis(redis.getHost(), redis.getPort());
         if (redis.getPassword() != null && !redis.getPassword().isBlank()) {
             this.jedis.auth(redis.getPassword());
         }
+        this.configKey = configKey != null && !configKey.isBlank() ? configKey.trim() : null;
     }
 
-    private static String getConfigKey() {
+    private String getConfigKey() {
+        if (configKey != null) return configKey;
         String k = System.getenv("CONFIG_KEY");
         return (k != null && !k.isBlank()) ? k.trim() : DEFAULT_CONFIG_KEY;
     }
@@ -59,7 +67,15 @@ public final class RedisConfigRepository implements ConfigRepository {
     public String get() {
         try {
             String key = buildKey(getConfigKey(), getConfigVersionForRead());
-            return jedis.get(key);
+            String value = jedis.get(key);
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+            if (configKey != null && !configKey.equals(DEFAULT_CONFIG_KEY)) {
+                String defaultKey = buildKey(DEFAULT_CONFIG_KEY, getConfigVersionForRead());
+                return jedis.get(defaultKey);
+            }
+            return value;
         } catch (Exception e) {
             return null;
         }

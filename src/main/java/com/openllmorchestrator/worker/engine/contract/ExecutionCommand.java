@@ -32,6 +32,8 @@ public class ExecutionCommand {
     private Map<String, Object> metadata;
     /** Initial input map for the pipeline; every plugin can read this (read-only). */
     private Map<String, Object> input;
+    /** Task queue name (e.g. from Workflow.getInfo().getTaskQueue()). Used for per-queue execution tree lookup. */
+    private String queueName;
     /** Pipeline name to run (e.g. "chat", "document-extraction"). When null/blank, "default" is used. */
     private String pipelineName;
     /** Optional execution id for versioned state (replay, audit). When null, workflow may generate one. */

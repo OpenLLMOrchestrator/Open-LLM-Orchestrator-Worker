@@ -86,7 +86,7 @@ public final class AsyncGroupExecutor implements GroupExecutor {
         if (allRequestBreak) {
             context.setPipelineBreakRequested(true);
         }
-        FeatureFlags flags = EngineRuntime.getFeatureFlags();
+        FeatureFlags flags = EngineRuntime.getFeatureFlags(context.getQueueName());
         for (int i = 0; i < results.size(); i++) {
             CapabilityResult r = results.get(i);
             if (flags != null && flags.isEnabled(FeatureFlag.STAGE_RESULT_ENVELOPE) && r.getMetadata() == null && i < group.size()) {

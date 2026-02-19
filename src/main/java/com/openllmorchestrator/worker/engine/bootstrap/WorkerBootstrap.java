@@ -17,6 +17,7 @@ package com.openllmorchestrator.worker.engine.bootstrap;
 
 import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildActivityRegistryStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildCompatiblePluginsStep;
+import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildFeatureHandlersStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.LoadDynamicPluginsStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildPlanStep;
 import com.openllmorchestrator.worker.engine.bootstrap.steps.BuildResolverStep;
@@ -36,7 +37,7 @@ import java.util.List;
  * interceptors and feature flags during traversal.
  */
 public final class WorkerBootstrap {
-    /** Order: load config, build registries and resolver, validate, build plans, set runtime. */
+    /** Order: load config, build registries and resolver, validate, build plans, set runtime, build feature handlers. */
     private static final List<BootstrapStep> DEFAULT_STEPS = List.of(
             new LoadConfigStep(),
             new BuildActivityRegistryStep(),
@@ -45,13 +46,16 @@ public final class WorkerBootstrap {
             new BuildResolverStep(),
             new ValidateConfigStep(),
             new BuildPlanStep(),
-            new SetRuntimeStep()
+            new SetRuntimeStep(),
+            new BuildFeatureHandlersStep()
     );
 
     private WorkerBootstrap() {}
 
-    public static EngineFileConfig initialize() {
+    /** Bootstrap for the given task queue. Config is loaded per queue (Redis/DB/file keyed by queueName). */
+    public static EngineFileConfig initialize(String queueName) {
         BootstrapContext ctx = new BootstrapContext();
+        ctx.setQueueName(queueName != null && !queueName.isBlank() ? queueName : null);
         ctx.setEnvConfig(com.openllmorchestrator.worker.engine.config.env.EnvConfig.fromEnvironment());
         ctx.setPredefinedBucket(CapabilityBucketFactory.createPredefinedBucket());
         ctx.setCustomBucket(CapabilityBucketFactory.createCustomBucket());
@@ -59,11 +63,27 @@ public final class WorkerBootstrap {
         return ctx.getConfig();
     }
 
+    /** Backward compat: bootstrap using queue name from env (QUEUE_NAME). */
+    public static EngineFileConfig initialize() {
+        String queueName = com.openllmorchestrator.worker.engine.config.env.EnvConfig.fromEnvironment().getWorker().getQueueName();
+        return initialize(queueName);
+    }
+
     public static EngineFileConfig initializeWithCustomBucket(CustomCapabilityBucket customBucket) {
         if (customBucket == null) {
             throw new IllegalArgumentException("CustomCapabilityBucket must be non-null");
         }
+        return initializeWithCustomBucket(null, customBucket);
+    }
+
+    /** Bootstrap for the given queue with custom capability bucket. */
+    public static EngineFileConfig initializeWithCustomBucket(String queueName, CustomCapabilityBucket customBucket) {
+        if (customBucket == null) {
+            throw new IllegalArgumentException("CustomCapabilityBucket must be non-null");
+        }
         BootstrapContext ctx = new BootstrapContext();
+        ctx.setQueueName(queueName != null && !queueName.isBlank() ? queueName : null);
+        ctx.setEnvConfig(com.openllmorchestrator.worker.engine.config.env.EnvConfig.fromEnvironment());
         ctx.setPredefinedBucket(CapabilityBucketFactory.createPredefinedBucket());
         ctx.setCustomBucket(customBucket);
         runSteps(ctx, DEFAULT_STEPS);

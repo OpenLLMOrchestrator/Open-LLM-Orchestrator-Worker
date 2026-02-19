@@ -15,6 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.config;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -26,6 +27,7 @@ import java.io.Reader;
  * Central serialization and deserialization for engine and queue configuration.
  * Use this in the worker to read/write config and in any tool that produces config JSON
  * consumed by the worker (e.g. CLI, dashboard, config service).
+ * Serialization omits null, empty string, empty collection, and empty map so they are not written to config file or Redis.
  */
 public final class EngineConfigMapper {
 
@@ -35,6 +37,7 @@ public final class EngineConfigMapper {
 
     public EngineConfigMapper() {
         this.objectMapper = new ObjectMapper();
+        this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
     }
 
     /** Shared mapper instance with default configuration. */

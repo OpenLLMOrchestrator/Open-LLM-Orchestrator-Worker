@@ -25,6 +25,10 @@ Plugins (tokenizer, vector store, folder ingestion, LLM) are included in this re
 - **Temporal-native**: Single workflow type (`CoreWorkflowImpl`); activities for each capability; workflow returns the full result map (including `result` from the LLM plugin).
 - **Extensible**: Add pipelines and plugins by config and registration; async merge is a **plugin** invoked as an activity before exiting each ASYNC group.
 - **RAG-ready**: Sample pipelines and plugins for document chunking, vector store (stub/real), and LLM (Ollama; URL and model via `OLLAMA_BASE_URL`, `OLLAMA_MODEL`).
+- **Drag-and-drop UI**: Redis-based pipeline configuration with runtime push; ready-made templates (text, image, video, multi-model, planner) selectable from a dropdown.
+- **One-click Docker stack**: Docker Compose starts all relevant containers with sample config; included chat application so the community can engage with chat as soon as images are up (image download is the only delay).
+
+**Full feature list** (qualities, use cases, templates, chat app, Docker): [**docs/features.md**](docs/features.md).
 
 ---
 

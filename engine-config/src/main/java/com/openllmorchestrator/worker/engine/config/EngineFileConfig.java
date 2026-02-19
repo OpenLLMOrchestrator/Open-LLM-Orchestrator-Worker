@@ -16,6 +16,7 @@
 package com.openllmorchestrator.worker.engine.config;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.openllmorchestrator.worker.engine.config.activity.ActivityDefaultsConfig;
 import com.openllmorchestrator.worker.engine.config.database.DatabaseConfig;
@@ -106,6 +107,12 @@ public class EngineFileConfig {
      */
     private List<String> enabledFeatures;
 
+    /**
+     * Feature execution plugins: feature name → list of plugin names (global).
+     * At bootstrap each listed plugin is resolved and attached to the feature; pre/post run at every node in config order.
+     */
+    private Map<String, List<String>> featurePlugins;
+
     /** Queue topology for concurrency isolation (queue-per-stage, queue-per-tenant). When CONCURRENCY_ISOLATION enabled. */
     private QueueTopologyConfig queueTopology;
 
@@ -113,6 +120,49 @@ public class EngineFileConfig {
     private String defaultForkPlugin;
     /** Default JOIN plugin name for ASYNC groups when group does not specify joinPlugin. Engine may use a built-in if null. */
     private String defaultJoinPlugin;
+
+    /** Default config version when not set. */
+    public static final String DEFAULT_CONFIG_VERSION = "1.0";
+    /** Default plugin repo package prefix when not set. */
+    public static final String DEFAULT_PLUGIN_REPO_PACKAGE_PREFIX = "com.openllmorchestrator.worker.plugin";
+    /** Default enabled feature names when not set. */
+    public static final List<String> DEFAULT_ENABLED_FEATURES = List.of(
+            "VERSIONED_STATE",
+            "STAGE_RESULT_ENVELOPE",
+            "EXECUTION_GRAPH",
+            "PLANNER_PLAN_EXECUTOR",
+            "INTERCEPTORS",
+            "EXECUTION_SNAPSHOT"
+    );
+
+    /**
+     * Applies default global properties when not set: configVersion, pluginRepoPackagePrefix,
+     * enabledFeatures, worker, temporal, activity. Mutates the given config in place.
+     */
+    public static void applyDefaultGlobals(EngineFileConfig config) {
+        if (config == null) return;
+        if (config.getConfigVersion() == null || config.getConfigVersion().isBlank()) {
+            config.setConfigVersion(DEFAULT_CONFIG_VERSION);
+        }
+        if (config.getPluginRepoPackagePrefix() == null || config.getPluginRepoPackagePrefix().isBlank()) {
+            config.setPluginRepoPackagePrefix(DEFAULT_PLUGIN_REPO_PACKAGE_PREFIX);
+        }
+        if (config.getEnabledFeatures() == null || config.getEnabledFeatures().isEmpty()) {
+            config.setEnabledFeatures(DEFAULT_ENABLED_FEATURES);
+        }
+        if (config.getWorker() == null) {
+            config.setWorker(WorkerConfig.of("core-task-queue", false));
+        }
+        if (config.getTemporal() == null) {
+            config.setTemporal(TemporalConfig.builder()
+                    .target("localhost:7233")
+                    .namespace("default")
+                    .build());
+        }
+        if (config.getActivity() == null) {
+            config.setActivity(ActivityDefaultsConfig.builder().build());
+        }
+    }
 
     /** Merge: connection config (queue, redis, db) from env; server config from storage. */
     public static EngineFileConfig mergeFromEnv(EnvConfig env, EngineFileConfig fromStorage) {
@@ -133,6 +183,7 @@ public class EngineFileConfig {
         merged.plugins = fromStorage != null ? fromStorage.plugins : null;
         merged.pluginRepoPackagePrefix = fromStorage != null ? fromStorage.pluginRepoPackagePrefix : null;
         merged.enabledFeatures = fromStorage != null ? fromStorage.enabledFeatures : null;
+        merged.featurePlugins = fromStorage != null ? fromStorage.featurePlugins : null;
         merged.queueTopology = fromStorage != null ? fromStorage.queueTopology : null;
         merged.defaultForkPlugin = fromStorage != null ? fromStorage.defaultForkPlugin : null;
         merged.defaultJoinPlugin = fromStorage != null ? fromStorage.defaultJoinPlugin : null;
@@ -140,56 +191,73 @@ public class EngineFileConfig {
     }
 
     /** Default FORK plugin for ASYNC groups when not set on group. Null = use engine built-in. */
+    @JsonIgnore
     public String getDefaultForkPluginEffective() {
         return defaultForkPlugin != null && !defaultForkPlugin.isBlank() ? defaultForkPlugin : null;
     }
 
     /** Default JOIN plugin for ASYNC groups when not set on group. Null = use engine built-in. */
+    @JsonIgnore
     public String getDefaultJoinPluginEffective() {
         return defaultJoinPlugin != null && !defaultJoinPlugin.isBlank() ? defaultJoinPlugin : null;
     }
 
     /** Enabled feature flag names from config (for use by worker to build FeatureFlags). When null/empty, no optional features are enabled. */
+    @JsonIgnore
     public List<String> getEnabledFeatureNames() {
         return enabledFeatures != null ? enabledFeatures : List.of();
     }
 
+    /** Feature → list of feature execution plugin names (global). Empty if not set. */
+    @JsonIgnore
+    public Map<String, List<String>> getFeaturePluginsEffective() {
+        return featurePlugins != null && !featurePlugins.isEmpty() ? featurePlugins : Collections.emptyMap();
+    }
+
     /** Effective merge policies from config (may be null/empty). */
+    @JsonIgnore
     public Map<String, String> getMergePoliciesEffective() {
         return mergePolicies != null ? mergePolicies : Collections.emptyMap();
     }
 
     /** Capability order from config only (no predefined fallback). Use worker-side helper for effective order including predefined capabilities. */
+    @JsonIgnore
     public List<String> getCapabilityOrderEffective() {
         return capabilityOrder != null ? capabilityOrder : List.of();
     }
 
     /** Effective capability plugins: engine-level if set. */
+    @JsonIgnore
     public Map<String, String> getCapabilityPluginsEffective() {
         return capabilityPlugins != null && !capabilityPlugins.isEmpty() ? capabilityPlugins : Collections.emptyMap();
     }
 
     /** User-defined capabilities (name → definition). Empty if not set. Used to resolve custom capability names anywhere in the flow. */
+    @JsonIgnore
     public Map<String, CapabilityDef> getCapabilitiesEffective() {
         return capabilities != null && !capabilities.isEmpty() ? capabilities : Collections.emptyMap();
     }
 
     /** All pipeline names to use at runtime. Requires at least one pipeline in config. */
+    @JsonIgnore
     public Map<String, PipelineSection> getPipelinesEffective() {
         return pipelines != null ? pipelines : Collections.emptyMap();
     }
 
     /** Effective dynamic plugin name → JAR path. */
+    @JsonIgnore
     public Map<String, String> getDynamicPluginsEffective() {
         return dynamicPlugins != null ? dynamicPlugins : Collections.emptyMap();
     }
 
     /** Effective list of JAR paths that provide multiple plugins (loadAll). */
+    @JsonIgnore
     public List<String> getDynamicPluginJarsEffective() {
         return dynamicPluginJars != null ? dynamicPluginJars : Collections.emptyList();
     }
 
     /** Allowed plugin names for static/dynamic use. Null or empty = no allow-list (all compatible plugins allowed). */
+    @JsonIgnore
     public Set<String> getPluginsEffective() {
         if (plugins == null || plugins.isEmpty()) {
             return null;

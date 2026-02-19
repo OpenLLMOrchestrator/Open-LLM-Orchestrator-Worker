@@ -24,133 +24,191 @@ import com.openllmorchestrator.worker.engine.security.SecurityHardeningGate;
 import com.openllmorchestrator.worker.contract.OutputContractValidator;
 import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
 import com.openllmorchestrator.worker.engine.capability.resolver.CapabilityResolver;
+import com.openllmorchestrator.worker.engine.kernel.feature.FeatureExecutionPluginRegistry;
+import com.openllmorchestrator.worker.engine.kernel.feature.FeatureHandlerRegistry;
+import com.openllmorchestrator.worker.engine.kernel.interceptor.ExecutionInterceptorChain;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * One-time bootstrap state: config, execution hierarchy (plan + resolver), and resolver.
- * Built once at startup and reused for the entire container lifecycle.
- * <p>
- * <b>No transactional data:</b> This runtime holds only config-derived, immutable state.
- * No workflow ID, request context, or per-execution data is stored here to avoid memory leaks.
- * Per-run state is passed as {@link com.openllmorchestrator.worker.engine.contract.ExecutionContext}
- * at execution time and is never retained by the runtime.
+ * Per-queue bootstrap state: each task queue has its own execution tree (config, plans, resolver, feature handlers).
+ * Built once per queue at startup so different queues can use different templates/pipelines.
  */
 public final class EngineRuntime {
 
-    private static volatile EngineFileConfig config;
-    private static volatile Map<String, CapabilityPlan> capabilityPlansByName;
-    private static volatile CapabilityResolver capabilityResolver;
-    private static volatile OutputContractValidator outputContractValidator;
-    private static volatile FeatureFlags featureFlags;
-    private static volatile ExecutionPolicyResolver executionPolicyResolver;
-    private static volatile BudgetGuardrailEnforcer budgetGuardrailEnforcer;
-    private static volatile SecurityHardeningGate securityHardeningGate;
-    private static volatile PlanValidator planValidator;
+    private static final ConcurrentHashMap<String, QueueExecutionTree> runtimesByQueue = new ConcurrentHashMap<>();
 
-    /** Set during bootstrap; never null after successful init. */
-    public static EngineFileConfig getConfig() {
-        EngineFileConfig c = config;
+    /** Resolve queue name for lookup: null/blank → default (first registered or "default"). */
+    public static String resolveDefaultQueue() {
+        if (runtimesByQueue.isEmpty()) {
+            return "default";
+        }
+        if (runtimesByQueue.size() == 1) {
+            return runtimesByQueue.keySet().iterator().next();
+        }
+        String fromEnv = System.getenv("QUEUE_NAME");
+        if (fromEnv != null && !fromEnv.isBlank() && runtimesByQueue.containsKey(fromEnv.trim())) {
+            return fromEnv.trim();
+        }
+        return runtimesByQueue.keySet().iterator().next();
+    }
+
+    /** Get the execution tree for the queue. Null/blank queueName → default queue. Creates empty tree if absent (for bootstrap). */
+    public static QueueExecutionTree getQueueRuntime(String queueName) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : resolveDefaultQueue();
+        return runtimesByQueue.computeIfAbsent(q, k -> new QueueExecutionTree());
+    }
+
+    /** Get config for the queue. Use null for default queue (single-queue or env QUEUE_NAME). */
+    public static EngineFileConfig getConfig(String queueName) {
+        QueueExecutionTree tree = getQueueRuntime(queueName);
+        EngineFileConfig c = tree.getConfig();
         if (c == null) {
-            throw new IllegalStateException("Engine not bootstrapped. Call WorkerBootstrap.initialize() first.");
+            throw new IllegalStateException("Engine not bootstrapped for queue '" + (queueName != null ? queueName : resolveDefaultQueue()) + "'. Call WorkerBootstrap.initialize(queueName) first.");
         }
         return c;
     }
 
-    public static void setConfig(EngineFileConfig config) {
-        EngineRuntime.config = config;
+    /** Backward compat: config for default queue. */
+    public static EngineFileConfig getConfig() {
+        return getConfig(null);
     }
 
-    /** Execution hierarchy (plan) for default pipeline; same as getCapabilityPlan("default"). */
-    public static CapabilityPlan getCapabilityPlan() {
-        return getCapabilityPlan("default");
+    public static void setConfig(String queueName, EngineFileConfig config) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : "default";
+        getQueueRuntime(q).setConfig(config);
     }
 
-    /** Execution hierarchy (plan) for the given pipeline name. Workflow payload should pass this name. */
-    public static CapabilityPlan getCapabilityPlan(String pipelineName) {
-        Map<String, CapabilityPlan> map = capabilityPlansByName;
+    public static CapabilityPlan getCapabilityPlan(String queueName, String pipelineName) {
+        QueueExecutionTree tree = getQueueRuntime(queueName);
+        Map<String, CapabilityPlan> map = tree.getCapabilityPlansByName();
         if (map == null || map.isEmpty()) {
-            throw new IllegalStateException("Engine not bootstrapped. Capability plans not set.");
+            throw new IllegalStateException("Engine not bootstrapped for queue '" + (queueName != null ? queueName : resolveDefaultQueue()) + "'. Capability plans not set.");
         }
         String name = pipelineName != null && !pipelineName.isBlank() ? pipelineName : "default";
         CapabilityPlan p = map.get(name);
         if (p == null) {
-            throw new IllegalStateException("Unknown pipeline name: '" + name + "'. Available: " + map.keySet());
+            throw new IllegalStateException("Unknown pipeline name: '" + name + "' for queue '" + (queueName != null ? queueName : resolveDefaultQueue()) + "'. Available: " + map.keySet());
         }
         return p;
     }
 
-    public static void setCapabilityPlans(Map<String, CapabilityPlan> plans) {
-        EngineRuntime.capabilityPlansByName = plans != null ? Collections.unmodifiableMap(plans) : null;
+    /** Backward compat: plan for default queue. */
+    public static CapabilityPlan getCapabilityPlan(String pipelineName) {
+        return getCapabilityPlan(null, pipelineName);
     }
 
-    /** Resolves predefined capabilities via config + plugin bucket, custom capabilities via custom bucket. */
-    public static CapabilityResolver getCapabilityResolver() {
-        CapabilityResolver r = capabilityResolver;
+    public static CapabilityPlan getCapabilityPlan() {
+        return getCapabilityPlan(null, "default");
+    }
+
+    public static void setCapabilityPlans(String queueName, Map<String, CapabilityPlan> plans) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : "default";
+        getQueueRuntime(q).setCapabilityPlans(plans);
+    }
+
+    public static CapabilityResolver getCapabilityResolver(String queueName) {
+        CapabilityResolver r = getQueueRuntime(queueName).getCapabilityResolver();
         if (r == null) {
-            throw new IllegalStateException("Engine not bootstrapped. Capability resolver not set.");
+            throw new IllegalStateException("Engine not bootstrapped for queue '" + (queueName != null ? queueName : resolveDefaultQueue()) + "'. Capability resolver not set.");
         }
         return r;
     }
 
-    public static void setCapabilityResolver(CapabilityResolver capabilityResolver) {
-        EngineRuntime.capabilityResolver = capabilityResolver;
+    public static CapabilityResolver getCapabilityResolver() {
+        return getCapabilityResolver(null);
     }
 
-    /** Optional validator for stages implementing {@link com.openllmorchestrator.worker.contract.OutputContract}. */
-    public static OutputContractValidator getOutputContractValidator() {
-        return outputContractValidator;
+    public static void setCapabilityResolver(String queueName, CapabilityResolver capabilityResolver) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : "default";
+        getQueueRuntime(q).setCapabilityResolver(capabilityResolver);
     }
 
-    public static void setOutputContractValidator(OutputContractValidator outputContractValidator) {
-        EngineRuntime.outputContractValidator = outputContractValidator;
+    public static OutputContractValidator getOutputContractValidator(String queueName) {
+        return getQueueRuntime(queueName).getOutputContractValidator();
+    }
+    public static OutputContractValidator getOutputContractValidator() { return getOutputContractValidator(null); }
+    public static void setOutputContractValidator(String queueName, OutputContractValidator v) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : "default";
+        getQueueRuntime(q).setOutputContractValidator(v);
     }
 
-    /** Feature flags loaded at bootstrap; only enabled features execute. Returns empty (all disabled) when not yet set. */
-    public static FeatureFlags getFeatureFlags() {
-        FeatureFlags f = featureFlags;
+    public static FeatureFlags getFeatureFlags(String queueName) {
+        FeatureFlags f = getQueueRuntime(queueName).getFeatureFlags();
         return f != null ? f : FeatureFlags.fromNames(Collections.emptyList());
     }
-
-    public static void setFeatureFlags(FeatureFlags featureFlags) {
-        EngineRuntime.featureFlags = featureFlags;
+    public static FeatureFlags getFeatureFlags() { return getFeatureFlags(null); }
+    public static void setFeatureFlags(String queueName, FeatureFlags featureFlags) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : "default";
+        getQueueRuntime(q).setFeatureFlags(featureFlags);
     }
 
-    /** When POLICY_ENGINE is enabled. */
-    public static ExecutionPolicyResolver getExecutionPolicyResolver() {
-        return executionPolicyResolver;
+    public static ExecutionPolicyResolver getExecutionPolicyResolver(String queueName) {
+        return getQueueRuntime(queueName).getExecutionPolicyResolver();
     }
-    public static void setExecutionPolicyResolver(ExecutionPolicyResolver executionPolicyResolver) {
-        EngineRuntime.executionPolicyResolver = executionPolicyResolver;
-    }
-
-    /** When BUDGET_GUARDRAIL is enabled. */
-    public static BudgetGuardrailEnforcer getBudgetGuardrailEnforcer() {
-        return budgetGuardrailEnforcer;
-    }
-    public static void setBudgetGuardrailEnforcer(BudgetGuardrailEnforcer budgetGuardrailEnforcer) {
-        EngineRuntime.budgetGuardrailEnforcer = budgetGuardrailEnforcer;
+    public static ExecutionPolicyResolver getExecutionPolicyResolver() { return getExecutionPolicyResolver(null); }
+    public static void setExecutionPolicyResolver(String queueName, ExecutionPolicyResolver r) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : "default";
+        getQueueRuntime(q).setExecutionPolicyResolver(r);
     }
 
-    /** When SECURITY_HARDENING is enabled. */
-    public static SecurityHardeningGate getSecurityHardeningGate() {
-        return securityHardeningGate;
+    public static BudgetGuardrailEnforcer getBudgetGuardrailEnforcer(String queueName) {
+        return getQueueRuntime(queueName).getBudgetGuardrailEnforcer();
     }
-    public static void setSecurityHardeningGate(SecurityHardeningGate securityHardeningGate) {
-        EngineRuntime.securityHardeningGate = securityHardeningGate;
-    }
-
-    /** When PLAN_SAFETY_VALIDATION is enabled. */
-    public static PlanValidator getPlanValidator() {
-        return planValidator;
-    }
-    public static void setPlanValidator(PlanValidator planValidator) {
-        EngineRuntime.planValidator = planValidator;
+    public static BudgetGuardrailEnforcer getBudgetGuardrailEnforcer() { return getBudgetGuardrailEnforcer(null); }
+    public static void setBudgetGuardrailEnforcer(String queueName, BudgetGuardrailEnforcer r) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : "default";
+        getQueueRuntime(q).setBudgetGuardrailEnforcer(r);
     }
 
-    /** Backward compatibility; set by bootstrap together with config. Prefer getConfig(). */
+    public static SecurityHardeningGate getSecurityHardeningGate(String queueName) {
+        return getQueueRuntime(queueName).getSecurityHardeningGate();
+    }
+    public static SecurityHardeningGate getSecurityHardeningGate() { return getSecurityHardeningGate(null); }
+    public static void setSecurityHardeningGate(String queueName, SecurityHardeningGate r) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : "default";
+        getQueueRuntime(q).setSecurityHardeningGate(r);
+    }
+
+    public static PlanValidator getPlanValidator(String queueName) {
+        return getQueueRuntime(queueName).getPlanValidator();
+    }
+    public static PlanValidator getPlanValidator() { return getPlanValidator(null); }
+    public static void setPlanValidator(String queueName, PlanValidator r) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : "default";
+        getQueueRuntime(q).setPlanValidator(r);
+    }
+
+    public static FeatureHandlerRegistry getFeatureHandlerRegistry(String queueName) {
+        return getQueueRuntime(queueName).getFeatureHandlerRegistry();
+    }
+    public static FeatureHandlerRegistry getFeatureHandlerRegistry() { return getFeatureHandlerRegistry(null); }
+    public static void setFeatureHandlerRegistry(String queueName, FeatureHandlerRegistry r) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : "default";
+        getQueueRuntime(q).setFeatureHandlerRegistry(r);
+    }
+
+    public static ExecutionInterceptorChain getExecutionInterceptorChain(String queueName) {
+        return getQueueRuntime(queueName).getExecutionInterceptorChain();
+    }
+    public static ExecutionInterceptorChain getExecutionInterceptorChain() { return getExecutionInterceptorChain(null); }
+    public static void setExecutionInterceptorChain(String queueName, ExecutionInterceptorChain r) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : "default";
+        getQueueRuntime(q).setExecutionInterceptorChain(r);
+    }
+
+    public static FeatureExecutionPluginRegistry getFeatureExecutionPluginRegistry(String queueName) {
+        return getQueueRuntime(queueName).getFeatureExecutionPluginRegistry();
+    }
+    public static FeatureExecutionPluginRegistry getFeatureExecutionPluginRegistry() { return getFeatureExecutionPluginRegistry(null); }
+    public static void setFeatureExecutionPluginRegistry(String queueName, FeatureExecutionPluginRegistry r) {
+        String q = (queueName != null && !queueName.isBlank()) ? queueName : "default";
+        getQueueRuntime(q).setFeatureExecutionPluginRegistry(r);
+    }
+
+    /** Backward compatibility; set by bootstrap. Prefer getConfig(queueName). */
     @Deprecated
     public static EngineFileConfig CONFIG;
 }
-

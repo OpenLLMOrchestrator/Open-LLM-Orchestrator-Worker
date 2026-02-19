@@ -15,6 +15,8 @@
  */
 package com.openllmorchestrator.worker.engine.config.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.openllmorchestrator.worker.engine.config.activity.RetryPolicyConfig;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,6 +33,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class NodeConfig {
     /** One of: GROUP, PLUGIN. Legacy: STAGE (treated as PLUGIN). */
     private String type;
@@ -77,14 +80,17 @@ public class NodeConfig {
         return children != null ? children : Collections.emptyList();
     }
 
+    @JsonIgnore
     public List<NodeConfig> getThenChildrenSafe() {
         return thenChildren != null ? thenChildren : getChildren();
     }
 
+    @JsonIgnore
     public List<ElseIfBranchNodeConfig> getElseifBranchesSafe() {
         return elseifBranches != null ? elseifBranches : Collections.emptyList();
     }
 
+    @JsonIgnore
     public List<NodeConfig> getElseChildrenSafe() {
         return elseChildren != null ? elseChildren : Collections.emptyList();
     }

@@ -33,9 +33,11 @@ public interface MergePolicyActivity {
     /**
      * Run the merge policy plugin with the given context. The plugin is resolved by name
      * (same registry as other stage plugins). Returns the merged map to use as accumulated output.
+     * @param queueName task queue for per-queue resolver lookup.
      */
     @ActivityMethod
-    Map<String, Object> merge(String mergePolicyName,
+    Map<String, Object> merge(String queueName,
+                              String mergePolicyName,
                               Map<String, Object> originalInput,
                               Map<String, Object> accumulatedOutput,
                               List<AsyncGroupResultEntry> asyncResults);

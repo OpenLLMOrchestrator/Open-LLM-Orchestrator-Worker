@@ -62,5 +62,8 @@ public final class PluginTypes {
     /** Condition plugin for group-level if/elseif/else: reads context, returns output key {@code branch} (0=then, 1=elseif, ..., n-1=else). */
     public static final String CONDITION = "ConditionPlugin";
 
+    /** Feature execution plugin: pre/post hooks per feature at each capability; configured globally per feature. */
+    public static final String FEATURE_EXECUTION = "FeatureExecutionPlugin";
+
     private PluginTypes() {}
 }

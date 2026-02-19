@@ -40,10 +40,10 @@ import java.util.Map;
 public class KernelCapabilityActivityImpl implements KernelCapabilityActivity {
 
     @Override
-    public CapabilityResult execute(String capabilityName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput) {
+    public CapabilityResult execute(String queueName, String capabilityName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput) {
         log.debug(">>> [START] Capability: {} | Thread: {}", capabilityName, Thread.currentThread().getName());
 
-        CapabilityResolver resolver = EngineRuntime.getCapabilityResolver();
+        CapabilityResolver resolver = EngineRuntime.getCapabilityResolver(queueName);
         CapabilityHandler handler = resolver.resolve(capabilityName);
         if (handler == null) {
             if (PredefinedCapabilities.isPredefined(capabilityName)) {
@@ -58,7 +58,7 @@ public class KernelCapabilityActivityImpl implements KernelCapabilityActivity {
                 originalInput != null ? originalInput : Map.of(),
                 accumulatedOutput != null ? accumulatedOutput : Map.of());
         CapabilityResult handlerResult = handler.execute(context);
-        validateOutputContract(handler, context.getCurrentPluginOutput(), capabilityName);
+        validateOutputContract(queueName, handler, context.getCurrentPluginOutput(), capabilityName);
         log.debug("<<< [END] Capability: {} | Thread: {}", capabilityName, Thread.currentThread().getName());
         Map<String, Object> output = context.getCurrentPluginOutput() != null && !context.getCurrentPluginOutput().isEmpty()
                 ? new HashMap<>(context.getCurrentPluginOutput())
@@ -71,14 +71,14 @@ public class KernelCapabilityActivityImpl implements KernelCapabilityActivity {
                 .build();
     }
 
-    static void validateOutputContract(CapabilityHandler handler, Map<String, Object> output, String capabilityName) {
-        if (EngineRuntime.getFeatureFlags() != null && !EngineRuntime.getFeatureFlags().isEnabled(FeatureFlag.OUTPUT_CONTRACT)) {
+    static void validateOutputContract(String queueName, CapabilityHandler handler, Map<String, Object> output, String capabilityName) {
+        if (EngineRuntime.getFeatureFlags(queueName) != null && !EngineRuntime.getFeatureFlags(queueName).isEnabled(FeatureFlag.OUTPUT_CONTRACT)) {
             return;
         }
         if (!(handler instanceof OutputContract contract)) {
             return;
         }
-        OutputContractValidator validator = EngineRuntime.getOutputContractValidator();
+        OutputContractValidator validator = EngineRuntime.getOutputContractValidator(queueName);
         if (validator == null) {
             return;
         }

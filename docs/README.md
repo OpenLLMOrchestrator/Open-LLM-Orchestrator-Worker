@@ -14,7 +14,7 @@ Index of project documentation. Config loading and environment variables are doc
 | [**architecture.md**](architecture.md) | High-level architecture, package layout, **execution model (ACID, stateless bootstrap, runtime fairness, dynamic tree scope)**, bootstrap flow, config loading (Redis → DB → file, `config/<CONFIG_KEY>.json`). |
 | [**dynamic-execution-plan.md**](dynamic-execution-plan.md) | **Dynamic execution plan:** How the execution tree is **created** at PLANNER (plugin builds `CapabilityPlan`, stores under `dynamicPlan`) and **executed** under PLAN_EXECUTOR (same kernel/context; scope and sequence). |
 | [**developerDoc.md**](developerDoc.md) | Developer guide: workflows, Temporal UI, infrastructure, config loading and default task queue. |
-| [**features.md**](features.md) | Feature list, use cases, feature flags, Temporal qualities, plugin types, capability result envelope, human signal, streaming, determinism. |
+| [**features.md**](features.md) | **Full feature list:** Core qualities, all use cases (chat, RAG, image, video, multi-model, planner), drag-and-drop pipeline configuration (Redis-based, runtime push), ready-made templates (text/image/video/multi-model/planner), one-click Docker stack, included chat application, first-engagement experience. |
 | [**plugin-contract.md**](plugin-contract.md) | Authoritative plugin contract: StageHandler (implements a capability), config (e.g. `config/<CONFIG_KEY>.json`), registration, pipeline nodes, dynamic JARs. |
 
 ---

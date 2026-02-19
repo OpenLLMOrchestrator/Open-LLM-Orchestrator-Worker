@@ -13,25 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.openllmorchestrator.worker.engine.config.worker;
+package com.openllmorchestrator.worker.engine.kernel.feature;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import com.openllmorchestrator.worker.engine.config.FeatureFlag;
 
-/** Worker section of engine config. */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class WorkerConfig {
-    private String queueName;
-    private boolean strictBoot;
+/**
+ * Creates a feature handler for a given feature flag. Used at bootstrap to build the registry.
+ * Return null for features that have no handler (or are disabled).
+ */
+@FunctionalInterface
+public interface FeatureHandlerFactory {
 
-    public static WorkerConfig of(String queueName, boolean strictBoot) {
-        return new WorkerConfig(queueName, strictBoot);
-    }
+    /**
+     * Create handler for the feature, or null if none (feature disabled or no implementation).
+     */
+    FeatureHandler createHandler(FeatureFlag feature);
 }

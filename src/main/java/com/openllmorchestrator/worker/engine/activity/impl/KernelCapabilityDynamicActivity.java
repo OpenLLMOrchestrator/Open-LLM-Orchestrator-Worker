@@ -46,13 +46,31 @@ public class KernelCapabilityDynamicActivity implements DynamicActivity {
         String activityType = Activity.getExecutionContext().getInfo().getActivityType();
         log.debug(">>> [START] Activity type: {} | Thread: {}", activityType, Thread.currentThread().getName());
 
-        String capabilityName = args.get(0, String.class);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> originalInput = args.get(1, Map.class);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> accumulatedOutput = args.get(2, Map.class);
+        String queueName;
+        String capabilityName;
+        Map<String, Object> originalInput;
+        Map<String, Object> accumulatedOutput;
+        try {
+            queueName = args.get(0, String.class);
+            capabilityName = args.get(1, String.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> orig = args.get(2, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> acc = args.get(3, Map.class);
+            originalInput = orig != null ? orig : Map.of();
+            accumulatedOutput = acc != null ? acc : Map.of();
+        } catch (Exception e) {
+            queueName = null;
+            capabilityName = args.get(0, String.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> orig = args.get(1, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> acc = args.get(2, Map.class);
+            originalInput = orig != null ? orig : Map.of();
+            accumulatedOutput = acc != null ? acc : Map.of();
+        }
 
-        CapabilityResolver resolver = EngineRuntime.getCapabilityResolver();
+        CapabilityResolver resolver = EngineRuntime.getCapabilityResolver(queueName);
         CapabilityHandler handler = resolver.resolve(capabilityName);
         if (handler == null) {
             if (PredefinedCapabilities.isPredefined(capabilityName)) {
@@ -67,7 +85,7 @@ public class KernelCapabilityDynamicActivity implements DynamicActivity {
                 originalInput != null ? originalInput : Map.of(),
                 accumulatedOutput != null ? accumulatedOutput : Map.of());
         handler.execute(context);
-        KernelCapabilityActivityImpl.validateOutputContract(handler, context.getCurrentPluginOutput(), capabilityName);
+        KernelCapabilityActivityImpl.validateOutputContract(queueName, handler, context.getCurrentPluginOutput(), capabilityName);
         log.debug("<<< [END] Activity type: {} | Thread: {}", activityType, Thread.currentThread().getName());
         return CapabilityResult.builder()
                 .capabilityName(capabilityName)

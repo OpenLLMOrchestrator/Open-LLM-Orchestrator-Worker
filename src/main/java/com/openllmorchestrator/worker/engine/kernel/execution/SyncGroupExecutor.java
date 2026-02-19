@@ -61,7 +61,7 @@ public final class SyncGroupExecutor implements GroupExecutor {
                 SYNC_MERGE.merge(state, output, def.getName());
                 current = current.withNextStep(state);
                 context.setVersionedState(current);
-                FeatureFlags flags = EngineRuntime.getFeatureFlags();
+                FeatureFlags flags = EngineRuntime.getFeatureFlags(context.getQueueName());
                 if (flags != null && flags.isEnabled(FeatureFlag.STAGE_RESULT_ENVELOPE) && result.getMetadata() == null) {
                     result.setMetadata(CapabilityMetadata.builder()
                             .capabilityName(def.getName())

@@ -76,9 +76,10 @@ public final class PlanExecutorGroupExecutor implements GroupExecutor {
                 interceptorChain.afterCapability(capabilityCtx, empty);
                 return;
             }
-            FeatureFlags flags = EngineRuntime.getFeatureFlags();
+            String queueName = context.getQueueName();
+            FeatureFlags flags = EngineRuntime.getFeatureFlags(queueName);
             if (flags != null && flags.isEnabled(FeatureFlag.PLAN_SAFETY_VALIDATION)) {
-                PlanValidator validator = EngineRuntime.getPlanValidator();
+                PlanValidator validator = EngineRuntime.getPlanValidator(queueName);
                 if (validator != null) {
                     try {
                         validator.validate(subPlan, context);

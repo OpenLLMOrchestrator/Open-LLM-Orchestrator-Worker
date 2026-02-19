@@ -41,7 +41,8 @@ public class CapabilityInvoker {
         ActivityStub stub = Workflow.newUntypedActivityStub(toActivityOptions(definition));
         Map<String, Object> orig = context != null ? context.getOriginalInput() : Map.of();
         Map<String, Object> acc = context != null ? context.getAccumulatedOutput() : Map.of();
-        return stub.executeAsync(activityType, CapabilityResult.class, definition.getName(), orig, acc);
+        String queueName = context != null ? context.getQueueName() : null;
+        return stub.executeAsync(activityType, CapabilityResult.class, queueName, definition.getName(), orig, acc);
     }
 
     public CapabilityResult invokeSync(CapabilityDefinition definition, ExecutionContext context) {
@@ -49,7 +50,8 @@ public class CapabilityInvoker {
         ActivityStub stub = Workflow.newUntypedActivityStub(toActivityOptions(definition));
         Map<String, Object> orig = context != null ? context.getOriginalInput() : Map.of();
         Map<String, Object> acc = context != null ? context.getAccumulatedOutput() : Map.of();
-        return stub.execute(activityType, CapabilityResult.class, definition.getName(), orig, acc);
+        String queueName = context != null ? context.getQueueName() : null;
+        return stub.execute(activityType, CapabilityResult.class, queueName, definition.getName(), orig, acc);
     }
 
     public Map<String, Object> invokeMerge(String mergePolicyName, String taskQueue, Duration timeout,
@@ -65,9 +67,10 @@ public class CapabilityInvoker {
                 entries.add(new AsyncGroupResultEntry(names.get(i), results.get(i)));
             }
         }
+        String queueName = context != null ? context.getQueueName() : null;
         Map<String, Object> orig = context != null ? context.getOriginalInput() : Map.of();
         Map<String, Object> acc = context != null ? context.getAccumulatedOutput() : Map.of();
-        return activity.merge(mergePolicyName, orig, acc, entries);
+        return activity.merge(queueName, mergePolicyName, orig, acc, entries);
     }
 
     private static ActivityOptions toActivityOptions(CapabilityDefinition d) {

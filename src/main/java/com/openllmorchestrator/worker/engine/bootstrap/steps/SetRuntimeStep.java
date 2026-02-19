@@ -20,14 +20,15 @@ import com.openllmorchestrator.worker.engine.bootstrap.BootstrapStep;
 import com.openllmorchestrator.worker.engine.config.EngineConfigRuntime;
 import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
 
-/** Step: set resolver, config, and execution hierarchy (plans) on EngineRuntime for container lifecycle. No per-run state is stored. */
+/** Step: set resolver, config, and execution hierarchy (plans) on EngineRuntime for this queue. Per-queue execution tree. */
 public final class SetRuntimeStep implements BootstrapStep {
     @Override
     public void run(BootstrapContext ctx) {
-        EngineRuntime.setCapabilityResolver(ctx.getResolver());
-        EngineRuntime.setConfig(ctx.getConfig());
-        EngineRuntime.setCapabilityPlans(ctx.getPlans());
-        EngineRuntime.setFeatureFlags(EngineConfigRuntime.getFeatureFlagsEffective(ctx.getConfig()));
+        String queueName = ctx.getQueueName() != null && !ctx.getQueueName().isBlank() ? ctx.getQueueName() : "default";
+        EngineRuntime.setCapabilityResolver(queueName, ctx.getResolver());
+        EngineRuntime.setConfig(queueName, ctx.getConfig());
+        EngineRuntime.setCapabilityPlans(queueName, ctx.getPlans());
+        EngineRuntime.setFeatureFlags(queueName, EngineConfigRuntime.getFeatureFlagsEffective(ctx.getConfig()));
         EngineRuntime.CONFIG = ctx.getConfig();
     }
 }

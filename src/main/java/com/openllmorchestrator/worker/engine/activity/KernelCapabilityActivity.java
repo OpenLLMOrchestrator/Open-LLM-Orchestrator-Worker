@@ -27,7 +27,8 @@ public interface KernelCapabilityActivity {
     /**
      * Execute a capability with pipeline data context. Every plugin receives original input and
      * accumulated output from previous capabilities; returns its output in result.data.
+     * @param queueName task queue name for per-queue execution tree (resolver, feature flags, etc.).
      */
     @ActivityMethod
-    CapabilityResult execute(String capabilityName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput);
+    CapabilityResult execute(String queueName, String capabilityName, Map<String, Object> originalInput, Map<String, Object> accumulatedOutput);
 }

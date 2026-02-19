@@ -49,7 +49,21 @@ public class KernelOrchestrator {
     private final ExecutionInterceptorChain interceptorChain;
 
     public KernelOrchestrator(CapabilityInvoker capabilityInvoker) {
-        this(capabilityInvoker, null);
+        this(capabilityInvoker, (ExecutionInterceptorChain) null);
+    }
+
+    /**
+     * Uses the bootstrap-built chain (ordered feature handlers + interceptors). Null → no-op chain for fast core path.
+     */
+    public KernelOrchestrator(CapabilityInvoker capabilityInvoker, ExecutionInterceptorChain chain) {
+        this.capabilityInvoker = capabilityInvoker;
+        this.interceptorChain = chain != null ? chain : ExecutionInterceptorChain.noOp();
+        this.executors = List.of(
+                new PlanExecutorGroupExecutor(this::execute),
+                new ConditionalGroupExecutor(this::execute),
+                new SyncGroupExecutor(),
+                new AsyncGroupExecutor()
+        );
     }
 
     /**
@@ -90,7 +104,8 @@ public class KernelOrchestrator {
                 log.info("Pipeline break requested; stopping further execution.");
                 return KernelExecutionOutcome.breakRequested();
             }
-            FeatureFlags flags = EngineRuntime.getFeatureFlags();
+            String queueName = context.getQueueName();
+            FeatureFlags flags = EngineRuntime.getFeatureFlags(queueName);
             if (flags != null && flags.isEnabled(FeatureFlag.HUMAN_SIGNAL) && context.isSuspendRequestedForSignal()) {
                 long stepId = context.getVersionedState() != null ? context.getVersionedState().getStepId() : 0L;
                 log.info("Suspend requested for signal (stepId={}); workflow will await signal.", stepId);

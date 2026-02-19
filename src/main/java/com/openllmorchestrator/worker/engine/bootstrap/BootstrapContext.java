@@ -36,6 +36,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class BootstrapContext {
+    /** Task queue name for this bootstrap; used to load queue-specific config and register execution tree. */
+    private String queueName;
     private EnvConfig envConfig;
     private EngineFileConfig config;
     private PredefinedPluginBucket predefinedBucket;

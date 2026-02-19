@@ -18,6 +18,7 @@ package com.openllmorchestrator.worker.engine.contract;
 import com.openllmorchestrator.worker.contract.AgentContext;
 import com.openllmorchestrator.worker.contract.DeterminismPolicy;
 import com.openllmorchestrator.worker.contract.PluginContext;
+import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
 import lombok.Getter;
 
 import java.util.Collections;
@@ -64,6 +65,13 @@ public class ExecutionContext implements PluginContext {
 
     /** When set, feature-flag checks are applied (e.g. HUMAN_SIGNAL); when null, optional features are no-op. */
     private final FeatureFlagsProvider featureFlagsProvider;
+
+    /**
+     * Execution-scoped copy of the capability plan; null in static flow (workflow uses immutable global plan).
+     * Set only during planner or debug phase when a stage creates a copy and modifies the hierarchy.
+     * When non-null, workflow and kernel use this plan instead of the global per-queue tree.
+     */
+    private volatile CapabilityPlan executionPlan;
 
     public ExecutionContext(ExecutionCommand command) {
         this(command, null);
@@ -197,6 +205,21 @@ public class ExecutionContext implements PluginContext {
     @Override
     public String getPipelineName() {
         return command != null ? command.getPipelineName() : null;
+    }
+
+    /** Task queue name for per-queue execution tree lookup (from command; set by workflow from getTaskQueue()). */
+    public String getQueueName() {
+        return command != null ? command.getQueueName() : null;
+    }
+
+    /** Execution-scoped plan copy; when non-null, use this instead of the global per-queue tree. */
+    public CapabilityPlan getExecutionPlan() {
+        return executionPlan;
+    }
+
+    /** Set the execution-scoped plan (e.g. after copying from global, or when planner replaces with dynamic plan). */
+    public void setExecutionPlan(CapabilityPlan executionPlan) {
+        this.executionPlan = executionPlan;
     }
 
     /**

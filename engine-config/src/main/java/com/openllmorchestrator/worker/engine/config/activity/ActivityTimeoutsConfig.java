@@ -22,7 +22,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ActivityTimeoutsConfig {
-    private Integer scheduleToStartSeconds;
+    private Integer scheduleToStartSeconds = 60;
     private Integer startToCloseSeconds = 30;
-    private Integer scheduleToCloseSeconds;
+    private Integer scheduleToCloseSeconds = 300;
 }

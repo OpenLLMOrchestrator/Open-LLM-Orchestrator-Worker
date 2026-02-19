@@ -15,6 +15,8 @@
  */
 package com.openllmorchestrator.worker.engine.config.pipeline;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -75,14 +77,17 @@ public class GroupConfig {
         return children != null ? children : Collections.emptyList();
     }
 
+    @JsonIgnore
     public List<Object> getThenChildrenSafe() {
         return thenChildren != null ? thenChildren : getChildrenAsList();
     }
 
+    @JsonIgnore
     public List<ElseIfBranchConfig> getElseifBranchesSafe() {
         return elseifBranches != null ? elseifBranches : Collections.emptyList();
     }
 
+    @JsonIgnore
     public List<Object> getElseChildrenSafe() {
         return elseChildren != null ? elseChildren : Collections.emptyList();
     }
