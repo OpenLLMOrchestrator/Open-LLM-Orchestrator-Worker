@@ -1,12 +1,8 @@
 # Copyright 2026 Open LLM Orchestrator contributors. Licensed under the Apache License, Version 2.0; see LICENSE file.
-# Publish plugin-contract to Maven (GitHub Packages) on push to main/master or on release tag.
+# Publish plugin-contract to Maven (GitHub Packages) only on release to avoid 409 Conflict (immutable artifacts).
 name: Publish plugin-contract to Maven
 
 on:
-  push:
-    branches:
-      - main
-      - master
   release:
     types: [published]
 
@@ -34,14 +30,9 @@ jobs:
       - name: Determine version
         id: version
         run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            # Use tag as version (strip leading 'v' if present)
-            TAG="${GITHUB_REF#refs/tags/}"
-            echo "version=${TAG#v}" >> $GITHUB_OUTPUT
-          else
-            VERSION=$(./gradlew :plugin-contract:properties -q 2>/dev/null | grep "^version:" | head -1 | sed 's/^version: *//')
-            echo "version=${VERSION:-0.0.1}" >> $GITHUB_OUTPUT
-          fi
+          # Use release tag as version (strip leading 'v' if present)
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
           echo "Publishing version: ${{ steps.version.outputs.version }}"
 
       - name: Grant execute permission for gradlew
@@ -53,11 +44,7 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            ./gradlew :plugin-contract:publish -Pversion=${{ steps.version.outputs.version }}
-          else
-            ./gradlew :plugin-contract:publish
-          fi
+          ./gradlew :plugin-contract:publish -Pversion=${{ steps.version.outputs.version }}
           echo "Published plugin-contract ${{ steps.version.outputs.version }} to GitHub Packages"
 
   # Optional: Publish to Maven Central (uncomment and set OSSRH + signing secrets if needed)
