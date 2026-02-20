@@ -22,7 +22,7 @@ public enum ExecutionMode {
     /** Normal execution: run all stages and call models. */
     LIVE,
 
-    /** Load snapshots and re-run (e.g. from {@link ExecutionSnapshot} or history). */
+    /** Load snapshots and re-run (e.g. from ExecutionSnapshot or history). */
     REPLAY,
 
     /** Build prompts only; do not call the model. */
@@ -34,4 +34,3 @@ public enum ExecutionMode {
     /** Fork from a historical execution (e.g. replay then diverge). */
     BRANCH
 }
-

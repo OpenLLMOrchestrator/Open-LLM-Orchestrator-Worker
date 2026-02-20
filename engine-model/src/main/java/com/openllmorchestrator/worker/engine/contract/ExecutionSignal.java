@@ -15,6 +15,7 @@
  */
 package com.openllmorchestrator.worker.engine.contract;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,11 +24,13 @@ import lombok.NoArgsConstructor;
 /**
  * External signal to suspend/resume workflow (e.g. human approval, manual override, compliance gate).
  * Workflow suspends when kernel reports suspend; client sends this signal to resume.
+ * Serializable.
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ExecutionSignal {
 
     /** Signal type, e.g. {@link #TYPE_HUMAN_APPROVAL}. */
@@ -39,4 +42,3 @@ public class ExecutionSignal {
     public static final String TYPE_MANUAL_OVERRIDE = "MANUAL_OVERRIDE";
     public static final String TYPE_COMPLIANCE_ACK = "COMPLIANCE_ACK";
 }
-

@@ -23,8 +23,11 @@ import java.util.Map;
 @AllArgsConstructor
 public class QueueTopologyConfig {
 
+    @Builder.Default
     private String strategy = "SINGLE";
+    @Builder.Default
     private Map<String, String> stageToQueue = Collections.emptyMap();
+    @Builder.Default
     private Map<String, String> tenantToQueue = Collections.emptyMap();
 
     public static final String SINGLE = "SINGLE";

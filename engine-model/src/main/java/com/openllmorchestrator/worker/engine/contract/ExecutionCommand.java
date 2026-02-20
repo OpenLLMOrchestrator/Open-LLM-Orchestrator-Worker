@@ -15,15 +15,21 @@
  */
 package com.openllmorchestrator.worker.engine.contract;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.openllmorchestrator.worker.contract.DeterminismPolicy;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
+/** Command for one pipeline execution. Serializable. */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ExecutionCommand {
 
     private String operation;
@@ -51,4 +57,3 @@ public class ExecutionCommand {
     /** Optional seed for reproducible randomness when determinism policy is enabled; kernel/store can use for replay. */
     private Long randomnessSeed;
 }
-

@@ -15,6 +15,7 @@ repositories {
 dependencies {
     implementation project(':plugin-contract')
     implementation project(':engine-config')
+    implementation project(':engine-model')
     if (project.findProject(':plugins') != null) {
         implementation project(':plugins')
     }

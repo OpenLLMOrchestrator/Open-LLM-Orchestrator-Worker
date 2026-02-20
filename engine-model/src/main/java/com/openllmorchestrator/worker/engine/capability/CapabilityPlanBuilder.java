@@ -112,4 +112,3 @@ public final class CapabilityPlanBuilder {
         return new CapabilityPlan(groups);
     }
 }
-

@@ -35,8 +35,10 @@ import java.util.Map;
 public class PipelineSection {
     private int defaultTimeoutSeconds;
     /** Default for ASYNC groups: ALL | FIRST_SUCCESS | FIRST_FAILURE | ALL_SETTLED */
+    @Builder.Default
     private String defaultAsyncCompletionPolicy = "ALL";
     /** Max depth for nested GROUP recursion (default 5). Exceeding throws at plan build. */
+    @Builder.Default
     private int defaultMaxGroupDepth = 5;
     /** Default merge policy hook for ASYNC groups: type MERGE_POLICY, pluginType MergePolicy, name = activity/FQCN. */
     private MergePolicyConfig mergePolicy;

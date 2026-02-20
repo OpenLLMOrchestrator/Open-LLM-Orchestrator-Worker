@@ -15,6 +15,9 @@
  */
 package com.openllmorchestrator.worker.engine.capability;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -23,16 +26,18 @@ import java.util.List;
 
 /**
  * Execution hierarchy: ordered list of stage groups. Built once at bootstrap from config
- * and reused for the container lifecycle. Immutable; holds no transactional or request-scoped data.
+ * and reused for the container lifecycle. Immutable; serializable.
  * Graph-capable: each group may declare {@link CapabilityGroupSpec#getDependsOnGroupIndices()}; kernel runs
  * a group when all its dependencies have completed (deterministic ready set).
  */
 @Getter
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CapabilityPlan {
     private final List<CapabilityGroupSpec> groups;
 
-    CapabilityPlan(List<CapabilityGroupSpec> groups) {
-        this.groups = Collections.unmodifiableList(new ArrayList<>(groups));
+    @JsonCreator
+    CapabilityPlan(@JsonProperty("groups") List<CapabilityGroupSpec> groups) {
+        this.groups = groups != null ? Collections.unmodifiableList(new ArrayList<>(groups)) : List.of();
     }
 
     public static CapabilityPlanBuilder builder() {
@@ -45,7 +50,7 @@ public class CapabilityPlan {
     }
 
     /**
-     * Returns a copy of this plan for execution-scoped use. The copy is stored in {@link com.openllmorchestrator.worker.engine.contract.ExecutionContext}
+     * Returns a copy of this plan for execution-scoped use. The copy is stored in execution context
      * before any stage can modify the hierarchy (e.g. planner). Modifications apply only to the copy; the global
      * per-queue execution tree remains immutable.
      */
@@ -53,4 +58,3 @@ public class CapabilityPlan {
         return fromGroups(new ArrayList<>(getGroups()));
     }
 }
-

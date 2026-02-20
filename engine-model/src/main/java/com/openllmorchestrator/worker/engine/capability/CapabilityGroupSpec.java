@@ -15,6 +15,9 @@
  */
 package com.openllmorchestrator.worker.engine.capability;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -29,6 +32,7 @@ import java.util.List;
  * then the selected branch (list of CapabilityGroupSpec) runs as a sub-plan.
  */
 @Getter
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CapabilityGroupSpec {
     private final List<CapabilityDefinition> definitions;
     private final AsyncCompletionPolicy asyncPolicy;
@@ -60,10 +64,15 @@ public class CapabilityGroupSpec {
         this(Collections.emptyList(), AsyncCompletionPolicy.ALL, "LAST_WINS", null, conditionDefinition, branches);
     }
 
-    private CapabilityGroupSpec(List<CapabilityDefinition> definitions, AsyncCompletionPolicy asyncPolicy,
-                           String asyncOutputMergePolicyName, int[] dependsOnGroupIndices,
-                           CapabilityDefinition conditionDefinition, List<List<CapabilityGroupSpec>> branches) {
-        this.definitions = Collections.unmodifiableList(new ArrayList<>(definitions));
+    @JsonCreator
+    CapabilityGroupSpec(
+            @JsonProperty("definitions") List<CapabilityDefinition> definitions,
+            @JsonProperty("asyncPolicy") AsyncCompletionPolicy asyncPolicy,
+            @JsonProperty("asyncOutputMergePolicyName") String asyncOutputMergePolicyName,
+            @JsonProperty("dependsOnGroupIndices") int[] dependsOnGroupIndices,
+            @JsonProperty("conditionDefinition") CapabilityDefinition conditionDefinition,
+            @JsonProperty("branches") List<List<CapabilityGroupSpec>> branches) {
+        this.definitions = definitions != null ? Collections.unmodifiableList(new ArrayList<>(definitions)) : Collections.emptyList();
         this.asyncPolicy = asyncPolicy != null ? asyncPolicy : AsyncCompletionPolicy.ALL;
         this.asyncOutputMergePolicyName = asyncOutputMergePolicyName != null && !asyncOutputMergePolicyName.isBlank()
                 ? asyncOutputMergePolicyName : "LAST_WINS";
@@ -74,4 +83,3 @@ public class CapabilityGroupSpec {
         this.branches = branches != null ? Collections.unmodifiableList(new ArrayList<>(branches)) : null;
     }
 }
-

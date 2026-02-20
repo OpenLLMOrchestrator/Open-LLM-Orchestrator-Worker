@@ -51,7 +51,19 @@ final class ActivityOptionsFromConfig {
                 : (ctx.getActivityDefaults().getRetryPolicy() != null
                 ? ctx.getActivityDefaults().getRetryPolicy()
                 : null);
-        return CapabilityRetryOptions.from(c);
+        return fromRetryPolicyConfig(c);
+    }
+
+    /** Build CapabilityRetryOptions from engine-config RetryPolicyConfig (engine-model has no config dependency). */
+    static CapabilityRetryOptions fromRetryPolicyConfig(RetryPolicyConfig c) {
+        if (c == null) return null;
+        return CapabilityRetryOptions.builder()
+                .maximumAttempts(c.getMaximumAttempts())
+                .initialIntervalSeconds(c.getInitialIntervalSeconds())
+                .backoffCoefficient(c.getBackoffCoefficient())
+                .maximumIntervalSeconds(c.getMaximumIntervalSeconds())
+                .nonRetryableErrors(c.getNonRetryableErrors())
+                .build();
     }
 }
 

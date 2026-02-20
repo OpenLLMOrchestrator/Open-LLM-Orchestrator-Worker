@@ -15,6 +15,9 @@
  */
 package com.openllmorchestrator.worker.engine.contract;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.util.Collections;
@@ -24,19 +27,22 @@ import java.util.Map;
 /**
  * Immutable versioned execution state. Every stage reads previous state and the kernel produces
  * new state (this object); stepId increments so we get replay, diff, time-travel, and audit.
- * <ul>
- *   <li>Sync: one stage → withNextStep(mergedState) → stepId + 1</li>
- *   <li>Async: N parallel stages → withNextStepAfterAsync(mergedState, N) → stepId + N (highest among them)</li>
- * </ul>
+ * Serializable.
  */
 @Getter
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class VersionedState {
     private final String executionId;
     private final long stepId;
     private final Map<String, Object> state;
     private final ExecutionMetadata metadata;
 
-    public VersionedState(String executionId, long stepId, Map<String, Object> state, ExecutionMetadata metadata) {
+    @JsonCreator
+    public VersionedState(
+            @JsonProperty("executionId") String executionId,
+            @JsonProperty("stepId") long stepId,
+            @JsonProperty("state") Map<String, Object> state,
+            @JsonProperty("metadata") ExecutionMetadata metadata) {
         this.executionId = executionId;
         this.stepId = stepId;
         this.state = state != null ? Collections.unmodifiableMap(new HashMap<>(state)) : Map.of();
@@ -81,4 +87,3 @@ public class VersionedState {
         return stepId < 0;
     }
 }
-

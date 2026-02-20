@@ -15,22 +15,27 @@
  */
 package com.openllmorchestrator.worker.engine.capability;
 
-import com.openllmorchestrator.worker.engine.config.activity.RetryPolicyConfig;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 import java.util.Collections;
 import java.util.List;
 
-/** Runtime retry options for an activity. Built from config; no hardcoded values. */
+/** Runtime retry options for an activity. Serializable; built from config in engine layer. */
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CapabilityRetryOptions {
-    private final int maximumAttempts;
-    private final int initialIntervalSeconds;
-    private final double backoffCoefficient;
-    private final int maximumIntervalSeconds;
-    private final List<String> nonRetryableErrors;
+    private int maximumAttempts;
+    private int initialIntervalSeconds;
+    private double backoffCoefficient;
+    private int maximumIntervalSeconds;
+    private List<String> nonRetryableErrors;
 
     public List<String> getNonRetryableErrors() {
         if (nonRetryableErrors == null || nonRetryableErrors.isEmpty()) {
@@ -38,16 +43,4 @@ public class CapabilityRetryOptions {
         }
         return Collections.unmodifiableList(nonRetryableErrors);
     }
-
-    public static CapabilityRetryOptions from(RetryPolicyConfig c) {
-        if (c == null) return null;
-        return CapabilityRetryOptions.builder()
-                .maximumAttempts(c.getMaximumAttempts())
-                .initialIntervalSeconds(c.getInitialIntervalSeconds())
-                .backoffCoefficient(c.getBackoffCoefficient())
-                .maximumIntervalSeconds(c.getMaximumIntervalSeconds())
-                .nonRetryableErrors(c.getNonRetryableErrors())
-                .build();
-    }
 }
-

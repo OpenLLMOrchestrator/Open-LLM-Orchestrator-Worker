@@ -15,20 +15,23 @@
  */
 package com.openllmorchestrator.worker.engine.contract;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-/**
- * Immutable metadata for an execution run (mode, tenant, user, etc.).
- * Used by {@link VersionedState} for replay, audit, and branching.
- */
+/** Immutable metadata for an execution run (mode, tenant, user, etc.). Serializable. */
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ExecutionMetadata {
-    private final ExecutionMode executionMode;
-    private final String tenantId;
-    private final String userId;
-    private final String pipelineName;
+    private ExecutionMode executionMode;
+    private String tenantId;
+    private String userId;
+    private String pipelineName;
 
     public static ExecutionMetadata from(ExecutionCommand command) {
         return from(command, ExecutionMode.LIVE);
@@ -52,4 +55,3 @@ public class ExecutionMetadata {
                 .build();
     }
 }
-

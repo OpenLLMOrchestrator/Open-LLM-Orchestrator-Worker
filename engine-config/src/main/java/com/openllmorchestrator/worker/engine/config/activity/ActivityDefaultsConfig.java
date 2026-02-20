@@ -28,8 +28,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ActivityDefaultsConfig {
+    @Builder.Default
     private ActivityTimeoutsConfig defaultTimeouts = new ActivityTimeoutsConfig();
+    @Builder.Default
     private RetryPolicyConfig retryPolicy = new RetryPolicyConfig();
     /** Optional payload limits so activity args/results stay small (Temporal records in DB/Elastic). */
+    @Builder.Default
     private ActivityPayloadConfig payload = new ActivityPayloadConfig();
 }

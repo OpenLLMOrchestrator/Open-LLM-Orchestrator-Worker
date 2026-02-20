@@ -15,21 +15,25 @@
  */
 package com.openllmorchestrator.worker.engine.contract;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-/**
- * Result of kernel execution. When suspended, workflow awaits {@link ExecutionSignal} then resumes.
- */
+/** Result of kernel execution. When suspended, workflow awaits ExecutionSignal then resumes. Serializable. */
 @Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class KernelExecutionOutcome {
 
-    private final boolean completed;
-    private final boolean suspended;
-    private final long suspendedAtStepId;
-    /** True when pipeline was stopped because one or more activities requested break (ASYNC: all in group requested). */
-    private final boolean breakRequested;
+    private boolean completed;
+    private boolean suspended;
+    private long suspendedAtStepId;
+    /** True when pipeline was stopped because one or more activities requested break. */
+    private boolean breakRequested;
 
     public static KernelExecutionOutcome completed() {
         return KernelExecutionOutcome.builder().completed(true).suspended(false).suspendedAtStepId(0L).breakRequested(false).build();
@@ -43,4 +47,3 @@ public class KernelExecutionOutcome {
         return KernelExecutionOutcome.builder().completed(true).suspended(false).suspendedAtStepId(0L).breakRequested(true).build();
     }
 }
-

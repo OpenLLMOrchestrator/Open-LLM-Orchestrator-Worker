@@ -28,6 +28,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TemporalConfig {
+    @Builder.Default
     private String target = "localhost:7233";
+    @Builder.Default
     private String namespace = "default";
 }
