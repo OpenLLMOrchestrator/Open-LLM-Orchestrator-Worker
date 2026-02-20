@@ -7,9 +7,15 @@ COPY build.gradle .
 COPY settings.gradle .
 COPY gradle gradle/
 
-# Required: plugin-contract. plugins/ must exist (e.g. plugins/README.md); put plugins/*.zip here to bundle them into the fat JAR
+# Required subprojects (settings.gradle includes these). Do not remove – root build depends on them.
 COPY plugin-contract plugin-contract/
+COPY engine-config engine-config/
+COPY engine-model engine-model/
+# plugins/ must exist (e.g. plugins/README.md); put plugins/*.zip here to bundle them into the fat JAR
 COPY plugins plugins/
+
+# Fail fast if a subproject is missing (e.g. .dockerignore or context issue)
+RUN for d in plugin-contract engine-config engine-model; do test -d /app/$d || (echo "Missing /app/$d - check Dockerfile COPY and .dockerignore" && exit 1); done
 
 # Fix CRLF in gradlew (Windows) so Linux can run it (shebang must be #!/bin/sh not #!/bin/sh\r)
 RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
