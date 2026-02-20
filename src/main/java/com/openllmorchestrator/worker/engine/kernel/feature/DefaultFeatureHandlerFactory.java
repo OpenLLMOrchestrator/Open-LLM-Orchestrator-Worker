@@ -31,6 +31,9 @@ public final class DefaultFeatureHandlerFactory implements FeatureHandlerFactory
 
     @Override
     public FeatureHandler createHandler(FeatureFlag feature) {
+        if (feature == FeatureFlag.DEBUGGER) {
+            return new DebuggerFeatureHandler();
+        }
         return null;
     }
 }

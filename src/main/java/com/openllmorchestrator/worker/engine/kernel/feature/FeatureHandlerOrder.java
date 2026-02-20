@@ -41,7 +41,8 @@ public final class FeatureHandlerOrder {
             FeatureFlag.STREAMING,
             FeatureFlag.AGENT_CONTEXT,
             FeatureFlag.CHECKPOINTABLE_STAGE,
-            FeatureFlag.EXECUTION_GRAPH_EXPORT
+            FeatureFlag.EXECUTION_GRAPH_EXPORT,
+            FeatureFlag.DEBUGGER
     );
 
     private FeatureHandlerOrder() {}

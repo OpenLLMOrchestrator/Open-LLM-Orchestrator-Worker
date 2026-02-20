@@ -15,6 +15,7 @@
  */
 package com.openllmorchestrator.worker.workflow.impl;
 
+import com.openllmorchestrator.worker.engine.activity.DebugPushActivity;
 import com.openllmorchestrator.worker.engine.contract.ExecutionCommand;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.engine.contract.ExecutionSignal;
@@ -25,9 +26,11 @@ import com.openllmorchestrator.worker.engine.kernel.CapabilityInvoker;
 import com.openllmorchestrator.worker.engine.runtime.EngineRuntime;
 import com.openllmorchestrator.worker.engine.kernel.interceptor.ExecutionInterceptorChain;
 import com.openllmorchestrator.worker.workflow.CoreWorkflow;
+import io.temporal.activity.ActivityOptions;
 import io.temporal.workflow.Workflow;
 import org.slf4j.Logger;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -58,6 +61,25 @@ public class CoreWorkflowImpl implements CoreWorkflow {
         // Static flow: use immutable global plan (context.executionPlan stays null). Planner/debug phases create a copy in context before modifying.
         CapabilityPlan globalPlan = EngineRuntime.getCapabilityPlan(queueName, pipelineName);
         CapabilityPlan planToRun = context.getExecutionPlan() != null ? context.getExecutionPlan() : globalPlan;
+
+        // When DEBUGGER FF is enabled and input has debug=true and debugID=uuid, put stub/plan in context so DebuggerFeatureHandler can push before/after every node.
+        com.openllmorchestrator.worker.engine.config.FeatureFlags flagsForDebug = EngineRuntime.getFeatureFlags(queueName);
+        if (flagsForDebug != null && flagsForDebug.isEnabled(com.openllmorchestrator.worker.engine.config.FeatureFlag.DEBUGGER)) {
+            Map<String, Object> input = command.getInput();
+            boolean debug = input != null && Boolean.TRUE.equals(input.get("debug"));
+            String debugID = input != null && input.get("debugID") != null ? String.valueOf(input.get("debugID")).trim() : null;
+            if (debug && debugID != null && !debugID.isEmpty()) {
+                ActivityOptions options = ActivityOptions.newBuilder()
+                        .setTaskQueue(Workflow.getInfo().getTaskQueue())
+                        .setStartToCloseTimeout(Duration.ofSeconds(30))
+                        .build();
+                DebugPushActivity debugPush = Workflow.newActivityStub(DebugPushActivity.class, options);
+                context.put(com.openllmorchestrator.worker.engine.kernel.feature.DebuggerFeatureHandler.STATE_KEY_DEBUG_ID, debugID);
+                context.put(com.openllmorchestrator.worker.engine.kernel.feature.DebuggerFeatureHandler.STATE_KEY_DEBUG_PUSH_ACTIVITY, debugPush);
+                context.put(com.openllmorchestrator.worker.engine.kernel.feature.DebuggerFeatureHandler.STATE_KEY_DEBUG_PLAN, planToRun);
+            }
+        }
+
         log.info("Executing pipeline: {} (queue: {})", pipelineName, queueName);
         CapabilityInvoker invoker = new CapabilityInvoker();
         ExecutionInterceptorChain chain = EngineRuntime.getExecutionInterceptorChain(queueName);

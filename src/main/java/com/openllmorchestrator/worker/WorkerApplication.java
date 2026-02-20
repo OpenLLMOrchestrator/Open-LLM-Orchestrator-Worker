@@ -15,6 +15,7 @@
  */
 package com.openllmorchestrator.worker;
 
+import com.openllmorchestrator.worker.engine.activity.impl.DebugPushActivityImpl;
 import com.openllmorchestrator.worker.engine.activity.impl.KernelCapabilityActivityImpl;
 import com.openllmorchestrator.worker.engine.activity.impl.KernelCapabilityDynamicActivity;
 import com.openllmorchestrator.worker.engine.activity.impl.MergePolicyActivityImpl;
@@ -96,11 +97,12 @@ public class WorkerApplication {
             // Register Workflow
             worker.registerWorkflowImplementationTypes(CoreWorkflowImpl.class);
 
-            // Register activities (DynamicActivity handles Capability::Plugin activity types for UI; KernelCapabilityActivityImpl handles "Execute" fallback)
+            // Register activities (DynamicActivity handles Capability::Plugin activity types for UI; KernelCapabilityActivityImpl handles "Execute" fallback; DebugPushActivity for DEBUGGER FF)
             worker.registerActivitiesImplementations(
                     new KernelCapabilityActivityImpl(),
                     new KernelCapabilityDynamicActivity(),
-                    new MergePolicyActivityImpl()
+                    new MergePolicyActivityImpl(),
+                    new DebugPushActivityImpl()
             );
 
             // ----------------------------------------------------

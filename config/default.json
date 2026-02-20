@@ -6,7 +6,8 @@
         "EXECUTION_GRAPH",
         "PLANNER_PLAN_EXECUTOR",
         "INTERCEPTORS",
-        "EXECUTION_SNAPSHOT"
+        "EXECUTION_SNAPSHOT",
+        "DEBUGGER"
     ],
     "worker": {
         "queueName": "core-task-queue",
