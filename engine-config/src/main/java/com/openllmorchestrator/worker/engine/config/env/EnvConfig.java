@@ -43,6 +43,8 @@ public class EnvConfig {
     private final String temporalTarget;
     /** Temporal namespace (env: TEMPORAL_NAMESPACE). Overrides config when set. */
     private final String temporalNamespace;
+    /** Shared folder for plugins (env: SHARED_FOLDER_PATH). Mount in container; any plugin may resolve paths relative to this. */
+    private final String sharedFolderPath;
 
     public static EnvConfig fromEnvironment() {
         String queueName = getEnv("QUEUE_NAME", "core-task-queue");
@@ -61,6 +63,7 @@ public class EnvConfig {
         int activityPollers = parseInt(getEnv("MAX_CONCURRENT_ACTIVITY_TASK_POLLERS", "10"), 10);
         String temporalTarget = getEnv("TEMPORAL_TARGET", "localhost:7233");
         String temporalNamespace = getEnv("TEMPORAL_NAMESPACE", "default");
+        String sharedFolder = getEnv("SHARED_FOLDER_PATH", null);
 
         return EnvConfig.builder()
                 .worker(WorkerConfig.of(queueName, false))
@@ -72,6 +75,7 @@ public class EnvConfig {
                 .maxConcurrentActivityTaskPollers(activityPollers)
                 .temporalTarget(temporalTarget)
                 .temporalNamespace(temporalNamespace)
+                .sharedFolderPath(sharedFolder)
                 .build();
     }
 

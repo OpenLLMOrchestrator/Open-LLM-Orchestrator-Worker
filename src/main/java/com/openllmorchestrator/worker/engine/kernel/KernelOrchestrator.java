@@ -27,11 +27,13 @@ import com.openllmorchestrator.worker.engine.kernel.execution.PlanExecutorGroupE
 import com.openllmorchestrator.worker.engine.kernel.execution.SyncGroupExecutor;
 import com.openllmorchestrator.worker.engine.capability.CapabilityGroupSpec;
 import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
+import com.openllmorchestrator.worker.engine.capability.ExecutionTreeNode;
 import com.openllmorchestrator.worker.engine.kernel.interceptor.ExecutionInterceptorChain;
 import com.openllmorchestrator.worker.engine.kernel.interceptor.ExecutionInterceptor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * Kernel: execution-state driven, deterministic, graph-capable, snapshot-aware.
@@ -89,6 +91,9 @@ public class KernelOrchestrator {
      */
     public KernelExecutionOutcome execute(CapabilityPlan plan, ExecutionContext context) {
         ExecutionState state = new ExecutionState(plan, context);
+        List<ExecutionTreeNode> capabilityRoots = plan.getExecutionTreeRoots();
+        List<String> capabilityNodeIds = plan.getCapabilityNodeIds();
+        int currentCapabilityIndex = -1;
         while (!state.isDone()) {
             List<Integer> ready = state.getReadyGroupIndices();
             if (ready.isEmpty()) {
@@ -97,8 +102,28 @@ public class KernelOrchestrator {
             }
             int next = ready.get(0);
             CapabilityGroupSpec spec = plan.getGroups().get(next);
+            String capabilityBucket = spec.getDefinitions() != null && !spec.getDefinitions().isEmpty()
+                    ? spec.getDefinitions().get(0).getCapabilityBucketName()
+                    : (spec.getConditionDefinition() != null ? spec.getConditionDefinition().getCapabilityBucketName() : null);
+            int capabilityIndex = resolveCapabilityIndex(capabilityBucket, capabilityRoots);
+            if (capabilityIndex >= 0 && capabilityIndex != currentCapabilityIndex) {
+                if (currentCapabilityIndex >= 0 && currentCapabilityIndex < capabilityNodeIds.size()) {
+                    String prevName = capabilityRoots.get(currentCapabilityIndex).getName();
+                    interceptorChain.afterCapabilityNode(context, prevName, capabilityNodeIds.get(currentCapabilityIndex));
+                }
+                if (capabilityIndex < capabilityNodeIds.size()) {
+                    String capName = capabilityRoots.get(capabilityIndex).getName();
+                    interceptorChain.beforeCapabilityNode(context, capName, capabilityNodeIds.get(capabilityIndex));
+                }
+                currentCapabilityIndex = capabilityIndex;
+            }
             log.info("---- Executing Capability Group {} ----", next);
-            executeGroup(spec, context, next);
+            interceptorChain.beforeGroup(context, next, spec);
+            try {
+                executeGroup(spec, context, next);
+            } finally {
+                interceptorChain.afterGroup(context, next, spec);
+            }
             state.markCompleted(next);
             if (context.isPipelineBreakRequested()) {
                 log.info("Pipeline break requested; stopping further execution.");
@@ -112,7 +137,25 @@ public class KernelOrchestrator {
                 return KernelExecutionOutcome.suspended(stepId);
             }
         }
+        if (currentCapabilityIndex >= 0 && currentCapabilityIndex < capabilityNodeIds.size()) {
+            String prevName = capabilityRoots.get(currentCapabilityIndex).getName();
+            interceptorChain.afterCapabilityNode(context, prevName, capabilityNodeIds.get(currentCapabilityIndex));
+        }
         return KernelExecutionOutcome.completed();
+    }
+
+    /** Resolve capability bucket name to index in execution tree roots (same order as config). */
+    private static int resolveCapabilityIndex(String capabilityBucketName, List<ExecutionTreeNode> capabilityRoots) {
+        if (capabilityRoots == null || capabilityRoots.isEmpty()) {
+            return -1;
+        }
+        if (capabilityBucketName == null || capabilityBucketName.isBlank()) {
+            return 0;
+        }
+        return IntStream.range(0, capabilityRoots.size())
+                .filter(i -> capabilityBucketName.equals(capabilityRoots.get(i).getName()))
+                .findFirst()
+                .orElse(0);
     }
 
     private void executeGroup(CapabilityGroupSpec spec, ExecutionContext context, int groupIndex) {

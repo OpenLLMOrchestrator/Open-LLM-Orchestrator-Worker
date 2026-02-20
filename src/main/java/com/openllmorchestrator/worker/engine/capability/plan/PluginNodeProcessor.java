@@ -31,12 +31,24 @@ public final class PluginNodeProcessor implements NodeProcessor {
 
     @Override
     public void process(NodeConfig node, PlanBuildContext ctx, CapabilityPlanBuilder builder, PipelineWalker walker, int depth) {
+        process(node, ctx, builder, walker, depth, null);
+    }
+
+    @Override
+    public void process(NodeConfig node, PlanBuildContext ctx, CapabilityPlanBuilder builder, PipelineWalker walker, int depth,
+                       ExecutionTreeBuilder treeBuilder) {
         if (ctx.getAllowedPluginNames() != null && !ctx.getAllowedPluginNames().contains(node.getName())) {
             throw new IllegalStateException(
                     "Plugin not allowed or incompatible: " + node.getName()
                             + ". Add it to config.plugins and ensure contract compatibility.");
         }
         int timeout = node.getTimeoutSeconds() != null ? node.getTimeoutSeconds() : ctx.getDefaultTimeoutSeconds();
+        String groupNodeId = null;
+        String pluginNodeId = null;
+        if (treeBuilder != null) {
+            groupNodeId = treeBuilder.getCurrentGroupNodeId();
+            pluginNodeId = treeBuilder.addPlugin(node.getName());
+        }
         builder.addSyncWithCustomConfig(
                 node.getName(),
                 CapabilityExecutionMode.SYNC,
@@ -45,7 +57,9 @@ public final class PluginNodeProcessor implements NodeProcessor {
                 ActivityOptionsFromConfig.scheduleToStart(node, ctx),
                 ActivityOptionsFromConfig.scheduleToClose(node, ctx),
                 ActivityOptionsFromConfig.retryOptions(node, ctx),
-                ctx.getCurrentCapabilityBucketName()
+                ctx.getCurrentCapabilityBucketName(),
+                groupNodeId,
+                pluginNodeId
         );
     }
 }

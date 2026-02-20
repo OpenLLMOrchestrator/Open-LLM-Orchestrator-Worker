@@ -15,6 +15,8 @@
  */
 package com.openllmorchestrator.worker.engine.kernel.interceptor;
 
+import com.openllmorchestrator.worker.engine.capability.CapabilityGroupSpec;
+import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.contract.CapabilityResult;
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,6 +73,72 @@ public final class ExecutionInterceptorChain implements ExecutionInterceptor {
                 interceptor.onError(ctx, e);
             } catch (Exception ex) {
                 log.warn("ExecutionInterceptor {} failed in onError: {}", interceptor.getClass().getSimpleName(), ex.getMessage(), ex);
+            }
+        }
+    }
+
+    @Override
+    public void beforeGroup(ExecutionContext context, int groupIndex, CapabilityGroupSpec spec) {
+        for (ExecutionInterceptor interceptor : interceptors) {
+            try {
+                interceptor.beforeGroup(context, groupIndex, spec);
+            } catch (Exception e) {
+                log.warn("ExecutionInterceptor {} failed in beforeGroup: {}", interceptor.getClass().getSimpleName(), e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
+    public void afterGroup(ExecutionContext context, int groupIndex, CapabilityGroupSpec spec) {
+        for (ExecutionInterceptor interceptor : interceptors) {
+            try {
+                interceptor.afterGroup(context, groupIndex, spec);
+            } catch (Exception e) {
+                log.warn("ExecutionInterceptor {} failed in afterGroup: {}", interceptor.getClass().getSimpleName(), e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
+    public void beforeBranch(ExecutionContext context, int groupIndex, int branchIndex) {
+        for (ExecutionInterceptor interceptor : interceptors) {
+            try {
+                interceptor.beforeBranch(context, groupIndex, branchIndex);
+            } catch (Exception e) {
+                log.warn("ExecutionInterceptor {} failed in beforeBranch: {}", interceptor.getClass().getSimpleName(), e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
+    public void afterBranch(ExecutionContext context, int groupIndex, int branchIndex) {
+        for (ExecutionInterceptor interceptor : interceptors) {
+            try {
+                interceptor.afterBranch(context, groupIndex, branchIndex);
+            } catch (Exception e) {
+                log.warn("ExecutionInterceptor {} failed in afterBranch: {}", interceptor.getClass().getSimpleName(), e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
+    public void beforeCapabilityNode(ExecutionContext context, String capabilityName, String capabilityNodeId) {
+        for (ExecutionInterceptor interceptor : interceptors) {
+            try {
+                interceptor.beforeCapabilityNode(context, capabilityName, capabilityNodeId);
+            } catch (Exception e) {
+                log.warn("ExecutionInterceptor {} failed in beforeCapabilityNode: {}", interceptor.getClass().getSimpleName(), e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
+    public void afterCapabilityNode(ExecutionContext context, String capabilityName, String capabilityNodeId) {
+        for (ExecutionInterceptor interceptor : interceptors) {
+            try {
+                interceptor.afterCapabilityNode(context, capabilityName, capabilityNodeId);
+            } catch (Exception e) {
+                log.warn("ExecutionInterceptor {} failed in afterCapabilityNode: {}", interceptor.getClass().getSimpleName(), e.getMessage(), e);
             }
         }
     }

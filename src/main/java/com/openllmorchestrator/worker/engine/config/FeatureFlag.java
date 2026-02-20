@@ -59,7 +59,7 @@ public enum FeatureFlag {
     PLAN_SAFETY_VALIDATION,
     /** Visual execution graph export: DOT, Mermaid, JSON for UI. */
     EXECUTION_GRAPH_EXPORT,
-    /** Debug: when input debug=true and debugID=uuid, push serialized execution tree and context to Redis (olo:debug:<uuid>:*). */
+    /** Debug: when command debug=true and debugID=uuid (same level as tenantId, userId, operation), push serialized execution tree and context to Redis (olo:debug:<uuid>:*). */
     DEBUGGER,
 }
 

@@ -44,24 +44,28 @@ public class CapabilityGroupSpec {
     private final CapabilityDefinition conditionDefinition;
     /** When conditional: branch 0 = then, 1..n-2 = elseif, n-1 = else. Each branch is a list of CapabilityGroupSpec to run in order. */
     private final List<List<CapabilityGroupSpec>> branches;
+    /** Stable UUID for this group node in the execution tree; used by pre/post handlers and debug Redis state. */
+    private final String groupNodeId;
+    /** When conditional: UUID for the condition node. */
+    private final String conditionNodeId;
 
     public CapabilityGroupSpec(List<CapabilityDefinition> definitions, AsyncCompletionPolicy asyncPolicy) {
-        this(definitions, asyncPolicy, "LAST_WINS", null, null, null);
+        this(definitions, asyncPolicy, "LAST_WINS", null, null, null, null, null);
     }
 
     public CapabilityGroupSpec(List<CapabilityDefinition> definitions, AsyncCompletionPolicy asyncPolicy,
                           String asyncOutputMergePolicyName) {
-        this(definitions, asyncPolicy, asyncOutputMergePolicyName, null, null, null);
+        this(definitions, asyncPolicy, asyncOutputMergePolicyName, null, null, null, null, null);
     }
 
     public CapabilityGroupSpec(List<CapabilityDefinition> definitions, AsyncCompletionPolicy asyncPolicy,
                           String asyncOutputMergePolicyName, int[] dependsOnGroupIndices) {
-        this(definitions, asyncPolicy, asyncOutputMergePolicyName, dependsOnGroupIndices, null, null);
+        this(definitions, asyncPolicy, asyncOutputMergePolicyName, dependsOnGroupIndices, null, null, null, null);
     }
 
     /** Conditional group: run conditionDefinition, then run branches.get(selectedIndex). */
     public CapabilityGroupSpec(CapabilityDefinition conditionDefinition, List<List<CapabilityGroupSpec>> branches) {
-        this(Collections.emptyList(), AsyncCompletionPolicy.ALL, "LAST_WINS", null, conditionDefinition, branches);
+        this(Collections.emptyList(), AsyncCompletionPolicy.ALL, "LAST_WINS", null, conditionDefinition, branches, null, null);
     }
 
     @JsonCreator
@@ -71,7 +75,9 @@ public class CapabilityGroupSpec {
             @JsonProperty("asyncOutputMergePolicyName") String asyncOutputMergePolicyName,
             @JsonProperty("dependsOnGroupIndices") int[] dependsOnGroupIndices,
             @JsonProperty("conditionDefinition") CapabilityDefinition conditionDefinition,
-            @JsonProperty("branches") List<List<CapabilityGroupSpec>> branches) {
+            @JsonProperty("branches") List<List<CapabilityGroupSpec>> branches,
+            @JsonProperty("groupNodeId") String groupNodeId,
+            @JsonProperty("conditionNodeId") String conditionNodeId) {
         this.definitions = definitions != null ? Collections.unmodifiableList(new ArrayList<>(definitions)) : Collections.emptyList();
         this.asyncPolicy = asyncPolicy != null ? asyncPolicy : AsyncCompletionPolicy.ALL;
         this.asyncOutputMergePolicyName = asyncOutputMergePolicyName != null && !asyncOutputMergePolicyName.isBlank()
@@ -81,5 +87,7 @@ public class CapabilityGroupSpec {
                 : new int[0];
         this.conditionDefinition = conditionDefinition;
         this.branches = branches != null ? Collections.unmodifiableList(new ArrayList<>(branches)) : null;
+        this.groupNodeId = groupNodeId;
+        this.conditionNodeId = conditionNodeId;
     }
 }

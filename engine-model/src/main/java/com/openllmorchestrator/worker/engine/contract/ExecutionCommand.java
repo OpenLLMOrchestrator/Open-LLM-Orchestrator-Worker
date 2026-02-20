@@ -56,4 +56,8 @@ public class ExecutionCommand {
     private DeterminismPolicy determinismPolicy;
     /** Optional seed for reproducible randomness when determinism policy is enabled; kernel/store can use for replay. */
     private Long randomnessSeed;
+    /** When true and debugID is set, DEBUGGER feature pushes execution tree and context to Redis before/after every node. Same level as tenantId, userId, operation. */
+    private Boolean debug;
+    /** UUID for debug session; used as Redis key suffix (olo:debug:&lt;debugID&gt;:*). Set alongside debug=true. */
+    private String debugID;
 }

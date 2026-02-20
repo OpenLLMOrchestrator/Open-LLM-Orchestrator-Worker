@@ -86,10 +86,12 @@ Use this to read **all files** from a folder and put them into the vector DB. Th
 
 ### 2.3 Set workflow input (JSON)
 
-**Required:** `input.folderPath` — path to the folder (relative to the worker’s working directory, or absolute).
+**Required:** `input.folderPath` — path to the folder. When running in a container, this is **relative to the RAG shared folder** (see below). Otherwise relative to the worker’s working directory, or absolute.
 
 **Optional:** `input.fileExtensions` — comma-separated (e.g. `.txt,.md`). Default: `.txt,.md`.  
 **Optional:** `input.recursive` — `true` to include subfolders. Default: `false`.
+
+**Shared folder (container):** The worker exposes a **shared folder** for use by any plugin (e.g. upload, document-ingestion, file search). In Docker it is created at `/app/shared` and declared as a `VOLUME`; mount a host directory there. Config: `sharedFolderPath` (or env `SHARED_FOLDER_PATH`). The execution context key `sharedFolderPath` is set so plugins can resolve paths relative to this root.
 
 **Example – ingest `samples/rag-docs` (relative path):**
 
@@ -178,6 +180,68 @@ Another example:
 | **Question/answer** | `CoreWorkflowImpl` | `core-task-queue` | `question-answer` | `{ "question": "<your question>" }` |
 
 If your config uses a different **task queue** or **namespace**, use those values in Temporal UI instead of the defaults above.
+
+---
+
+## How to debug
+
+When the **DEBUGGER** feature is enabled, you can stream execution state to Redis for inspection (e.g. by a debug UI). Each node (capability, group, plugin, condition, expression) gets a unique UUID; state is written to Redis on **pre** and **post** for every node.
+
+### 1. Enable DEBUGGER in config
+
+Add **`DEBUGGER`** to **`enabledFeatures`** in your engine config (e.g. `config/default.json` or `config/debug.json`):
+
+```json
+"enabledFeatures": [
+  "VERSIONED_STATE",
+  "STAGE_RESULT_ENVELOPE",
+  "DEBUGGER",
+  ...
+]
+```
+
+### 2. Set debug and debugID in workflow input
+
+In the **ExecutionCommand** (workflow input JSON), set **`debug`** to `true` and **`debugID`** to a unique value (e.g. a UUID). Optionally set **`operation`** to identify the run (e.g. pipeline or use-case name).
+
+**Example – question-answer with debug:**
+
+```json
+{
+  "pipelineName": "question-answer",
+  "operation": "question-answer",
+  "debug": true,
+  "debugID": "550e8400-e29b-41d4-a716-446655440000",
+  "input": {
+    "question": "How do I ingest documents for RAG?"
+  }
+}
+```
+
+**Example – document-ingestion-folder with debug:**
+
+```json
+{
+  "pipelineName": "document-ingestion-folder",
+  "operation": "document-ingestion-folder",
+  "debug": true,
+  "debugID": "550e8400-e29b-41d4-a716-446655440000",
+  "input": {
+    "folderPath": "samples/rag-docs"
+  }
+}
+```
+
+### 3. Where debug data is written
+
+- **Redis keys** (per run):  
+  - `olo:debug:<debugID>:ExecutionTree` – execution tree (plan + executionTreeRoots + capabilityNodeIds) for the current node.  
+  - `olo:debug:<debugID>:context` – command, versionedState, and related context.
+- State is **updated on every node** (before and after each capability, group, plugin, condition, expression). Each payload includes **`recordId`**, **`debugId`**, and **`executionNodeId`** (UUID per node).
+
+### 4. Using the debug session
+
+Use **`debugID`** as the session id: your debug UI or tool can read from Redis with that key prefix to show the execution tree and context as the run progresses. The same **`debugID`** can be passed when starting the workflow so you can correlate Temporal workflow ID with your debug session.
 
 ---
 

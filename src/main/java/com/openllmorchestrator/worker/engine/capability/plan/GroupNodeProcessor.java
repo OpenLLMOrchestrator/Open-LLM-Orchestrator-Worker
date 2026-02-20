@@ -38,15 +38,24 @@ public final class GroupNodeProcessor implements NodeProcessor {
 
     @Override
     public void process(NodeConfig node, PlanBuildContext ctx, CapabilityPlanBuilder builder, PipelineWalker walker, int depth) {
+        process(node, ctx, builder, walker, depth, null);
+    }
+
+    @Override
+    public void process(NodeConfig node, PlanBuildContext ctx, CapabilityPlanBuilder builder, PipelineWalker walker, int depth,
+                        ExecutionTreeBuilder treeBuilder) {
         int effectiveMax = node.getMaxDepth() != null ? node.getMaxDepth() : ctx.getDefaultMaxGroupDepth();
         if (depth >= effectiveMax) {
             throw new IllegalStateException("Group recursion depth " + depth + " exceeds max " + effectiveMax);
         }
         if (node.isConditional()) {
-            processConditional(node, ctx, builder, walker, depth);
+            processConditional(node, ctx, builder, walker, depth, treeBuilder);
             return;
         }
         if ("ASYNC".equalsIgnoreCase(node.getExecutionMode())) {
+            if (treeBuilder != null) {
+                treeBuilder.startGroup(node.getExecutionMode() != null ? node.getExecutionMode() : "ASYNC");
+            }
             List<String> names = collectStageNames(node, ctx);
             int timeout = node.getTimeoutSeconds() != null ? node.getTimeoutSeconds() : ctx.getDefaultTimeoutSeconds();
             AsyncCompletionPolicy policy = node.getAsyncCompletionPolicy() != null && !node.getAsyncCompletionPolicy().isBlank()
@@ -64,9 +73,21 @@ public final class GroupNodeProcessor implements NodeProcessor {
                     mergePolicyName,
                     ctx.getCurrentCapabilityBucketName()
             );
+            if (treeBuilder != null) {
+                for (String name : names) {
+                    treeBuilder.addPlugin(name);
+                }
+                treeBuilder.endGroup();
+            }
         } else {
+            if (treeBuilder != null) {
+                treeBuilder.startGroup(node.getExecutionMode() != null ? node.getExecutionMode() : "SYNC");
+            }
             for (NodeConfig child : node.getChildren()) {
-                walker.processNode(child, ctx, builder, depth + 1);
+                walker.processNode(child, ctx, builder, depth + 1, treeBuilder);
+            }
+            if (treeBuilder != null) {
+                treeBuilder.endGroup();
             }
         }
     }
@@ -96,7 +117,8 @@ public final class GroupNodeProcessor implements NodeProcessor {
         return names;
     }
 
-    private void processConditional(NodeConfig node, PlanBuildContext ctx, CapabilityPlanBuilder builder, PipelineWalker walker, int depth) {
+    private void processConditional(NodeConfig node, PlanBuildContext ctx, CapabilityPlanBuilder builder, PipelineWalker walker, int depth,
+                                   ExecutionTreeBuilder treeBuilder) {
         String conditionName = node.getCondition().trim();
         if (ctx.getAllowedPluginNames() != null && !ctx.getAllowedPluginNames().contains(conditionName)) {
             throw new IllegalStateException(
@@ -117,24 +139,24 @@ public final class GroupNodeProcessor implements NodeProcessor {
                 .build();
         List<List<CapabilityGroupSpec>> branches = new ArrayList<>();
         branches.add(node.hasThenGroup()
-                ? buildBranchSpecs(List.of(node.getThenGroup()), ctx, walker, depth)
-                : buildBranchSpecs(node.getThenChildrenSafe(), ctx, walker, depth));
+                ? buildBranchSpecs(List.of(node.getThenGroup()), ctx, walker, depth, treeBuilder)
+                : buildBranchSpecs(node.getThenChildrenSafe(), ctx, walker, depth, treeBuilder));
         for (ElseIfBranchNodeConfig elseif : node.getElseifBranchesSafe()) {
             branches.add(elseif.hasThenGroup()
-                    ? buildBranchSpecs(List.of(elseif.getThenGroup()), ctx, walker, depth)
-                    : buildBranchSpecs(elseif.getThenSafe(), ctx, walker, depth));
+                    ? buildBranchSpecs(List.of(elseif.getThenGroup()), ctx, walker, depth, treeBuilder)
+                    : buildBranchSpecs(elseif.getThenSafe(), ctx, walker, depth, treeBuilder));
         }
         branches.add(node.hasElseGroup()
-                ? buildBranchSpecs(List.of(node.getElseGroup()), ctx, walker, depth)
-                : buildBranchSpecs(node.getElseChildrenSafe(), ctx, walker, depth));
+                ? buildBranchSpecs(List.of(node.getElseGroup()), ctx, walker, depth, treeBuilder)
+                : buildBranchSpecs(node.getElseChildrenSafe(), ctx, walker, depth, treeBuilder));
         builder.addConditionalGroup(conditionDef, branches);
     }
 
     private static List<CapabilityGroupSpec> buildBranchSpecs(List<NodeConfig> nodes, PlanBuildContext ctx,
-                                                         PipelineWalker walker, int depth) {
+                                                         PipelineWalker walker, int depth, ExecutionTreeBuilder treeBuilder) {
         CapabilityPlanBuilder branchBuilder = CapabilityPlan.builder();
         for (NodeConfig n : nodes) {
-            walker.processNode(n, ctx, branchBuilder, depth + 1);
+            walker.processNode(n, ctx, branchBuilder, depth + 1, treeBuilder);
         }
         return branchBuilder.build().getGroups();
     }

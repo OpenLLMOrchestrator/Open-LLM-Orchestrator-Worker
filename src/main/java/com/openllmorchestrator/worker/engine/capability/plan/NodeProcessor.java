@@ -23,5 +23,9 @@ public interface NodeProcessor {
     boolean supports(NodeConfig node);
 
     void process(NodeConfig node, PlanBuildContext ctx, CapabilityPlanBuilder builder, PipelineWalker walker, int depth);
+
+    /** Process with optional execution tree builder (when building from rootByCapability). */
+    void process(NodeConfig node, PlanBuildContext ctx, CapabilityPlanBuilder builder, PipelineWalker walker, int depth,
+                 ExecutionTreeBuilder treeBuilder);
 }
 

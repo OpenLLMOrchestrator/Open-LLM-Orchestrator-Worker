@@ -27,6 +27,7 @@ import java.util.List;
 /**
  * Execution hierarchy: ordered list of stage groups. Built once at bootstrap from config
  * and reused for the container lifecycle. Immutable; serializable.
+ * Tree mirrors config: capability node → group node → plugin as leaf (or recursive group/condition/expression).
  * Graph-capable: each group may declare {@link CapabilityGroupSpec#getDependsOnGroupIndices()}; kernel runs
  * a group when all its dependencies have completed (deterministic ready set).
  */
@@ -34,10 +35,24 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CapabilityPlan {
     private final List<CapabilityGroupSpec> groups;
+    /** Execution tree roots (one per capability when from rootByCapability). Same shape as config; every node has UUID. */
+    private final List<ExecutionTreeNode> executionTreeRoots;
+    /** Capability node UUIDs in same order as execution (for pre/post capability-level hooks). */
+    private final List<String> capabilityNodeIds;
 
     @JsonCreator
-    CapabilityPlan(@JsonProperty("groups") List<CapabilityGroupSpec> groups) {
+    CapabilityPlan(
+            @JsonProperty("groups") List<CapabilityGroupSpec> groups,
+            @JsonProperty("executionTreeRoots") List<ExecutionTreeNode> executionTreeRoots,
+            @JsonProperty("capabilityNodeIds") List<String> capabilityNodeIds) {
         this.groups = groups != null ? Collections.unmodifiableList(new ArrayList<>(groups)) : List.of();
+        this.executionTreeRoots = executionTreeRoots != null ? Collections.unmodifiableList(new ArrayList<>(executionTreeRoots)) : List.of();
+        this.capabilityNodeIds = capabilityNodeIds != null ? Collections.unmodifiableList(new ArrayList<>(capabilityNodeIds)) : List.of();
+    }
+
+    /** Legacy constructor: no tree. */
+    CapabilityPlan(List<CapabilityGroupSpec> groups) {
+        this(groups, null, null);
     }
 
     public static CapabilityPlanBuilder builder() {
@@ -55,6 +70,9 @@ public class CapabilityPlan {
      * per-queue execution tree remains immutable.
      */
     public CapabilityPlan copyForExecution() {
-        return fromGroups(new ArrayList<>(getGroups()));
+        return new CapabilityPlan(
+                new ArrayList<>(getGroups()),
+                executionTreeRoots.isEmpty() ? List.of() : new ArrayList<>(getExecutionTreeRoots()),
+                capabilityNodeIds.isEmpty() ? List.of() : new ArrayList<>(getCapabilityNodeIds()));
     }
 }

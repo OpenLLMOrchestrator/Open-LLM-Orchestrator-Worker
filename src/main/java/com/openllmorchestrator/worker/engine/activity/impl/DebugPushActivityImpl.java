@@ -25,7 +25,7 @@ import redis.clients.jedis.Jedis;
 import java.util.UUID;
 
 /**
- * Pushes serialized execution tree and context to Redis when DEBUGGER is enabled and input has debug=true, debugID=uuid.
+ * Pushes serialized execution tree and context to Redis when DEBUGGER is enabled and command has debug=true, debugID (same level as tenantId, userId, operation).
  * Keys: olo:debug:&lt;uuid&gt;:ExecutionTree, olo:debug:&lt;uuid&gt;:context.
  * Each stored value is a JSON object with a unique recordId (UUID) so every object has a different uuid.
  */
@@ -38,7 +38,7 @@ public class DebugPushActivityImpl implements DebugPushActivity {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
-    public void push(String debugId, String executionTreeJson, String contextJson) {
+    public void push(String debugId, String executionNodeId, String executionTreeJson, String contextJson) {
         if (debugId == null || debugId.isBlank()) {
             log.warn("DebugPushActivity: debugId is null or blank; skipping push.");
             return;
@@ -52,8 +52,8 @@ public class DebugPushActivityImpl implements DebugPushActivity {
             if (env.getRedis().getPassword() != null && !env.getRedis().getPassword().isBlank()) {
                 jedis.auth(env.getRedis().getPassword());
             }
-            String executionTreeValue = wrapWithRecordId(debugId, "executionTree", executionTreeJson);
-            String contextValue = wrapWithRecordId(debugId, "context", contextJson);
+            String executionTreeValue = wrapWithRecordId(debugId, executionNodeId, "executionTree", executionTreeJson);
+            String contextValue = wrapWithRecordId(debugId, executionNodeId, "context", contextJson);
             String keyExecutionTree = KEY_PREFIX + debugId + SUFFIX_EXECUTION_TREE;
             String keyContext = KEY_PREFIX + debugId + SUFFIX_CONTEXT;
             jedis.set(keyExecutionTree, executionTreeValue);
@@ -65,11 +65,14 @@ public class DebugPushActivityImpl implements DebugPushActivity {
         }
     }
 
-    /** Build a JSON object with unique recordId and debugId so every stored object has a different uuid. */
-    private static String wrapWithRecordId(String debugId, String payloadKey, String payloadJson) throws Exception {
+    /** Build a JSON object with unique recordId, debugId, and executionNodeId (unique per execution node/leaf). */
+    private static String wrapWithRecordId(String debugId, String executionNodeId, String payloadKey, String payloadJson) throws Exception {
         ObjectNode root = MAPPER.createObjectNode();
         root.put("recordId", UUID.randomUUID().toString());
         root.put("debugId", debugId);
+        if (executionNodeId != null && !executionNodeId.isBlank()) {
+            root.put("executionNodeId", executionNodeId);
+        }
         if (payloadJson != null && !payloadJson.isBlank()) {
             root.set(payloadKey, MAPPER.readTree(payloadJson));
         } else {

@@ -19,7 +19,7 @@ import io.temporal.activity.ActivityInterface;
 import io.temporal.activity.ActivityMethod;
 
 /**
- * When DEBUGGER feature is enabled and workflow input has debug=true and debugID=uuid,
+ * When DEBUGGER feature is enabled and command has debug=true and debugID (same level as tenantId, userId, operation),
  * the workflow serializes execution tree and context and calls this activity to push them to Redis.
  * Keys: olo:debug:&lt;uuid&gt;:ExecutionTree, olo:debug:&lt;uuid&gt;:context.
  * Each stored value is a JSON object with a unique recordId (UUID) per object.
@@ -28,11 +28,12 @@ import io.temporal.activity.ActivityMethod;
 public interface DebugPushActivity {
 
     /**
-     * Push serialized execution tree and context to Redis. Each stored blob gets a unique recordId.
-     * @param debugId from workflow input (debugID)
+     * Push serialized execution tree and context to Redis. Each stored blob gets a unique recordId and the executionNodeId for this node/leaf.
+     * @param debugId from command (debugID)
+     * @param executionNodeId unique UUID for this execution expression node/leaf (deterministic from groupIndex, capabilityName, stepId, phase)
      * @param executionTreeJson serialized CapabilityPlan (JSON)
      * @param contextJson serialized context snapshot (command + versionedState, JSON)
      */
     @ActivityMethod
-    void push(String debugId, String executionTreeJson, String contextJson);
+    void push(String debugId, String executionNodeId, String executionTreeJson, String contextJson);
 }

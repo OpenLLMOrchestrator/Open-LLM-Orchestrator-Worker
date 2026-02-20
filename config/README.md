@@ -57,6 +57,7 @@ The following is a concise reference for building a **configuration UI** or **pi
 | `pipelines` | object | **Yes** | Pipeline list; each pipeline = canvas or form (see **Pipeline structure** and **Condition flow**). |
 | `plugins` | string[] | No | Multi-select; allowed plugin names (FQCN or activity id). |
 | `dynamicPlugins` | object | No | Key = plugin name, value = JAR path. |
+| `sharedFolderPath` | string | No | Shared folder for plugins; mount in container. Any plugin may resolve file/folder paths relative to this. Env: `SHARED_FOLDER_PATH`. Default in container: `/app/shared`. |
 | `queueTopology` | object | No | `strategy` dropdown + `stageToQueue`, `tenantToQueue` maps. |
 
 ### Pipeline structure (root-by-capability, recommended)

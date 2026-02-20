@@ -21,5 +21,8 @@ import com.openllmorchestrator.worker.engine.capability.CapabilityPlanBuilder;
 /** Callback to process a child node when building the plan. */
 public interface PipelineWalker {
     void processNode(NodeConfig node, PlanBuildContext ctx, CapabilityPlanBuilder builder, int depth);
+
+    /** Process node and optionally build execution tree (same shape as config). TreeBuilder may be null. */
+    void processNode(NodeConfig node, PlanBuildContext ctx, CapabilityPlanBuilder builder, int depth, ExecutionTreeBuilder treeBuilder);
 }
 

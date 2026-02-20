@@ -22,6 +22,8 @@ import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.engine.contract.VersionedState;
 import com.openllmorchestrator.worker.engine.kernel.CapabilityInvoker;
+import com.openllmorchestrator.worker.engine.kernel.feature.DebuggerFeatureHandler;
+import com.openllmorchestrator.worker.engine.kernel.interceptor.CapabilityContext;
 import com.openllmorchestrator.worker.engine.kernel.interceptor.ExecutionInterceptorChain;
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,7 +58,22 @@ public final class ConditionalGroupExecutor implements GroupExecutor {
         CapabilityDefinition conditionDef = spec.getConditionDefinition();
         List<List<CapabilityGroupSpec>> branches = spec.getBranches();
         log.info("Executing conditional group: condition plugin={}", conditionDef.getName());
-        CapabilityResult conditionResult = invoker.invokeSync(conditionDef, context);
+
+        // Run condition capability through interceptor chain with node kind "condition"
+        context.put(DebuggerFeatureHandler.STATE_KEY_DEBUG_NODE_KIND, "condition");
+        CapabilityContext capCtx = CapabilityContext.from(groupIndex, conditionDef, context.getVersionedState(), context);
+        interceptorChain.beforeCapability(capCtx);
+        CapabilityResult conditionResult;
+        try {
+            conditionResult = invoker.invokeSync(conditionDef, context);
+            interceptorChain.afterCapability(capCtx, conditionResult != null ? conditionResult : CapabilityResult.builder().build());
+        } catch (Exception e) {
+            interceptorChain.onError(capCtx, e);
+            throw e;
+        } finally {
+            context.put(DebuggerFeatureHandler.STATE_KEY_DEBUG_NODE_KIND, null);
+        }
+
         Map<String, Object> output = conditionResult != null ? conditionResult.getOutput() : null;
         if (output != null && !output.isEmpty()) {
             Map<String, Object> merged = new HashMap<>(context.getAccumulatedOutput());
@@ -69,9 +86,16 @@ public final class ConditionalGroupExecutor implements GroupExecutor {
         Object branchObj = output != null ? output.get(OUTPUT_KEY_BRANCH) : null;
         int branchIndex = toBranchIndex(branchObj, branches.size());
         log.info("Condition selected branch {} (0=then, {} = else)", branchIndex, branches.size() - 1);
-        List<CapabilityGroupSpec> selectedBranch = branches.get(branchIndex);
-        CapabilityPlan branchPlan = CapabilityPlan.fromGroups(selectedBranch);
-        runSubPlan.accept(branchPlan, context);
+
+        // Expression node: branch selection; push before/after executing the selected branch
+        interceptorChain.beforeBranch(context, groupIndex, branchIndex);
+        try {
+            List<CapabilityGroupSpec> selectedBranch = branches.get(branchIndex);
+            CapabilityPlan branchPlan = CapabilityPlan.fromGroups(selectedBranch);
+            runSubPlan.accept(branchPlan, context);
+        } finally {
+            interceptorChain.afterBranch(context, groupIndex, branchIndex);
+        }
     }
 
     private static int toBranchIndex(Object value, int branchCount) {

@@ -23,10 +23,17 @@ import com.openllmorchestrator.worker.engine.config.pipeline.PipelineSection;
 import com.openllmorchestrator.worker.engine.config.pipeline.CapabilityBlockConfig;
 import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
 import com.openllmorchestrator.worker.engine.capability.CapabilityPlanBuilder;
+import com.openllmorchestrator.worker.engine.capability.ExecutionTreeNode;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.TreeSet;
 
 /** Builds CapabilityPlan from config. Single responsibility: plan construction. */
 public final class
@@ -136,6 +143,8 @@ CapabilityPlanFactory {
         List<String> capabilityOrder = EngineConfigRuntime.getFeatureFlagsEffective(fileConfig).isEnabled(FeatureFlag.EXECUTION_GRAPH)
                 ? EngineConfigRuntime.getExecutionGraphEffective(fileConfig).topologicalOrder()
                 : EngineConfigRuntime.getCapabilityOrderEffective(fileConfig);
+        // Include every capability present in rootByCapability; order by capabilityOrder first, then any remaining by name
+        List<String> capabilityNamesToProcess = capabilityOrderForRootByCapability(capabilityOrder, rootByCapability);
         int defaultMaxDepth = section.getDefaultMaxGroupDepth() > 0 ? section.getDefaultMaxGroupDepth() : 5;
         PlanBuildContext ctx = new PlanBuildContext(
                 section.getDefaultTimeoutSeconds(),
@@ -147,25 +156,57 @@ CapabilityPlanFactory {
                 allowedPluginNames
         );
         DefaultPipelineWalker walker = new DefaultPipelineWalker();
-        for (String capabilityName : capabilityOrder) {
+        ExecutionTreeBuilder treeBuilder = new ExecutionTreeBuilder();
+        for (String capabilityName : capabilityNamesToProcess) {
             NodeConfig groupNode = rootByCapability.get(capabilityName);
             if (groupNode == null) {
-                continue; // not defined → skip
+                continue; // defensive: skip if not in map
             }
             if (!groupNode.isGroup()) {
                 throw new IllegalStateException("Pipeline rootByCapability['" + capabilityName + "'] must be a GROUP, got: " + groupNode.getType());
             }
+            treeBuilder.startCapability(capabilityName);
             PlanBuildContext ctxForCapability = ctx.withCurrentCapabilityBucketName(capabilityName);
-            walker.processNode(groupNode, ctxForCapability, builder, 0);
+            walker.processNode(groupNode, ctxForCapability, builder, 0, treeBuilder);
+            treeBuilder.endCapability();
         }
+        builder.executionTree(treeBuilder.getRoots(), treeBuilder.getCapabilityNodeIds());
+    }
+
+    /**
+     * Build ordered list of capability names: those from capabilityOrder that exist in rootByCapability (in that order),
+     * then any other keys from rootByCapability that were not in capabilityOrder (sorted for determinism).
+     * Ensures no capability defined in rootByCapability is omitted (e.g. RETRIEVAL when capabilityOrder only lists MODEL, POST_PROCESS).
+     */
+    private static List<String> capabilityOrderForRootByCapability(List<String> capabilityOrder,
+                                                                   Map<String, NodeConfig> rootByCapability) {
+        Set<String> inRoot = rootByCapability.keySet();
+        LinkedHashSet<String> ordered = new LinkedHashSet<>();
+        if (capabilityOrder != null) {
+            for (String name : capabilityOrder) {
+                if (inRoot.contains(name)) {
+                    ordered.add(name);
+                }
+            }
+        }
+        TreeSet<String> remaining = new TreeSet<>(inRoot);
+        remaining.removeAll(ordered);
+        ordered.addAll(remaining);
+        return new ArrayList<>(ordered);
     }
 
     private static class DefaultPipelineWalker implements PipelineWalker {
         @Override
         public void processNode(NodeConfig node, PlanBuildContext ctx, CapabilityPlanBuilder builder, int depth) {
+            processNode(node, ctx, builder, depth, null);
+        }
+
+        @Override
+        public void processNode(NodeConfig node, PlanBuildContext ctx, CapabilityPlanBuilder builder, int depth,
+                               ExecutionTreeBuilder treeBuilder) {
             for (NodeProcessor p : PROCESSORS) {
                 if (p.supports(node)) {
-                    p.process(node, ctx, builder, this, depth);
+                    p.process(node, ctx, builder, this, depth, treeBuilder);
                     return;
                 }
             }

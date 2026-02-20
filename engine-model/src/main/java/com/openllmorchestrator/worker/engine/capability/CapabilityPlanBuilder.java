@@ -23,9 +23,20 @@ import java.util.List;
 /** Builds a CapabilityPlan. All options from config; no hardcoded values. */
 public final class CapabilityPlanBuilder {
     private final List<CapabilityGroupSpec> groups = new ArrayList<>();
+    private final List<ExecutionTreeNode> executionTreeRoots = new ArrayList<>();
+    private final List<String> capabilityNodeIds = new ArrayList<>();
     private int groupCounter = 0;
 
     CapabilityPlanBuilder() {}
+
+    /** Set execution tree roots (capability nodes) and their UUIDs in same order. Tree mirrors config. */
+    public CapabilityPlanBuilder executionTree(List<ExecutionTreeNode> roots, List<String> capabilityIds) {
+        executionTreeRoots.clear();
+        capabilityNodeIds.clear();
+        if (roots != null) executionTreeRoots.addAll(roots);
+        if (capabilityIds != null) capabilityNodeIds.addAll(capabilityIds);
+        return this;
+    }
 
     public CapabilityPlanBuilder addSyncWithCustomConfig(String capabilityName, CapabilityExecutionMode mode,
                                                     Duration timeout, String taskQueue,
@@ -39,6 +50,17 @@ public final class CapabilityPlanBuilder {
                                                     Duration scheduleToStart, Duration scheduleToClose,
                                                     CapabilityRetryOptions retryOptions,
                                                     String capabilityBucketName) {
+        return addSyncWithCustomConfig(capabilityName, mode, timeout, taskQueue, scheduleToStart, scheduleToClose,
+                retryOptions, capabilityBucketName, null, null);
+    }
+
+    /** Same as above but with execution tree node IDs for pre/post and debug. */
+    public CapabilityPlanBuilder addSyncWithCustomConfig(String capabilityName, CapabilityExecutionMode mode,
+                                                    Duration timeout, String taskQueue,
+                                                    Duration scheduleToStart, Duration scheduleToClose,
+                                                    CapabilityRetryOptions retryOptions,
+                                                    String capabilityBucketName,
+                                                    String groupNodeId, String pluginNodeId) {
         CapabilityDefinition def = CapabilityDefinition.builder()
                 .name(capabilityName)
                 .executionMode(mode)
@@ -49,8 +71,9 @@ public final class CapabilityPlanBuilder {
                 .scheduleToCloseTimeout(scheduleToClose)
                 .retryOptions(retryOptions)
                 .capabilityBucketName(capabilityBucketName)
+                .pluginNodeId(pluginNodeId)
                 .build();
-        groups.add(new CapabilityGroupSpec(Collections.singletonList(def), null));
+        groups.add(new CapabilityGroupSpec(Collections.singletonList(def), null, null, null, null, null, groupNodeId, null));
         return this;
     }
 
@@ -109,6 +132,8 @@ public final class CapabilityPlanBuilder {
     }
 
     public CapabilityPlan build() {
-        return new CapabilityPlan(groups);
+        return new CapabilityPlan(groups,
+                executionTreeRoots.isEmpty() ? List.of() : new ArrayList<>(executionTreeRoots),
+                capabilityNodeIds.isEmpty() ? List.of() : new ArrayList<>(capabilityNodeIds));
     }
 }

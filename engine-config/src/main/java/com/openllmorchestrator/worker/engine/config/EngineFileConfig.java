@@ -121,8 +121,16 @@ public class EngineFileConfig {
     /** Default JOIN plugin name for ASYNC groups when group does not specify joinPlugin. Engine may use a built-in if null. */
     private String defaultJoinPlugin;
 
+    /**
+     * Shared folder path for plugins: mounted in container; any plugin may resolve file/folder paths
+     * relative to this (e.g. upload, document-ingestion, file search). Env override: SHARED_FOLDER_PATH.
+     */
+    private String sharedFolderPath;
+
     /** Default config version when not set. */
     public static final String DEFAULT_CONFIG_VERSION = "1.0";
+    /** Default shared folder path in container when sharedFolderPath not set. */
+    public static final String DEFAULT_SHARED_FOLDER_PATH = "/app/shared";
     /** Default plugin repo package prefix when not set. */
     public static final String DEFAULT_PLUGIN_REPO_PACKAGE_PREFIX = "com.openllmorchestrator.worker.plugin";
     /** Default enabled feature names when not set. */
@@ -187,6 +195,7 @@ public class EngineFileConfig {
         merged.queueTopology = fromStorage != null ? fromStorage.queueTopology : null;
         merged.defaultForkPlugin = fromStorage != null ? fromStorage.defaultForkPlugin : null;
         merged.defaultJoinPlugin = fromStorage != null ? fromStorage.defaultJoinPlugin : null;
+        merged.sharedFolderPath = env.getSharedFolderPath() != null ? env.getSharedFolderPath() : (fromStorage != null ? fromStorage.sharedFolderPath : null);
         return merged;
     }
 
@@ -200,6 +209,12 @@ public class EngineFileConfig {
     @JsonIgnore
     public String getDefaultJoinPluginEffective() {
         return defaultJoinPlugin != null && !defaultJoinPlugin.isBlank() ? defaultJoinPlugin : null;
+    }
+
+    /** Effective shared folder path (config or env). Default /app/shared when unset. Any plugin may resolve paths relative to this. */
+    @JsonIgnore
+    public String getSharedFolderPathEffective() {
+        return sharedFolderPath != null && !sharedFolderPath.isBlank() ? sharedFolderPath.trim() : DEFAULT_SHARED_FOLDER_PATH;
     }
 
     /** Enabled feature flag names from config (for use by worker to build FeatureFlags). When null/empty, no optional features are enabled. */

@@ -19,6 +19,7 @@ import com.openllmorchestrator.worker.engine.activity.DebugPushActivity;
 import com.openllmorchestrator.worker.engine.contract.ExecutionCommand;
 import com.openllmorchestrator.worker.engine.contract.ExecutionContext;
 import com.openllmorchestrator.worker.engine.contract.ExecutionSignal;
+import com.openllmorchestrator.worker.engine.contract.SharedFolderContextKeys;
 import com.openllmorchestrator.worker.engine.contract.KernelExecutionOutcome;
 import com.openllmorchestrator.worker.engine.kernel.KernelOrchestrator;
 import com.openllmorchestrator.worker.engine.capability.CapabilityPlan;
@@ -55,6 +56,7 @@ public class CoreWorkflowImpl implements CoreWorkflow {
         }
         String queueName = command.getQueueName();
         ExecutionContext context = ExecutionContext.from(command, EngineRuntime.getFeatureFlags(queueName));
+        context.put(SharedFolderContextKeys.SHARED_FOLDER_PATH, EngineRuntime.getConfig(queueName).getSharedFolderPathEffective());
         String pipelineName = command.getPipelineName() != null && !command.getPipelineName().isBlank()
                 ? command.getPipelineName()
                 : "default";
@@ -62,13 +64,12 @@ public class CoreWorkflowImpl implements CoreWorkflow {
         CapabilityPlan globalPlan = EngineRuntime.getCapabilityPlan(queueName, pipelineName);
         CapabilityPlan planToRun = context.getExecutionPlan() != null ? context.getExecutionPlan() : globalPlan;
 
-        // When DEBUGGER FF is enabled and input has debug=true and debugID=uuid, put stub/plan in context so DebuggerFeatureHandler can push before/after every node.
+        // When DEBUGGER FF is enabled and command has debug=true and debugID (same level as tenantId, userId, operation), put stub/plan in context so DebuggerFeatureHandler can push before/after every node.
         com.openllmorchestrator.worker.engine.config.FeatureFlags flagsForDebug = EngineRuntime.getFeatureFlags(queueName);
         if (flagsForDebug != null && flagsForDebug.isEnabled(com.openllmorchestrator.worker.engine.config.FeatureFlag.DEBUGGER)) {
-            Map<String, Object> input = command.getInput();
-            boolean debug = input != null && Boolean.TRUE.equals(input.get("debug"));
-            String debugID = input != null && input.get("debugID") != null ? String.valueOf(input.get("debugID")).trim() : null;
-            if (debug && debugID != null && !debugID.isEmpty()) {
+            boolean debug = Boolean.TRUE.equals(command.getDebug());
+            String debugID = command.getDebugID() != null && !command.getDebugID().isBlank() ? command.getDebugID().trim() : null;
+            if (debug && debugID != null) {
                 ActivityOptions options = ActivityOptions.newBuilder()
                         .setTaskQueue(Workflow.getInfo().getTaskQueue())
                         .setStartToCloseTimeout(Duration.ofSeconds(30))

@@ -26,6 +26,11 @@ WORKDIR /app
 
 RUN adduser -D -u 1000 appuser
 
+# Shared folder for plugins: mount a volume here so any plugin can read/write files from the host
+# Override path with SHARED_FOLDER_PATH if needed (default /app/shared)
+RUN mkdir -p /app/shared && chown appuser:appuser /app/shared
+VOLUME /app/shared
+
 COPY --from=build /app/build/libs/open-llm-orchestrator-worker-*-all.jar /app/worker.jar
 COPY config config/
 

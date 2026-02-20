@@ -44,4 +44,6 @@ public class CapabilityDefinition {
     private CapabilityRetryOptions retryOptions;
     /** Capability bucket name (e.g. RETRIEVAL, MODEL) for Temporal UI activity summary; null = use plugin name only. */
     private String capabilityBucketName;
+    /** Stable UUID for this plugin node in the execution tree; used by pre/post handlers and debug Redis state. */
+    private String pluginNodeId;
 }
