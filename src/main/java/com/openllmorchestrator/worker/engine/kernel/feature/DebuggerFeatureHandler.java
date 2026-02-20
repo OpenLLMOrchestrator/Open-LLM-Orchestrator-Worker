@@ -165,7 +165,7 @@ public final class DebuggerFeatureHandler implements FeatureHandler {
         ctxNode.set("command", ExecutionModelSerde.objectMapper().valueToTree(executionContext.getCommand()));
         ctxNode.set("versionedState", ExecutionModelSerde.objectMapper().valueToTree(executionContext.getVersionedState()));
         String contextJson = ExecutionModelSerde.objectMapper().writeValueAsString(ctxNode);
-        stub.push(debugID, executionNodeId, planJson, contextJson);
+        stub.debugPush(debugID, executionNodeId, planJson, contextJson);
     }
 
     /** Unique UUID for group node (deterministic for replay). */

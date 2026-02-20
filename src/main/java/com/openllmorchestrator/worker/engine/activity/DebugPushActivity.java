@@ -35,5 +35,5 @@ public interface DebugPushActivity {
      * @param contextJson serialized context snapshot (command + versionedState, JSON)
      */
     @ActivityMethod
-    void push(String debugId, String executionNodeId, String executionTreeJson, String contextJson);
+    void debugPush(String debugId, String executionNodeId, String executionTreeJson, String contextJson);
 }

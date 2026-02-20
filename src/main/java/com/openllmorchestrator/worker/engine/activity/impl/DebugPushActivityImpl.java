@@ -38,7 +38,7 @@ public class DebugPushActivityImpl implements DebugPushActivity {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
-    public void push(String debugId, String executionNodeId, String executionTreeJson, String contextJson) {
+    public void debugPush(String debugId, String executionNodeId, String executionTreeJson, String contextJson) {
         if (debugId == null || debugId.isBlank()) {
             log.warn("DebugPushActivity: debugId is null or blank; skipping push.");
             return;
